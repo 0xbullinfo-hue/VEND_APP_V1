@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
   },
   footerContainer: {
     paddingHorizontal: theme.spacing.xl,
-    paddingBottom: Platform.OS === 'android' ? normalize(40) : theme.spacing.xl,
+    paddingBottom: Platform.OS === 'android' ? normalize(60) : normalize(50),
   },
   indicatorRow: {
     flexDirection: 'row',

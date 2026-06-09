@@ -158,6 +158,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonWrapper: {
-    marginBottom: normalize(10),
+    marginBottom: normalize(40),
   },
 });

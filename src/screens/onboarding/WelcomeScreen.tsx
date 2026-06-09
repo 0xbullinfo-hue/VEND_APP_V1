@@ -152,6 +152,6 @@ const styles = StyleSheet.create({
     lineHeight: normalize(20),
   },
   buttonWrapper: {
-    marginBottom: normalize(10),
+    marginBottom: normalize(40),
   },
 });

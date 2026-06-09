@@ -133,26 +133,30 @@ export const CustomerProfileScreen: React.FC<CustomerProfileScreenProps> = ({
             <View style={styles.menuGroup}>
               <TouchableOpacity activeOpacity={0.7} style={styles.menuItem} onPress={() => Alert.alert('Edit Profile', 'Profile editor will be available soon.')}>
                 <View style={styles.menuLeft}>
-                  <Ionicons name="person-outline" size={20} color={theme.colors.primary} />
-                  <VText variant="body" style={{ marginLeft: 12 }}>Edit Profile Details</VText>
+                  <Ionicons name="person-outline" size={32} color={theme.colors.primary} />
+                  <VText variant="h3" align="center" style={{ marginTop: 8 }}>Edit Profile</VText>
                 </View>
-                <Ionicons name="chevron-forward" size={16} color={theme.colors.textMuted} />
               </TouchableOpacity>
 
               <TouchableOpacity activeOpacity={0.7} style={styles.menuItem} onPress={() => Alert.alert('Notifications', 'Notification settings will be available soon.')}>
                 <View style={styles.menuLeft}>
-                  <Ionicons name="notifications-outline" size={20} color={theme.colors.primary} />
-                  <VText variant="body" style={{ marginLeft: 12 }}>Notification Options</VText>
+                  <Ionicons name="notifications-outline" size={32} color={theme.colors.primary} />
+                  <VText variant="h3" align="center" style={{ marginTop: 8 }}>Notifications</VText>
                 </View>
-                <Ionicons name="chevron-forward" size={16} color={theme.colors.textMuted} />
               </TouchableOpacity>
 
               <TouchableOpacity activeOpacity={0.7} style={styles.menuItem} onPress={() => Alert.alert('Terms', 'Loading Terms & Agreements...')}>
                 <View style={styles.menuLeft}>
-                  <Ionicons name="document-text-outline" size={20} color={theme.colors.primary} />
-                  <VText variant="body" style={{ marginLeft: 12 }}>Terms & Agreements</VText>
+                  <Ionicons name="document-text-outline" size={32} color={theme.colors.primary} />
+                  <VText variant="h3" align="center" style={{ marginTop: 8 }}>Terms</VText>
                 </View>
-                <Ionicons name="chevron-forward" size={16} color={theme.colors.textMuted} />
+              </TouchableOpacity>
+
+              <TouchableOpacity activeOpacity={0.7} style={styles.menuItem} onPress={() => Alert.alert('Support', 'Contacting support...')}>
+                <View style={styles.menuLeft}>
+                  <Ionicons name="help-buoy-outline" size={32} color={theme.colors.primary} />
+                  <VText variant="h3" align="center" style={{ marginTop: 8 }}>Support</VText>
+                </View>
               </TouchableOpacity>
             </View>
 
@@ -200,7 +204,7 @@ export const CustomerProfileScreen: React.FC<CustomerProfileScreenProps> = ({
 
         {/* SAVED VENDORS TAB */}
         {activeTab === 'favorites' && (
-          <View style={styles.tabContent}>
+          <View style={[styles.tabContent, { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }]}>
             {favoriteVendors.length > 0 ? (
               favoriteVendors.map((vendor) => (
                 <TouchableOpacity
@@ -211,17 +215,14 @@ export const CustomerProfileScreen: React.FC<CustomerProfileScreenProps> = ({
                 >
                   <Image source={{ uri: vendor.image }} style={styles.vendorImg} />
                   <View style={styles.vendorInfo}>
-                    <VText variant="h3">{vendor.business_name}</VText>
-                    <VText variant="caption" color={theme.colors.textMuted}>{vendor.category}</VText>
+                    <VText variant="h3" numberOfLines={1}>{vendor.business_name}</VText>
+                    <VText variant="caption" color={theme.colors.textMuted} numberOfLines={1}>{vendor.category}</VText>
                     
                     <View style={styles.ratingRow}>
                       <Ionicons name="star" size={12} color={theme.colors.warning} />
                       <VText variant="caption" style={{ marginLeft: 4 }}>{vendor.rating}</VText>
-                      <Ionicons name="location-outline" size={12} color={theme.colors.primary} style={{ marginLeft: 10 }} />
-                      <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 2 }}>Directions</VText>
                     </View>
                   </View>
-                  <Ionicons name="chevron-forward" size={18} color={theme.colors.textMuted} />
                 </TouchableOpacity>
               ))
             ) : (
@@ -402,24 +403,24 @@ const styles = StyleSheet.create({
   
   // Settings Tab styles
   menuGroup: {
-    backgroundColor: theme.colors.background,
-    borderRadius: normalize(12),
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    overflow: 'hidden',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.spacing.md,
+    justifyContent: 'space-between',
     marginBottom: theme.spacing.xl,
   },
   menuItem: {
-    flexDirection: 'row',
+    width: '47%',
+    aspectRatio: 1,
+    backgroundColor: theme.colors.surface,
+    borderRadius: normalize(16),
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    justifyContent: 'center',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    padding: theme.spacing.md,
   },
   menuLeft: {
-    flexDirection: 'row',
     alignItems: 'center',
   },
   switchAccountBox: {
@@ -442,23 +443,25 @@ const styles = StyleSheet.create({
 
   // Saved tab styles
   vendorCard: {
-    flexDirection: 'row',
+    width: '48%',
     alignItems: 'center',
     padding: theme.spacing.md,
-    borderRadius: normalize(12),
+    borderRadius: normalize(16),
     borderWidth: 1,
     borderColor: theme.colors.border,
-    marginBottom: theme.spacing.sm,
-  },
-  vendorImg: {
-    width: normalize(52),
-    height: normalize(52),
-    borderRadius: 8,
+    marginBottom: theme.spacing.md,
     backgroundColor: theme.colors.surface,
   },
+  vendorImg: {
+    width: normalize(60),
+    height: normalize(60),
+    borderRadius: normalize(30),
+    backgroundColor: theme.colors.surface,
+    marginBottom: theme.spacing.sm,
+  },
   vendorInfo: {
-    flex: 1,
-    marginLeft: 12,
+    alignItems: 'center',
+    width: '100%',
   },
   ratingRow: {
     flexDirection: 'row',
