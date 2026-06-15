@@ -1,106 +1,128 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, ScrollView, TouchableOpacity, Modal, Image, TextInput } from 'react-native';
+import { StyleSheet, View, ScrollView, Modal } from 'react-native';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, VButton, VInput, HeaderBar } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
 import { Ionicons } from '@expo/vector-icons';
+import { SUBSCRIPTION_PLANS, MIN_SUBSCRIPTION_TIER } from '../../lib/subscriptionPlans';
 
 interface SubscriptionManagerScreenProps {
   onBack: () => void;
 }
 
 export const SubscriptionManagerScreen: React.FC<SubscriptionManagerScreenProps> = ({ onBack }) => {
-  const { vendors, locality, updateVendorSubscription, addPoints } = useApp();
-  
-  // Hardcoded for vendor v1 demo details
-  const vendor = vendors.find(v => v.id === 'v1') || vendors[0];
+  const { vendors, myVendorProfile, locality, updateVendorSubscription, addPoints } = useApp();
 
-  const [activeModal, setActiveModal] = useState<'paystack' | 'web3' | null>(null);
+  // Fall back defensively if a vendor profile somehow isn't linked yet.
+  const vendor = myVendorProfile || vendors[0];
+
+  const [activeModal, setActiveModal] = useState<'paystack' | null>(null);
+  const [pendingTier, setPendingTier] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
-  
+
   // Paystack input states
   const [cardNumber, setCardNumber] = useState('');
   const [expiry, setExpiry] = useState('');
   const [cvv, setCvv] = useState('');
-  
-  // Web3 state
-  const [walletConnected, setWalletConnected] = useState(false);
 
   const userCount = locality?.registered_users_count || 942;
   const isMilestoneCleared = userCount >= 1000;
 
+  const openCheckout = (tier: number) => {
+    if (!isMilestoneCleared) return;
+    setPendingTier(tier);
+    setActiveModal('paystack');
+  };
+
   const handlePaystackSubmit = () => {
     if (cardNumber.length < 16 || expiry.length < 4 || cvv.length < 3) {
-      alert("Please fill in valid payment credentials");
+      alert('Please fill in valid payment credentials');
       return;
     }
+    if (pendingTier === null) return;
+
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      updateVendorSubscription(vendor.id, 2); // Update subscription to tier 2 (Boosted)
-      addPoints(50); // reward points
+      const success = updateVendorSubscription(vendor.id, pendingTier);
+      if (success) {
+        addPoints(50); // reward points for upgrading
+      }
       setActiveModal(null);
+      setPendingTier(null);
+      setCardNumber('');
+      setExpiry('');
+      setCvv('');
     }, 2000);
   };
 
-  const handleConnectWallet = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      setWalletConnected(true);
-    }, 1500);
+  const handleDowngrade = (tier: number) => {
+    updateVendorSubscription(vendor.id, tier);
   };
 
-  const handleSignTransaction = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      updateVendorSubscription(vendor.id, 3); // Update subscription to tier 3 (Web3 Pro)
-      addPoints(100); // reward points
-      setActiveModal(null);
-      setWalletConnected(false);
-    }, 2000);
-  };
+  const targetPlan = SUBSCRIPTION_PLANS.find(p => p.tier === pendingTier);
 
   return (
     <View style={styles.container}>
       <HeaderBar showBack={true} onBack={onBack} title="Vendor Pro Hub" showPoints={false} />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        
+
+        {/* Listing usage summary */}
+        <View style={[styles.usageBox, theme.shadows.soft]}>
+          <View style={styles.usageHeaderRow}>
+            <Ionicons name="pricetags-outline" size={20} color={theme.colors.primary} />
+            <VText variant="h3" style={{ marginLeft: 8 }}>Your Listings</VText>
+          </View>
+          <VText variant="caption" color={theme.colors.textMuted} style={{ marginTop: 4 }}>
+            {vendor.services.length} of {SUBSCRIPTION_PLANS.find(p => p.tier === vendor.subscription_tier)?.maxListings ?? '-'} used on your current plan
+          </VText>
+          <View style={styles.progressBarBg}>
+            <View
+              style={[
+                styles.progressBarFill,
+                {
+                  width: `${Math.min(100, (vendor.services.length / (SUBSCRIPTION_PLANS.find(p => p.tier === vendor.subscription_tier)?.maxListings || 1)) * 100)}%`,
+                  backgroundColor: theme.colors.primary,
+                }
+              ]}
+            />
+          </View>
+        </View>
+
         {/* Locality Milestones Status Box */}
         <View style={[styles.milestoneBox, isMilestoneCleared ? styles.milestonePassed : styles.milestoneLocked]}>
           <View style={styles.milestoneHeader}>
-            <Ionicons 
-              name={isMilestoneCleared ? "checkmark-circle" : "lock-closed"} 
-              size={20} 
-              color={isMilestoneCleared ? theme.colors.primary : theme.colors.danger} 
+            <Ionicons
+              name={isMilestoneCleared ? "checkmark-circle" : "lock-closed"}
+              size={20}
+              color={isMilestoneCleared ? theme.colors.primary : theme.colors.danger}
             />
             <VText variant="h3" color={isMilestoneCleared ? theme.colors.primary : theme.colors.danger} style={{ marginLeft: 8 }}>
-              {isMilestoneCleared ? 'Milestone Active: Paid Tiers Unlocked' : 'Locality Milestones Check'}
+              {isMilestoneCleared ? 'Milestone Active: Paid Plans Unlocked' : 'Locality Milestones Check'}
             </VText>
           </View>
-          
+
           <VText variant="caption" color={theme.colors.textMuted} style={{ marginTop: 4, lineHeight: 14 }}>
-            Paid advertising subscriptions are locked until your LGA/Ward registers at least 1,000 customers. This ensures advertisement value.
+            Paid plans unlock once your LGA/Ward registers at least 1,000 customers. This ensures advertising value for boosted listings.
           </VText>
 
           <View style={styles.milestoneProgressRow}>
             <VText variant="h2">{locality?.name || 'Yaba'}: {userCount} / 1,000 Users</VText>
             <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: '800' }}>
-              {isMilestoneCleared ? '100% Unlocked' : '94% Locked'}
+              {isMilestoneCleared ? '100% Unlocked' : `${Math.floor((userCount / 1000) * 100)}% there`}
             </VText>
           </View>
 
           <View style={styles.progressBarBg}>
-            <View 
+            <View
               style={[
-                styles.progressBarFill, 
-                { 
+                styles.progressBarFill,
+                {
                   width: `${Math.min(100, (userCount / 1000) * 100)}%`,
-                  backgroundColor: isMilestoneCleared ? theme.colors.primary : theme.colors.danger 
+                  backgroundColor: isMilestoneCleared ? theme.colors.primary : theme.colors.danger
                 }
-              ]} 
+              ]}
             />
           </View>
 
@@ -108,118 +130,79 @@ export const SubscriptionManagerScreen: React.FC<SubscriptionManagerScreenProps>
             <View style={styles.tipBox}>
               <Ionicons name="bulb-outline" size={14} color={theme.colors.primary} />
               <VText variant="caption" color={theme.colors.primary} style={{ flex: 1, marginLeft: 6 }}>
-                Tip: You can switch your locality to "Ikeja / GRA" in settings to test the unlocked Paystack and WalletConnect interfaces!
+                Keep growing your community! Once {locality?.name || 'your locality'} hits 1,000 registered VEND users, paid visibility plans automatically unlock for every vendor there.
               </VText>
             </View>
           )}
         </View>
 
-        {/* 3-Tier subscription card options */}
+        {/* Subscription plan cards (data-driven so future tiers can be added in one place) */}
         <VText variant="h2" style={styles.sectionTitle}>Choose Your Plan</VText>
-        
-        {/* Tier 1: Free */}
-        <View style={[styles.planCard, vendor.subscription_tier === 1 && styles.planActive, theme.shadows.soft]}>
-          <View style={styles.planHeader}>
-            <VText variant="h3">Tier 1: Free Explorer</VText>
-            <VText variant="caption" color={theme.colors.primary}>FREE (3 MONTHS)</VText>
-          </View>
-          <VText variant="caption" color={theme.colors.textMuted} style={styles.planDesc}>
-            Standard maps pinpoint listing. Basic search placement. Includes 1 service listing capability.
-          </VText>
-          {vendor.subscription_tier === 1 ? (
-            <View style={styles.activeLabel}>
-              <Ionicons name="checkmark-circle" size={16} color={theme.colors.primary} />
-              <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 6, fontWeight: '800' }}>
-                CURRENT ACTIVE PLAN
-              </VText>
-            </View>
-          ) : (
-            <VButton
-              title="Downgrade to Free"
-              onPress={() => updateVendorSubscription(vendor.id, 1)}
-              variant="secondary"
-              style={styles.planActionBtn}
-            />
-          )}
-        </View>
 
-        {/* Tier 2: Boosted */}
-        <View style={[
-          styles.planCard, 
-          vendor.subscription_tier === 2 && styles.planActive, 
-          !isMilestoneCleared && styles.planLockedCard,
-          theme.shadows.soft
-        ]}>
-          {!isMilestoneCleared && (
-            <View style={styles.cardLockOverlay}>
-              <Ionicons name="lock-closed" size={20} color={theme.colors.textMuted} />
-              <VText variant="caption" color={theme.colors.textMuted} style={{ marginLeft: 6 }}>LOCKED BY LGA MILESTONE</VText>
-            </View>
-          )}
+        {SUBSCRIPTION_PLANS.map((plan) => {
+          const isCurrent = vendor.subscription_tier === plan.tier;
+          const isUpgrade = plan.tier > vendor.subscription_tier;
+          const isDowngrade = plan.tier < vendor.subscription_tier;
+          const isPaidTier = plan.tier > MIN_SUBSCRIPTION_TIER;
+          const lockedByMilestone = isPaidTier && !isMilestoneCleared && isUpgrade;
 
-          <View style={styles.planHeader}>
-            <VText variant="h3">Tier 2: Premium Boosted Pin</VText>
-            <VText variant="caption" color={theme.colors.primary}>N5,000 / MONTH</VText>
-          </View>
-          <VText variant="caption" color={theme.colors.textMuted} style={styles.planDesc}>
-            Pulsing golden/teal pin marker on map. Top category search placement priority. Up to 10 service listings.
-          </VText>
-          
-          {vendor.subscription_tier === 2 ? (
-            <View style={styles.activeLabel}>
-              <Ionicons name="checkmark-circle" size={16} color={theme.colors.primary} />
-              <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 6, fontWeight: '800' }}>
-                CURRENT ACTIVE PLAN
-              </VText>
-            </View>
-          ) : (
-            <VButton
-              title="Activate Boosted (Paystack)"
-              onPress={() => isMilestoneCleared && setActiveModal('paystack')}
-              disabled={!isMilestoneCleared}
-              style={styles.planActionBtn}
-            />
-          )}
-        </View>
+          return (
+            <View
+              key={plan.tier}
+              style={[
+                styles.planCard,
+                isCurrent && styles.planActive,
+                lockedByMilestone && styles.planLockedCard,
+                theme.shadows.soft
+              ]}
+            >
+              {lockedByMilestone && (
+                <View style={styles.cardLockOverlay}>
+                  <Ionicons name="lock-closed" size={20} color={theme.colors.textMuted} />
+                  <VText variant="caption" color={theme.colors.textMuted} style={{ marginLeft: 6 }}>LOCKED BY LGA MILESTONE</VText>
+                </View>
+              )}
 
-        {/* Tier 3: Web3 Pro */}
-        <View style={[
-          styles.planCard, 
-          vendor.subscription_tier === 3 && styles.planActive, 
-          !isMilestoneCleared && styles.planLockedCard,
-          theme.shadows.soft
-        ]}>
-          {!isMilestoneCleared && (
-            <View style={styles.cardLockOverlay}>
-              <Ionicons name="lock-closed" size={20} color={theme.colors.textMuted} />
-              <VText variant="caption" color={theme.colors.textMuted} style={{ marginLeft: 6 }}>LOCKED BY LGA MILESTONE</VText>
-            </View>
-          )}
+              <View style={styles.planHeader}>
+                <VText variant="h3">Tier {plan.tier}: {plan.name}</VText>
+                <VText variant="caption" color={theme.colors.primary}>{plan.priceLabel}</VText>
+              </View>
 
-          <View style={styles.planHeader}>
-            <VText variant="h3">Tier 3: Web3 Pro Merchant</VText>
-            <VText variant="caption" color={theme.colors.primary}>5 VEND TOKENS</VText>
-          </View>
-          <VText variant="caption" color={theme.colors.textMuted} style={styles.planDesc}>
-            Premium maps pin marker. Unlocks customer analytics tracking. Integrated Web3 client payments using VEND tokens.
-          </VText>
-          
-          {vendor.subscription_tier === 3 ? (
-            <View style={styles.activeLabel}>
-              <Ionicons name="checkmark-circle" size={16} color={theme.colors.primary} />
-              <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 6, fontWeight: '800' }}>
-                CURRENT ACTIVE PLAN
-              </VText>
+              {/* Data-driven feature/perks list */}
+              <View style={styles.featureList}>
+                {plan.features.map((feature) => (
+                  <View key={feature} style={styles.featureRow}>
+                    <Ionicons name="checkmark" size={14} color={theme.colors.primary} style={{ marginRight: 6 }} />
+                    <VText variant="caption" color={theme.colors.textMuted} style={{ flex: 1 }}>{feature}</VText>
+                  </View>
+                ))}
+              </View>
+
+              {isCurrent ? (
+                <View style={styles.activeLabel}>
+                  <Ionicons name="checkmark-circle" size={16} color={theme.colors.primary} />
+                  <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 6, fontWeight: '800' }}>
+                    CURRENT ACTIVE PLAN
+                  </VText>
+                </View>
+              ) : isUpgrade ? (
+                <VButton
+                  title={isPaidTier ? `Activate ${plan.name} (Paystack)` : `Switch to ${plan.name}`}
+                  onPress={() => isPaidTier ? openCheckout(plan.tier) : handleDowngrade(plan.tier)}
+                  disabled={lockedByMilestone}
+                  style={styles.planActionBtn}
+                />
+              ) : isDowngrade ? (
+                <VButton
+                  title={`Downgrade to ${plan.name}`}
+                  onPress={() => handleDowngrade(plan.tier)}
+                  variant="secondary"
+                  style={styles.planActionBtn}
+                />
+              ) : null}
             </View>
-          ) : (
-            <VButton
-              title="Activate Pro (Wallet Connect)"
-              onPress={() => isMilestoneCleared && setActiveModal('web3')}
-              disabled={!isMilestoneCleared}
-              style={styles.planActionBtn}
-            />
-          )}
-        </View>
+          );
+        })}
 
       </ScrollView>
 
@@ -236,7 +219,7 @@ export const SubscriptionManagerScreen: React.FC<SubscriptionManagerScreenProps>
               <VText variant="h2" style={{ marginLeft: 8 }}>Paystack Checkout</VText>
             </View>
             <VText variant="caption" color={theme.colors.textMuted} style={{ marginBottom: theme.spacing.lg }}>
-              Complete security payment for N5,000 monthly VEND Boost plan.
+              Complete secure payment for {targetPlan?.priceLabel} {targetPlan?.name} plan.
             </VText>
 
             {/* Inputs */}
@@ -274,86 +257,17 @@ export const SubscriptionManagerScreen: React.FC<SubscriptionManagerScreenProps>
             <View style={styles.modalBtns}>
               <VButton
                 title="Cancel"
-                onPress={() => setActiveModal(null)}
+                onPress={() => { setActiveModal(null); setPendingTier(null); }}
                 variant="outline"
                 style={{ flex: 1 }}
               />
               <VButton
-                title="Pay N5,000"
+                title={`Pay ${targetPlan?.priceLabel || ''}`}
                 onPress={handlePaystackSubmit}
                 loading={loading}
                 style={{ flex: 1, marginLeft: theme.spacing.sm }}
               />
             </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Wallet Connect Web3 Modal */}
-      <Modal
-        visible={activeModal === 'web3'}
-        transparent={true}
-        animationType="fade"
-      >
-        <View style={styles.modalBackdrop}>
-          <View style={[styles.modalCard, theme.shadows.premium, { alignItems: 'center' }]}>
-            <Ionicons name="wallet" size={32} color={theme.colors.primary} style={{ marginBottom: theme.spacing.sm }} />
-            <VText variant="h2" style={{ marginBottom: theme.spacing.xs }}>WalletConnect</VText>
-            <VText variant="caption" color={theme.colors.textMuted} align="center" style={{ marginBottom: theme.spacing.xl }}>
-              Authorize transaction of 5 VEND Tokens on Ethereum Mainnet.
-            </VText>
-
-            {!walletConnected ? (
-              // Connect wallet state
-              <View style={styles.web3Center}>
-                <View style={styles.qrMockBox}>
-                  {/* Render simulated Web3 connection QR code */}
-                  <Ionicons name="qr-code" size={normalize(120)} color={theme.colors.primary} />
-                </View>
-                <VText variant="caption" color={theme.colors.textMuted} align="center" style={{ marginVertical: theme.spacing.md }}>
-                  Scan QR inside MetaMask, Trust Wallet, or Phantom to connect.
-                </VText>
-
-                <View style={styles.modalBtns}>
-                  <VButton
-                    title="Cancel"
-                    onPress={() => setActiveModal(null)}
-                    variant="outline"
-                    style={{ flex: 1 }}
-                  />
-                  <VButton
-                    title="Simulate Connect"
-                    onPress={handleConnectWallet}
-                    loading={loading}
-                    style={{ flex: 1, marginLeft: theme.spacing.sm }}
-                  />
-                </View>
-              </View>
-            ) : (
-              // Connected wallet sign transaction state
-              <View style={styles.web3Center}>
-                <View style={styles.walletDetailsBox}>
-                  <Ionicons name="shield-checkmark" size={24} color={theme.colors.accent} />
-                  <VText variant="h3" color={theme.colors.accent} style={{ marginTop: 4 }}>Wallet Connected</VText>
-                  <VText variant="caption" color={theme.colors.textMuted}>Address: 0x71C...8e9A</VText>
-                </View>
-
-                <View style={styles.modalBtns}>
-                  <VButton
-                    title="Disconnect"
-                    onPress={() => setWalletConnected(false)}
-                    variant="outline"
-                    style={{ flex: 1 }}
-                  />
-                  <VButton
-                    title="Sign & Approve (5 VEND)"
-                    onPress={handleSignTransaction}
-                    loading={loading}
-                    style={{ flex: 1, marginLeft: theme.spacing.sm }}
-                  />
-                </View>
-              </View>
-            )}
           </View>
         </View>
       </Modal>
@@ -372,6 +286,21 @@ const styles = StyleSheet.create({
     paddingTop: theme.spacing.md,
     paddingBottom: theme.spacing.xxl,
   },
+
+  // Listing usage card
+  usageBox: {
+    backgroundColor: theme.colors.background,
+    borderRadius: normalize(16),
+    borderWidth: 1.5,
+    borderColor: theme.colors.border,
+    padding: theme.spacing.lg,
+    marginBottom: theme.spacing.lg,
+  },
+  usageHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
   milestoneBox: {
     padding: theme.spacing.lg,
     borderRadius: normalize(16),
@@ -403,6 +332,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.border,
     borderRadius: 4,
     overflow: 'hidden',
+    marginTop: theme.spacing.sm,
   },
   progressBarFill: {
     height: '100%',
@@ -413,7 +343,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: theme.spacing.sm,
   },
-  
+
   // Plans list
   sectionTitle: {
     marginBottom: theme.spacing.md,
@@ -438,9 +368,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: theme.spacing.sm,
   },
-  planDesc: {
-    lineHeight: 14,
+  featureList: {
     marginBottom: theme.spacing.md,
+    gap: 4,
+  },
+  featureRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
   },
   activeLabel: {
     flexDirection: 'row',
@@ -470,7 +404,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     zIndex: 2,
   },
-  
+
   // Checkout Modal Layout
   modalBackdrop: {
     flex: 1,
@@ -497,28 +431,5 @@ const styles = StyleSheet.create({
   },
   modalBtns: {
     flexDirection: 'row',
-  },
-  
-  // Web3 modal layout
-  web3Center: {
-    width: '100%',
-    alignItems: 'center',
-  },
-  qrMockBox: {
-    padding: theme.spacing.md,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1.5,
-    borderColor: theme.colors.border,
-    borderRadius: normalize(12),
-  },
-  walletDetailsBox: {
-    backgroundColor: theme.colors.surface,
-    padding: theme.spacing.lg,
-    borderRadius: normalize(12),
-    borderWidth: 1.5,
-    borderColor: theme.colors.accent,
-    alignItems: 'center',
-    width: '100%',
-    marginBottom: theme.spacing.xl,
   },
 });

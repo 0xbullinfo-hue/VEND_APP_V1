@@ -191,3 +191,89 @@ if (status.milestone_met && status.paid_plans_status === 'ACTIVE_UNLOCKED') {
 console.log("\n=================================================");
 console.log("   ALL TEST CASES VERIFIED SUCCESSFULLY          ");
 console.log("=================================================");
+
+
+// =================================================
+// TEST CASE 5: Vendor Subscription Tier System (Fiat-Only)
+// =================================================
+// Mirrors src/lib/subscriptionPlans.ts + AppContext.addVendorService /
+// AppContext.updateVendorSubscription. Crypto/Web3 "Tier 3" has been
+// removed entirely - only two NGN-billed tiers exist.
+
+console.log("\n--- TEST CASE 5: Vendor Subscription Tier System (Fiat-Only) ---");
+
+const SUBSCRIPTION_PLANS = [
+  { tier: 1, id: 'free', name: 'Free Explorer', maxListings: 2, boosted: false },
+  { tier: 2, id: 'boosted', name: 'Premium Boosted', maxListings: 10, boosted: true },
+];
+const MIN_TIER = SUBSCRIPTION_PLANS[0].tier;
+const MAX_TIER = SUBSCRIPTION_PLANS[SUBSCRIPTION_PLANS.length - 1].tier;
+
+const getPlanForTier = (tier) => SUBSCRIPTION_PLANS.find(p => p.tier === tier) || SUBSCRIPTION_PLANS[0];
+const clampTier = (tier) => SUBSCRIPTION_PLANS.some(p => p.tier === tier) ? tier : MIN_TIER;
+
+// A fresh vendor signing up always starts on Tier 1 (Free).
+const testVendor = { id: 'v_test', subscription_tier: 1, services: [] };
+
+function addVendorService(vendor, title) {
+  const plan = getPlanForTier(vendor.subscription_tier);
+  if (vendor.services.length >= plan.maxListings) {
+    return { ok: false, reason: `Listing limit reached (${plan.maxListings} on ${plan.name})` };
+  }
+  vendor.services.push({ id: `s_${vendor.services.length + 1}`, title });
+  return { ok: true };
+}
+
+function updateVendorSubscription(vendor, tier) {
+  const targetTier = clampTier(tier);
+  const targetPlan = getPlanForTier(targetTier);
+  if (targetTier < vendor.subscription_tier && vendor.services.length > targetPlan.maxListings) {
+    return { ok: false, reason: `Remove ${vendor.services.length - targetPlan.maxListings} listing(s) before downgrading to ${targetPlan.name}` };
+  }
+  vendor.subscription_tier = targetTier;
+  return { ok: true };
+}
+
+// 5a. Free tier allows up to 2 listings, then blocks the 3rd.
+addVendorService(testVendor, 'Listing 1');
+addVendorService(testVendor, 'Listing 2');
+let blocked = addVendorService(testVendor, 'Listing 3 (should fail)');
+console.log(`Free tier listings: ${testVendor.services.length} (Expect 2). 3rd listing result:`, blocked);
+if (testVendor.services.length === 2 && !blocked.ok) {
+  console.log("✅ Success: Free tier correctly capped at 2 listings.");
+} else {
+  console.error("❌ Error: Free tier listing limit not enforced.");
+}
+
+// 5b. Upgrading to Tier 2 (Premium Boosted) raises the cap to 10 and unlocks more adds.
+let upgrade = updateVendorSubscription(testVendor, 2);
+console.log(`Upgrade to Tier 2 result:`, upgrade, `New tier: ${testVendor.subscription_tier}`);
+let added3rd = addVendorService(testVendor, 'Listing 3');
+console.log(`Listing 3 after upgrade:`, added3rd, `Total listings: ${testVendor.services.length} (Expect 3)`);
+if (upgrade.ok && testVendor.subscription_tier === 2 && added3rd.ok && testVendor.services.length === 3) {
+  console.log("✅ Success: Tier 2 upgrade unlocked higher listing capacity (up to 10).");
+} else {
+  console.error("❌ Error: Tier 2 upgrade did not unlock additional listings.");
+}
+
+// 5c. Downgrading back to Tier 1 (Free) is blocked while over the Free limit (3 > 2).
+let downgrade = updateVendorSubscription(testVendor, 1);
+console.log(`Downgrade to Tier 1 with 3 listings:`, downgrade, `Tier remains: ${testVendor.subscription_tier}`);
+if (!downgrade.ok && testVendor.subscription_tier === 2) {
+  console.log("✅ Success: Downgrade correctly blocked while over the Free tier's listing limit.");
+} else {
+  console.error("❌ Error: Downgrade should have been blocked.");
+}
+
+// 5d. Crypto/Web3 "Tier 3" no longer exists - any attempt to set it is clamped back to Tier 1.
+let cryptoAttempt = clampTier(3);
+console.log(`clampTier(3) (legacy "Web3 Pro" tier) resolves to: Tier ${cryptoAttempt}`);
+if (cryptoAttempt === MIN_TIER && MAX_TIER === 2) {
+  console.log("✅ Success: Crypto/Web3 tier fully removed - only Tiers 1-2 (NGN/Paystack) remain.");
+} else {
+  console.error("❌ Error: A crypto/Web3 tier is still reachable.");
+}
+
+console.log("\n=================================================");
+console.log("   TEST CASE 5 COMPLETE                          ");
+console.log("=================================================");

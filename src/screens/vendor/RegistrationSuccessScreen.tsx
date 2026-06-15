@@ -12,8 +12,8 @@ interface RegistrationSuccessScreenProps {
 export const RegistrationSuccessScreen: React.FC<RegistrationSuccessScreenProps> = ({
   onGoToDashboard
 }) => {
-  const { vendors } = useApp();
-  const vendor = vendors.find(v => v.id === 'v1') || vendors[0];
+  const { vendors, myVendorProfile } = useApp();
+  const vendor = myVendorProfile || vendors[0];
 
   return (
     <SafeAreaView style={styles.container}>

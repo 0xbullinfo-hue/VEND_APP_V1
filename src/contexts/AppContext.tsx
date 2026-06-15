@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { MOCK_LOCALITIES, MOCK_VENDORS } from '../lib/supabase';
+import { getPlanForTier, clampTier, SubscriptionPlan } from '../lib/subscriptionPlans';
 
 export interface UserProfile {
   id: string;
@@ -30,6 +31,8 @@ interface AppContextType {
   points: number;
   locality: typeof MOCK_LOCALITIES[0] | null;
   vendors: typeof MOCK_VENDORS;
+  myVendorProfile: typeof MOCK_VENDORS[number] | null;
+  myVendorPlan: SubscriptionPlan;
   savedVendors: string[];
   directionRequests: DirectionRequest[];
   emergencyContacts: EmergencyContact[];
@@ -50,8 +53,8 @@ interface AppContextType {
   deleteEmergencyContact: (id: string) => void;
   triggerSOS: () => void;
   registerVendor: (businessName: string, bio: string, category: string, subCategory: string, address: string, isHomeBased: boolean, latitude: number, longitude: number) => void;
-  addVendorService: (vendorId: string, title: string, description: string, category: string, price: number, stock: number, stockStatus: string, image: string) => void;
-  updateVendorSubscription: (vendorId: string, tier: number) => void;
+  addVendorService: (vendorId: string, title: string, description: string, category: string, price: number, stock: number, stockStatus: string, image: string) => boolean;
+  updateVendorSubscription: (vendorId: string, tier: number) => boolean;
   dismissNotification: () => void;
   setPoints: (points: number) => void;
 }
@@ -85,6 +88,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setRole(selectedRole);
     if (selectedRole === 'customer') {
       setPointsState(0); // Onboarding referral code can boost this to 50
+    }
+
+    if (selectedRole === 'vendor') {
+      // Ensure this account has its own linked business profile so the
+      // dashboard, subscription tiers, and listing limits all apply to
+      // *their* business rather than a hardcoded demo vendor.
+      setVendors(prev => {
+        if (prev.some(v => v.id === mockUser.id)) return prev;
+        const newVendorProfile = {
+          id: mockUser.id,
+          business_name: mockUser.name,
+          bio: 'Tell customers about your business by completing your profile setup.',
+          category: 'Professional Services',
+          sub_category: 'General Services',
+          rating: 5.0,
+          is_open: true,
+          is_home_based: true,
+          locality_id: locality ? locality.id : 1,
+          subscription_tier: 1, // New vendors start on the Free tier
+          image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500&q=80',
+          services: [],
+          street_address: '',
+          exact_location: locality?.center_location || { latitude: 6.5165, longitude: 3.3792 }
+        };
+        return [newVendorProfile, ...prev];
+      });
     }
   };
 
@@ -208,27 +237,54 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     latitude: number,
     longitude: number
   ) => {
-    const newVendor = {
-      id: 'v_' + Math.random().toString(36).substr(2, 9),
+    const profileFields = {
       business_name: businessName,
       bio,
       category,
       sub_category: subCategory,
-      rating: 5.0,
-      is_open: true,
       is_home_based: isHomeBased,
       locality_id: locality ? locality.id : 1,
-      subscription_tier: 1, // Start on free tier
-      image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500&q=80',
-      services: [],
       street_address: address,
       exact_location: { latitude, longitude }
     };
-    setVendors(prev => [newVendor, ...prev]);
+
+    setVendors(prev => {
+      const vendorId = user?.id;
+      const existingIndex = vendorId ? prev.findIndex(v => v.id === vendorId) : -1;
+
+      if (existingIndex > -1) {
+        // Update the vendor profile that was auto-created at login time.
+        const updated = [...prev];
+        updated[existingIndex] = { ...updated[existingIndex], ...profileFields };
+        return updated;
+      }
+
+      // Fallback: no linked profile exists yet (e.g. registration completed
+      // before login finished setting up state). Create a fresh Tier 1 record.
+      const newVendor = {
+        id: vendorId || ('v_' + Math.random().toString(36).substr(2, 9)),
+        ...profileFields,
+        rating: 5.0,
+        is_open: true,
+        subscription_tier: 1, // Start on the Free tier
+        image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500&q=80',
+        services: [],
+      };
+      return [newVendor, ...prev];
+    });
   };
 
-  const addVendorService = (vendorId: string, title: string, description: string, category: string, price: number, stock: number, stockStatus: string, image: string) => {
-    setVendors(prev => 
+  const addVendorService = (vendorId: string, title: string, description: string, category: string, price: number, stock: number, stockStatus: string, image: string): boolean => {
+    const vendor = vendors.find(v => v.id === vendorId);
+    if (!vendor) return false;
+
+    const plan = getPlanForTier(vendor.subscription_tier);
+    if (vendor.services.length >= plan.maxListings) {
+      setNotification(`Listing limit reached (${plan.maxListings} on the ${plan.name} plan). Upgrade your plan to add more services.`);
+      return false;
+    }
+
+    setVendors(prev =>
       prev.map(v => {
         if (v.id === vendorId) {
           return {
@@ -242,23 +298,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return v;
       })
     );
+    return true;
   };
 
-  const updateVendorSubscription = (vendorId: string, tier: number) => {
+  const updateVendorSubscription = (vendorId: string, tier: number): boolean => {
+    const vendor = vendors.find(v => v.id === vendorId);
+    if (!vendor) return false;
+
+    const targetTier = clampTier(tier);
+    const targetPlan = getPlanForTier(targetTier);
+
+    // Block downgrades that would leave a vendor over their new plan's listing limit.
+    if (targetTier < vendor.subscription_tier && vendor.services.length > targetPlan.maxListings) {
+      const excess = vendor.services.length - targetPlan.maxListings;
+      setNotification(`Can't switch to ${targetPlan.name}: remove ${excess} listing${excess > 1 ? 's' : ''} first (limit is ${targetPlan.maxListings}).`);
+      return false;
+    }
+
     setVendors(prev =>
-      prev.map(v => {
-        if (v.id === vendorId) {
-          return { ...v, subscription_tier: tier };
-        }
-        return v;
-      })
+      prev.map(v => v.id === vendorId ? { ...v, subscription_tier: targetTier } : v)
     );
-    setNotification(`Subscription activated! Tier ${tier} is now active.`);
+    setNotification(`Subscription activated! ${targetPlan.name} is now active.`);
+    return true;
   };
 
   const dismissNotification = () => {
     setNotification(null);
   };
+
+  // The business profile linked to the currently logged-in vendor account
+  // (auto-created at login time - see `login` above), plus their resolved
+  // subscription plan config (limits, perks, pricing).
+  const myVendorProfile = vendors.find(v => v.id === user?.id) ?? null;
+  const myVendorPlan = getPlanForTier(myVendorProfile?.subscription_tier);
 
   return (
     <AppContext.Provider value={{
@@ -267,6 +339,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       points,
       locality,
       vendors,
+      myVendorProfile,
+      myVendorPlan,
       savedVendors,
       directionRequests,
       emergencyContacts,

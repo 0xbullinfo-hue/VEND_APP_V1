@@ -64,7 +64,7 @@ export const MOCK_VENDORS = [
     is_open: true,
     is_home_based: true,
     locality_id: 3,
-    subscription_tier: 3, // Crypto
+    subscription_tier: 2, // Boosted (Premium plan)
     image: 'https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?w=500&q=80',
     services: [
       { id: 's3_1', title: 'Senator Attire Sewing (Material not included)', description: 'Slim fit sewing with high quality embroidery.', category: 'Clothing & Accessories', price: 8000, stock: 0, stockStatus: 'SOLD OUT', image: 'https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?w=500&q=80' },

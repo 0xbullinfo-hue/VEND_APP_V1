@@ -216,6 +216,7 @@ const AppNavigation: React.FC = () => {
           {activeVendorTab === 'services' && (
             <ProductManagementScreen 
               onBack={() => setActiveVendorTab('dashboard')} 
+              onUpgrade={() => setIsManagingSubscription(true)}
             />
           )}
           {activeVendorTab === 'growth' && (

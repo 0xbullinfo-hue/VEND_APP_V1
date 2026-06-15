@@ -23,10 +23,10 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
   onStartChat,
   onViewProfile
 }) => {
-  const { vendors } = useApp();
+  const { vendors, myVendorProfile, myVendorPlan } = useApp();
   
-  // Find vendor details matching current login user phone or default to first
-  const vendor = vendors.find(v => v.id === 'v1') || vendors[0];
+  // Use the logged-in vendor's own linked business profile.
+  const vendor = myVendorProfile || vendors[0];
 
   return (
     <View style={styles.container}>
@@ -167,6 +167,14 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
             </View>
             <VText variant="h3" style={{ fontSize: normalize(16), marginBottom: 4 }}>Redeem</VText>
             <VText variant="caption" color={theme.colors.textMuted}>Use points</VText>
+          </TouchableOpacity>
+
+          <TouchableOpacity activeOpacity={0.8} style={styles.gridBox} onPress={onManageSubscription}>
+            <View style={styles.gridIconCircle}>
+              <Ionicons name="diamond" size={24} color={theme.colors.primary} />
+            </View>
+            <VText variant="h3" style={{ fontSize: normalize(16), marginBottom: 4 }}>Plan</VText>
+            <VText variant="caption" color={theme.colors.textMuted}>{myVendorPlan.name}</VText>
           </TouchableOpacity>
         </View>
 

@@ -7,11 +7,13 @@ import { Ionicons } from '@expo/vector-icons';
 
 interface ProductManagementScreenProps {
   onBack: () => void;
+  /** Optional: lets the user jump straight to the subscription/upgrade screen when they hit their plan's listing limit. */
+  onUpgrade?: () => void;
 }
 
-export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = ({ onBack }) => {
-  const { vendors, addVendorService } = useApp();
-  const vendor = vendors.find(v => v.id === 'v1') || vendors[0];
+export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = ({ onBack, onUpgrade }) => {
+  const { vendors, myVendorProfile, myVendorPlan, addVendorService } = useApp();
+  const vendor = myVendorProfile || vendors[0];
 
   const [isAddingListing, setIsAddingListing] = useState(false);
   
@@ -22,9 +24,24 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
   const [desc, setDesc] = useState('');
   const [locationType, setLocationType] = useState<'hq' | 'specific'>('hq');
 
-  const handleSaveItem = () => {
+  const atListingLimit = vendor.services.length >= myVendorPlan.maxListings;
+
+  const handleStartAddListing = () => {
+    if (atListingLimit) {
+      if (onUpgrade) {
+        onUpgrade();
+      } else {
+        alert(`You've reached the ${myVendorPlan.maxListings}-listing limit on the ${myVendorPlan.name} plan. Upgrade your plan to add more.`);
+      }
+      return;
+    }
+    setIsAddingListing(true);
+  };
+
+  const handleSaveItem = (keepAdding: boolean = false) => {
     if (!title) return;
-    addVendorService(
+
+    const added = addVendorService(
       vendor.id,
       title,
       desc || 'No description provided.',
@@ -34,18 +51,38 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
       'AVAILABLE',
       'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=500&q=80'
     );
+
+    if (!added) {
+      // AppContext already raises a "limit reached" notification toast.
+      if (!keepAdding) setIsAddingListing(false);
+      return;
+    }
+
     // Reset form
     setTitle('');
     setPrice('');
     setCategory('');
     setDesc('');
-    setIsAddingListing(false);
+    if (!keepAdding) setIsAddingListing(false);
   };
 
   const renderManageListings = () => (
     <View style={styles.viewContainer}>
       <View style={styles.manageHeader}>
         <VText variant="h2" style={{ fontSize: normalize(22) }}>Manage Listings</VText>
+        <View style={styles.planUsageRow}>
+          <VText variant="caption" color={theme.colors.textMuted}>
+            {vendor.services.length} / {myVendorPlan.maxListings} listings used · {myVendorPlan.name} plan
+          </VText>
+          {atListingLimit && (
+            <TouchableOpacity onPress={() => onUpgrade?.()} style={styles.upgradePill}>
+              <Ionicons name="arrow-up-circle" size={14} color={theme.colors.primary} />
+              <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 4, fontWeight: '700' }}>
+                Upgrade for more
+              </VText>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
       
       <View style={{ paddingHorizontal: theme.spacing.lg, marginBottom: theme.spacing.md }}>
@@ -105,8 +142,8 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
 
       <View style={styles.floatingActionBox}>
         <VButton
-          title="+ New Product"
-          onPress={() => setIsAddingListing(true)}
+          title={atListingLimit ? `Upgrade to Add More (${myVendorPlan.maxListings} max)` : "+ New Product"}
+          onPress={handleStartAddListing}
           style={{ borderRadius: 30 }}
         />
       </View>
@@ -188,8 +225,14 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
         </View>
 
         <View style={styles.addBtnRow}>
-          <VButton title="Save Item" onPress={handleSaveItem} style={{ flex: 1 }} />
-          <VButton title="Add Another Item" onPress={() => {}} variant="outline" style={{ flex: 1, marginLeft: theme.spacing.md }} />
+          <VButton title="Save Item" onPress={() => handleSaveItem(false)} style={{ flex: 1 }} />
+          <VButton
+            title="Add Another Item"
+            onPress={() => handleSaveItem(true)}
+            variant="outline"
+            disabled={atListingLimit}
+            style={{ flex: 1, marginLeft: theme.spacing.md }}
+          />
         </View>
         
         <View style={{ height: normalize(180) }} />
@@ -197,7 +240,7 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
 
       {/* Sticky Bottom Bar */}
       <View style={styles.publishBottomBar}>
-        <VButton title="Publish All Listings" onPress={handleSaveItem} style={{ width: '100%' }} />
+        <VButton title="Publish All Listings" onPress={() => handleSaveItem(false)} style={{ width: '100%' }} />
       </View>
     </View>
   );
@@ -221,6 +264,20 @@ const styles = StyleSheet.create({
   manageHeader: {
     paddingHorizontal: theme.spacing.lg,
     paddingBottom: theme.spacing.md,
+  },
+  planUsageRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  upgradePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.primaryLight,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
   },
   listContent: {
     paddingHorizontal: theme.spacing.lg,

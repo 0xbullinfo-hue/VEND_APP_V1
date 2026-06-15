@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS public.vendors (
     locality_id INTEGER REFERENCES public.localities(id) ON DELETE SET NULL,
     is_home_based BOOLEAN DEFAULT false NOT NULL,
     is_active BOOLEAN DEFAULT true NOT NULL,
-    subscription_tier INTEGER DEFAULT 1 CHECK (subscription_tier IN (1, 2, 3)), -- 1: Free (3M), 2: Pro Fiat (6M), 3: Pro Crypto (12M)
+    subscription_tier INTEGER DEFAULT 1 CHECK (subscription_tier IN (1, 2)), -- 1: Free (basic visibility, limited listings), 2: Pro Boosted (priority visibility, more listings, future features) - billed in NGN via Paystack only, no crypto
     subscription_expires_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -187,8 +187,8 @@ DECLARE
     users_count INTEGER;
     v_locality_id INTEGER;
 BEGIN
-    -- Only restrict Tier 2 and Tier 3 subscriptions
-    IF NEW.subscription_tier IN (2, 3) THEN
+    -- Only restrict paid tiers (Tier 2 and above). Tier 1 (Free) is always allowed.
+    IF NEW.subscription_tier > 1 THEN
         SELECT locality_id INTO v_locality_id FROM public.vendors WHERE id = NEW.id;
         
         IF v_locality_id IS NOT NULL THEN
@@ -210,6 +210,37 @@ CREATE OR REPLACE TRIGGER tr_vendor_subscription_upgrade
 BEFORE UPDATE OF subscription_tier ON public.vendors
 FOR EACH ROW WHEN (OLD.subscription_tier IS DISTINCT FROM NEW.subscription_tier)
 EXECUTE FUNCTION public.check_subscription_milestone_activation();
+
+-- Per-Tier Listing Limit Enforcement (defense-in-depth alongside the app layer)
+-- IMPORTANT: keep these limits in sync with SUBSCRIPTION_PLANS in
+-- src/lib/subscriptionPlans.ts (currently: Tier 1 = 2 listings, Tier 2 = 10 listings).
+CREATE OR REPLACE FUNCTION public.check_listing_limit_before_insert()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_tier INTEGER;
+    v_max_listings INTEGER;
+    v_current_count INTEGER;
+BEGIN
+    SELECT subscription_tier INTO v_tier FROM public.vendors WHERE id = NEW.vendor_id;
+
+    v_max_listings := CASE v_tier
+        WHEN 2 THEN 10
+        ELSE 2 -- Tier 1 (Free) default
+    END;
+
+    SELECT COUNT(*) INTO v_current_count FROM public.products_services WHERE vendor_id = NEW.vendor_id;
+
+    IF v_current_count >= v_max_listings THEN
+        RAISE EXCEPTION 'Listing Limit Reached: Your current plan (Tier %) allows up to % active listings. Upgrade your subscription to add more.', v_tier, v_max_listings;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE TRIGGER tr_products_services_listing_limit
+BEFORE INSERT ON public.products_services
+FOR EACH ROW EXECUTE FUNCTION public.check_listing_limit_before_insert();
 
 -- Enable Row Level Security (RLS) on Base Tables
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
