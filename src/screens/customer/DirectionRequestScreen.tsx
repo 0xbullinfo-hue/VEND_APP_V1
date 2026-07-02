@@ -3,7 +3,7 @@ import { StyleSheet, View, SafeAreaView, TouchableOpacity, Linking, KeyboardAvoi
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, VButton, VInput, HeaderBar } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '../../components/VIcons';
 
 interface DirectionRequestScreenProps {
   vendorId: string;

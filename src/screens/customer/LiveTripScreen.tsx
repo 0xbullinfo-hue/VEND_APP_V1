@@ -5,7 +5,7 @@ import MapViewDirections from 'react-native-maps-directions';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, VButton, HeaderBar } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '../../components/VIcons';
 import { uberMapStyle } from '../../theme/mapStyles';
 
 interface LiveTripScreenProps {

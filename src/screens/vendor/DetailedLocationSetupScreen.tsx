@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Platform } from 'react-native';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, VButton, VInput, HeaderBar } from '../../components/SharedComponents';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '../../components/VIcons';
 
 interface DetailedLocationSetupScreenProps {
   onBack: () => void;

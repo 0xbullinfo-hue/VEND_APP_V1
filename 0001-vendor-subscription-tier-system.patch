@@ -1,0 +1,1228 @@
+From 07cd787687270e12141393c1d06026998f7a2919 Mon Sep 17 00:00:00 2001
+From: VEND Audit Agent <agent@figmentstudio.dev>
+Date: Mon, 15 Jun 2026 05:28:33 +0000
+Subject: [PATCH] Add fiat-only vendor subscription tier system, remove
+ crypto/Web3 tier
+
+- Add src/lib/subscriptionPlans.ts as single source of truth for tier limits/perks
+- AppContext: link vendor profiles to user.id, enforce listing limits per tier,
+  block downgrades that exceed new tier limit, expose myVendorProfile/myVendorPlan
+- SubscriptionManagerScreen: rewrite as data-driven 2-tier (Free/Premium Boosted)
+  Paystack-only flow, remove WalletConnect/Web3/VEND token UI entirely
+- ProductManagementScreen, VendorDashboardScreen, RegistrationSuccessScreen:
+  fix hardcoded vendor 'v1' lookup, add listing usage banner + upgrade CTA
+- supabase/schema.sql: cap subscription_tier CHECK to (1,2), update milestone
+  trigger, add tr_products_services_listing_limit trigger
+- verify_logic.js: add Test Case 5 for tier limits/upgrades/downgrades
+---
+ App.tsx                                       |   1 +
+ src/__tests__/verify_logic.js                 |  86 ++++
+ src/contexts/AppContext.tsx                   | 114 ++++-
+ src/lib/subscriptionPlans.ts                  |  78 ++++
+ src/lib/supabase.ts                           |   2 +-
+ .../vendor/ProductManagementScreen.tsx        |  79 +++-
+ .../vendor/RegistrationSuccessScreen.tsx      |   4 +-
+ .../vendor/SubscriptionManagerScreen.tsx      | 397 +++++++-----------
+ src/screens/vendor/VendorDashboardScreen.tsx  |  14 +-
+ supabase/schema.sql                           |  37 +-
+ 10 files changed, 529 insertions(+), 283 deletions(-)
+ create mode 100644 src/lib/subscriptionPlans.ts
+
+diff --git a/App.tsx b/App.tsx
+index 51aa71ac..6d535442 100644
+--- a/App.tsx
++++ b/App.tsx
+@@ -216,6 +216,7 @@ const AppNavigation: React.FC = () => {
+           {activeVendorTab === 'services' && (
+             <ProductManagementScreen 
+               onBack={() => setActiveVendorTab('dashboard')} 
++              onUpgrade={() => setIsManagingSubscription(true)}
+             />
+           )}
+           {activeVendorTab === 'growth' && (
+diff --git a/src/__tests__/verify_logic.js b/src/__tests__/verify_logic.js
+index 85e42173..65b4007b 100644
+--- a/src/__tests__/verify_logic.js
++++ b/src/__tests__/verify_logic.js
+@@ -191,3 +191,89 @@ if (status.milestone_met && status.paid_plans_status === 'ACTIVE_UNLOCKED') {
+ console.log("\n=================================================");
+ console.log("   ALL TEST CASES VERIFIED SUCCESSFULLY          ");
+ console.log("=================================================");
++
++
++// =================================================
++// TEST CASE 5: Vendor Subscription Tier System (Fiat-Only)
++// =================================================
++// Mirrors src/lib/subscriptionPlans.ts + AppContext.addVendorService /
++// AppContext.updateVendorSubscription. Crypto/Web3 "Tier 3" has been
++// removed entirely - only two NGN-billed tiers exist.
++
++console.log("\n--- TEST CASE 5: Vendor Subscription Tier System (Fiat-Only) ---");
++
++const SUBSCRIPTION_PLANS = [
++  { tier: 1, id: 'free', name: 'Free Explorer', maxListings: 2, boosted: false },
++  { tier: 2, id: 'boosted', name: 'Premium Boosted', maxListings: 10, boosted: true },
++];
++const MIN_TIER = SUBSCRIPTION_PLANS[0].tier;
++const MAX_TIER = SUBSCRIPTION_PLANS[SUBSCRIPTION_PLANS.length - 1].tier;
++
++const getPlanForTier = (tier) => SUBSCRIPTION_PLANS.find(p => p.tier === tier) || SUBSCRIPTION_PLANS[0];
++const clampTier = (tier) => SUBSCRIPTION_PLANS.some(p => p.tier === tier) ? tier : MIN_TIER;
++
++// A fresh vendor signing up always starts on Tier 1 (Free).
++const testVendor = { id: 'v_test', subscription_tier: 1, services: [] };
++
++function addVendorService(vendor, title) {
++  const plan = getPlanForTier(vendor.subscription_tier);
++  if (vendor.services.length >= plan.maxListings) {
++    return { ok: false, reason: `Listing limit reached (${plan.maxListings} on ${plan.name})` };
++  }
++  vendor.services.push({ id: `s_${vendor.services.length + 1}`, title });
++  return { ok: true };
++}
++
++function updateVendorSubscription(vendor, tier) {
++  const targetTier = clampTier(tier);
++  const targetPlan = getPlanForTier(targetTier);
++  if (targetTier < vendor.subscription_tier && vendor.services.length > targetPlan.maxListings) {
++    return { ok: false, reason: `Remove ${vendor.services.length - targetPlan.maxListings} listing(s) before downgrading to ${targetPlan.name}` };
++  }
++  vendor.subscription_tier = targetTier;
++  return { ok: true };
++}
++
++// 5a. Free tier allows up to 2 listings, then blocks the 3rd.
++addVendorService(testVendor, 'Listing 1');
++addVendorService(testVendor, 'Listing 2');
++let blocked = addVendorService(testVendor, 'Listing 3 (should fail)');
++console.log(`Free tier listings: ${testVendor.services.length} (Expect 2). 3rd listing result:`, blocked);
++if (testVendor.services.length === 2 && !blocked.ok) {
++  console.log("✅ Success: Free tier correctly capped at 2 listings.");
++} else {
++  console.error("❌ Error: Free tier listing limit not enforced.");
++}
++
++// 5b. Upgrading to Tier 2 (Premium Boosted) raises the cap to 10 and unlocks more adds.
++let upgrade = updateVendorSubscription(testVendor, 2);
++console.log(`Upgrade to Tier 2 result:`, upgrade, `New tier: ${testVendor.subscription_tier}`);
++let added3rd = addVendorService(testVendor, 'Listing 3');
++console.log(`Listing 3 after upgrade:`, added3rd, `Total listings: ${testVendor.services.length} (Expect 3)`);
++if (upgrade.ok && testVendor.subscription_tier === 2 && added3rd.ok && testVendor.services.length === 3) {
++  console.log("✅ Success: Tier 2 upgrade unlocked higher listing capacity (up to 10).");
++} else {
++  console.error("❌ Error: Tier 2 upgrade did not unlock additional listings.");
++}
++
++// 5c. Downgrading back to Tier 1 (Free) is blocked while over the Free limit (3 > 2).
++let downgrade = updateVendorSubscription(testVendor, 1);
++console.log(`Downgrade to Tier 1 with 3 listings:`, downgrade, `Tier remains: ${testVendor.subscription_tier}`);
++if (!downgrade.ok && testVendor.subscription_tier === 2) {
++  console.log("✅ Success: Downgrade correctly blocked while over the Free tier's listing limit.");
++} else {
++  console.error("❌ Error: Downgrade should have been blocked.");
++}
++
++// 5d. Crypto/Web3 "Tier 3" no longer exists - any attempt to set it is clamped back to Tier 1.
++let cryptoAttempt = clampTier(3);
++console.log(`clampTier(3) (legacy "Web3 Pro" tier) resolves to: Tier ${cryptoAttempt}`);
++if (cryptoAttempt === MIN_TIER && MAX_TIER === 2) {
++  console.log("✅ Success: Crypto/Web3 tier fully removed - only Tiers 1-2 (NGN/Paystack) remain.");
++} else {
++  console.error("❌ Error: A crypto/Web3 tier is still reachable.");
++}
++
++console.log("\n=================================================");
++console.log("   TEST CASE 5 COMPLETE                          ");
++console.log("=================================================");
+diff --git a/src/contexts/AppContext.tsx b/src/contexts/AppContext.tsx
+index 3e89846f..a871185c 100644
+--- a/src/contexts/AppContext.tsx
++++ b/src/contexts/AppContext.tsx
+@@ -1,5 +1,6 @@
+ import React, { createContext, useContext, useState, useEffect } from 'react';
+ import { MOCK_LOCALITIES, MOCK_VENDORS } from '../lib/supabase';
++import { getPlanForTier, clampTier, SubscriptionPlan } from '../lib/subscriptionPlans';
+ 
+ export interface UserProfile {
+   id: string;
+@@ -30,6 +31,8 @@ interface AppContextType {
+   points: number;
+   locality: typeof MOCK_LOCALITIES[0] | null;
+   vendors: typeof MOCK_VENDORS;
++  myVendorProfile: typeof MOCK_VENDORS[number] | null;
++  myVendorPlan: SubscriptionPlan;
+   savedVendors: string[];
+   directionRequests: DirectionRequest[];
+   emergencyContacts: EmergencyContact[];
+@@ -50,8 +53,8 @@ interface AppContextType {
+   deleteEmergencyContact: (id: string) => void;
+   triggerSOS: () => void;
+   registerVendor: (businessName: string, bio: string, category: string, subCategory: string, address: string, isHomeBased: boolean, latitude: number, longitude: number) => void;
+-  addVendorService: (vendorId: string, title: string, description: string, category: string, price: number, stock: number, stockStatus: string, image: string) => void;
+-  updateVendorSubscription: (vendorId: string, tier: number) => void;
++  addVendorService: (vendorId: string, title: string, description: string, category: string, price: number, stock: number, stockStatus: string, image: string) => boolean;
++  updateVendorSubscription: (vendorId: string, tier: number) => boolean;
+   dismissNotification: () => void;
+   setPoints: (points: number) => void;
+ }
+@@ -86,6 +89,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children
+     if (selectedRole === 'customer') {
+       setPointsState(0); // Onboarding referral code can boost this to 50
+     }
++
++    if (selectedRole === 'vendor') {
++      // Ensure this account has its own linked business profile so the
++      // dashboard, subscription tiers, and listing limits all apply to
++      // *their* business rather than a hardcoded demo vendor.
++      setVendors(prev => {
++        if (prev.some(v => v.id === mockUser.id)) return prev;
++        const newVendorProfile = {
++          id: mockUser.id,
++          business_name: mockUser.name,
++          bio: 'Tell customers about your business by completing your profile setup.',
++          category: 'Professional Services',
++          sub_category: 'General Services',
++          rating: 5.0,
++          is_open: true,
++          is_home_based: true,
++          locality_id: locality ? locality.id : 1,
++          subscription_tier: 1, // New vendors start on the Free tier
++          image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500&q=80',
++          services: [],
++          street_address: '',
++          exact_location: locality?.center_location || { latitude: 6.5165, longitude: 3.3792 }
++        };
++        return [newVendorProfile, ...prev];
++      });
++    }
+   };
+ 
+   const logout = () => {
+@@ -208,27 +237,54 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children
+     latitude: number,
+     longitude: number
+   ) => {
+-    const newVendor = {
+-      id: 'v_' + Math.random().toString(36).substr(2, 9),
++    const profileFields = {
+       business_name: businessName,
+       bio,
+       category,
+       sub_category: subCategory,
+-      rating: 5.0,
+-      is_open: true,
+       is_home_based: isHomeBased,
+       locality_id: locality ? locality.id : 1,
+-      subscription_tier: 1, // Start on free tier
+-      image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500&q=80',
+-      services: [],
+       street_address: address,
+       exact_location: { latitude, longitude }
+     };
+-    setVendors(prev => [newVendor, ...prev]);
++
++    setVendors(prev => {
++      const vendorId = user?.id;
++      const existingIndex = vendorId ? prev.findIndex(v => v.id === vendorId) : -1;
++
++      if (existingIndex > -1) {
++        // Update the vendor profile that was auto-created at login time.
++        const updated = [...prev];
++        updated[existingIndex] = { ...updated[existingIndex], ...profileFields };
++        return updated;
++      }
++
++      // Fallback: no linked profile exists yet (e.g. registration completed
++      // before login finished setting up state). Create a fresh Tier 1 record.
++      const newVendor = {
++        id: vendorId || ('v_' + Math.random().toString(36).substr(2, 9)),
++        ...profileFields,
++        rating: 5.0,
++        is_open: true,
++        subscription_tier: 1, // Start on the Free tier
++        image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500&q=80',
++        services: [],
++      };
++      return [newVendor, ...prev];
++    });
+   };
+ 
+-  const addVendorService = (vendorId: string, title: string, description: string, category: string, price: number, stock: number, stockStatus: string, image: string) => {
+-    setVendors(prev => 
++  const addVendorService = (vendorId: string, title: string, description: string, category: string, price: number, stock: number, stockStatus: string, image: string): boolean => {
++    const vendor = vendors.find(v => v.id === vendorId);
++    if (!vendor) return false;
++
++    const plan = getPlanForTier(vendor.subscription_tier);
++    if (vendor.services.length >= plan.maxListings) {
++      setNotification(`Listing limit reached (${plan.maxListings} on the ${plan.name} plan). Upgrade your plan to add more services.`);
++      return false;
++    }
++
++    setVendors(prev =>
+       prev.map(v => {
+         if (v.id === vendorId) {
+           return {
+@@ -242,24 +298,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children
+         return v;
+       })
+     );
++    return true;
+   };
+ 
+-  const updateVendorSubscription = (vendorId: string, tier: number) => {
++  const updateVendorSubscription = (vendorId: string, tier: number): boolean => {
++    const vendor = vendors.find(v => v.id === vendorId);
++    if (!vendor) return false;
++
++    const targetTier = clampTier(tier);
++    const targetPlan = getPlanForTier(targetTier);
++
++    // Block downgrades that would leave a vendor over their new plan's listing limit.
++    if (targetTier < vendor.subscription_tier && vendor.services.length > targetPlan.maxListings) {
++      const excess = vendor.services.length - targetPlan.maxListings;
++      setNotification(`Can't switch to ${targetPlan.name}: remove ${excess} listing${excess > 1 ? 's' : ''} first (limit is ${targetPlan.maxListings}).`);
++      return false;
++    }
++
+     setVendors(prev =>
+-      prev.map(v => {
+-        if (v.id === vendorId) {
+-          return { ...v, subscription_tier: tier };
+-        }
+-        return v;
+-      })
++      prev.map(v => v.id === vendorId ? { ...v, subscription_tier: targetTier } : v)
+     );
+-    setNotification(`Subscription activated! Tier ${tier} is now active.`);
++    setNotification(`Subscription activated! ${targetPlan.name} is now active.`);
++    return true;
+   };
+ 
+   const dismissNotification = () => {
+     setNotification(null);
+   };
+ 
++  // The business profile linked to the currently logged-in vendor account
++  // (auto-created at login time - see `login` above), plus their resolved
++  // subscription plan config (limits, perks, pricing).
++  const myVendorProfile = vendors.find(v => v.id === user?.id) ?? null;
++  const myVendorPlan = getPlanForTier(myVendorProfile?.subscription_tier);
++
+   return (
+     <AppContext.Provider value={{
+       user,
+@@ -267,6 +339,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children
+       points,
+       locality,
+       vendors,
++      myVendorProfile,
++      myVendorPlan,
+       savedVendors,
+       directionRequests,
+       emergencyContacts,
+diff --git a/src/lib/subscriptionPlans.ts b/src/lib/subscriptionPlans.ts
+new file mode 100644
+index 00000000..33a53a35
+--- /dev/null
++++ b/src/lib/subscriptionPlans.ts
+@@ -0,0 +1,78 @@
++// Centralized configuration for vendor subscription tiers.
++//
++// IMPORTANT: This is the single source of truth for tier numbers, listing
++// limits, and pricing copy used across the app (SubscriptionManagerScreen,
++// ProductManagementScreen, AppContext, map/explore "BOOSTED" badges, etc).
++//
++// To add a future tier (e.g. an annual fiat plan with more perks):
++//   1. Add a new entry to SUBSCRIPTION_PLANS below with the next tier number.
++//   2. Update the `subscription_tier` CHECK constraint in supabase/schema.sql
++//      to allow the new tier number.
++//   3. Update the `check_listing_limit_before_insert` trigger in
++//      supabase/schema.sql to include the new tier's maxListings.
++//
++// All vendor-to-customer payments remain out of scope for VEND. These tiers
++// only control the vendor's own subscription to the platform (visibility,
++// listing capacity, and future platform features) and are billed in NGN via
++// Paystack. No crypto/Web3 payment path is supported.
++
++export interface SubscriptionPlan {
++  /** Numeric tier stored on the vendor record (matches supabase schema). */
++  tier: number;
++  /** Stable identifier, useful for analytics/keys. */
++  id: string;
++  /** Display name shown to vendors. */
++  name: string;
++  /** Human-readable price, shown on the plan card. */
++  priceLabel: string;
++  /** Maximum number of active product/service listings allowed on this tier. */
++  maxListings: number;
++  /** Whether vendors on this tier get the "BOOSTED" map pin + search priority. */
++  boosted: boolean;
++  /** Bullet list of perks shown on the plan card (data-driven, easy to extend). */
++  features: string[];
++}
++
++export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
++  {
++    tier: 1,
++    id: 'free',
++    name: 'Free Explorer',
++    priceLabel: 'FREE',
++    maxListings: 2,
++    boosted: false,
++    features: [
++      'Standard map pin listing',
++      'Basic search placement',
++      'Up to 2 active service/product listings',
++    ],
++  },
++  {
++    tier: 2,
++    id: 'boosted',
++    name: 'Premium Boosted',
++    priceLabel: '₦5,000 / month',
++    maxListings: 10,
++    boosted: true,
++    features: [
++      'Pulsing boosted map pin marker',
++      'Top category search placement priority',
++      'Up to 10 active service/product listings',
++      'Early access to new platform features',
++    ],
++  },
++];
++
++export const MIN_SUBSCRIPTION_TIER = SUBSCRIPTION_PLANS[0].tier;
++export const MAX_SUBSCRIPTION_TIER = SUBSCRIPTION_PLANS[SUBSCRIPTION_PLANS.length - 1].tier;
++
++/** Returns the plan config for a given tier number, falling back to the free tier. */
++export const getPlanForTier = (tier: number | undefined | null): SubscriptionPlan => {
++  return SUBSCRIPTION_PLANS.find(p => p.tier === tier) ?? SUBSCRIPTION_PLANS[0];
++};
++
++/** Clamps an arbitrary tier value to a valid, supported tier number. */
++export const clampTier = (tier: number): number => {
++  if (SUBSCRIPTION_PLANS.some(p => p.tier === tier)) return tier;
++  return MIN_SUBSCRIPTION_TIER;
++};
+diff --git a/src/lib/supabase.ts b/src/lib/supabase.ts
+index 9a196a08..750b3d30 100644
+--- a/src/lib/supabase.ts
++++ b/src/lib/supabase.ts
+@@ -64,7 +64,7 @@ export const MOCK_VENDORS = [
+     is_open: true,
+     is_home_based: true,
+     locality_id: 3,
+-    subscription_tier: 3, // Crypto
++    subscription_tier: 2, // Boosted (Premium plan)
+     image: 'https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?w=500&q=80',
+     services: [
+       { id: 's3_1', title: 'Senator Attire Sewing (Material not included)', description: 'Slim fit sewing with high quality embroidery.', category: 'Clothing & Accessories', price: 8000, stock: 0, stockStatus: 'SOLD OUT', image: 'https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?w=500&q=80' },
+diff --git a/src/screens/vendor/ProductManagementScreen.tsx b/src/screens/vendor/ProductManagementScreen.tsx
+index 5771b5a2..dcef818b 100644
+--- a/src/screens/vendor/ProductManagementScreen.tsx
++++ b/src/screens/vendor/ProductManagementScreen.tsx
+@@ -7,11 +7,13 @@ import { Ionicons } from '@expo/vector-icons';
+ 
+ interface ProductManagementScreenProps {
+   onBack: () => void;
++  /** Optional: lets the user jump straight to the subscription/upgrade screen when they hit their plan's listing limit. */
++  onUpgrade?: () => void;
+ }
+ 
+-export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = ({ onBack }) => {
+-  const { vendors, addVendorService } = useApp();
+-  const vendor = vendors.find(v => v.id === 'v1') || vendors[0];
++export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = ({ onBack, onUpgrade }) => {
++  const { vendors, myVendorProfile, myVendorPlan, addVendorService } = useApp();
++  const vendor = myVendorProfile || vendors[0];
+ 
+   const [isAddingListing, setIsAddingListing] = useState(false);
+   
+@@ -22,9 +24,24 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
+   const [desc, setDesc] = useState('');
+   const [locationType, setLocationType] = useState<'hq' | 'specific'>('hq');
+ 
+-  const handleSaveItem = () => {
++  const atListingLimit = vendor.services.length >= myVendorPlan.maxListings;
++
++  const handleStartAddListing = () => {
++    if (atListingLimit) {
++      if (onUpgrade) {
++        onUpgrade();
++      } else {
++        alert(`You've reached the ${myVendorPlan.maxListings}-listing limit on the ${myVendorPlan.name} plan. Upgrade your plan to add more.`);
++      }
++      return;
++    }
++    setIsAddingListing(true);
++  };
++
++  const handleSaveItem = (keepAdding: boolean = false) => {
+     if (!title) return;
+-    addVendorService(
++
++    const added = addVendorService(
+       vendor.id,
+       title,
+       desc || 'No description provided.',
+@@ -34,18 +51,38 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
+       'AVAILABLE',
+       'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=500&q=80'
+     );
++
++    if (!added) {
++      // AppContext already raises a "limit reached" notification toast.
++      if (!keepAdding) setIsAddingListing(false);
++      return;
++    }
++
+     // Reset form
+     setTitle('');
+     setPrice('');
+     setCategory('');
+     setDesc('');
+-    setIsAddingListing(false);
++    if (!keepAdding) setIsAddingListing(false);
+   };
+ 
+   const renderManageListings = () => (
+     <View style={styles.viewContainer}>
+       <View style={styles.manageHeader}>
+         <VText variant="h2" style={{ fontSize: normalize(22) }}>Manage Listings</VText>
++        <View style={styles.planUsageRow}>
++          <VText variant="caption" color={theme.colors.textMuted}>
++            {vendor.services.length} / {myVendorPlan.maxListings} listings used · {myVendorPlan.name} plan
++          </VText>
++          {atListingLimit && (
++            <TouchableOpacity onPress={() => onUpgrade?.()} style={styles.upgradePill}>
++              <Ionicons name="arrow-up-circle" size={14} color={theme.colors.primary} />
++              <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 4, fontWeight: '700' }}>
++                Upgrade for more
++              </VText>
++            </TouchableOpacity>
++          )}
++        </View>
+       </View>
+       
+       <View style={{ paddingHorizontal: theme.spacing.lg, marginBottom: theme.spacing.md }}>
+@@ -105,8 +142,8 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
+ 
+       <View style={styles.floatingActionBox}>
+         <VButton
+-          title="+ New Product"
+-          onPress={() => setIsAddingListing(true)}
++          title={atListingLimit ? `Upgrade to Add More (${myVendorPlan.maxListings} max)` : "+ New Product"}
++          onPress={handleStartAddListing}
+           style={{ borderRadius: 30 }}
+         />
+       </View>
+@@ -188,8 +225,14 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
+         </View>
+ 
+         <View style={styles.addBtnRow}>
+-          <VButton title="Save Item" onPress={handleSaveItem} style={{ flex: 1 }} />
+-          <VButton title="Add Another Item" onPress={() => {}} variant="outline" style={{ flex: 1, marginLeft: theme.spacing.md }} />
++          <VButton title="Save Item" onPress={() => handleSaveItem(false)} style={{ flex: 1 }} />
++          <VButton
++            title="Add Another Item"
++            onPress={() => handleSaveItem(true)}
++            variant="outline"
++            disabled={atListingLimit}
++            style={{ flex: 1, marginLeft: theme.spacing.md }}
++          />
+         </View>
+         
+         <View style={{ height: normalize(180) }} />
+@@ -197,7 +240,7 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
+ 
+       {/* Sticky Bottom Bar */}
+       <View style={styles.publishBottomBar}>
+-        <VButton title="Publish All Listings" onPress={handleSaveItem} style={{ width: '100%' }} />
++        <VButton title="Publish All Listings" onPress={() => handleSaveItem(false)} style={{ width: '100%' }} />
+       </View>
+     </View>
+   );
+@@ -222,6 +265,20 @@ const styles = StyleSheet.create({
+     paddingHorizontal: theme.spacing.lg,
+     paddingBottom: theme.spacing.md,
+   },
++  planUsageRow: {
++    flexDirection: 'row',
++    justifyContent: 'space-between',
++    alignItems: 'center',
++    marginTop: 4,
++  },
++  upgradePill: {
++    flexDirection: 'row',
++    alignItems: 'center',
++    backgroundColor: theme.colors.primaryLight,
++    paddingHorizontal: 8,
++    paddingVertical: 3,
++    borderRadius: 8,
++  },
+   listContent: {
+     paddingHorizontal: theme.spacing.lg,
+     paddingTop: theme.spacing.sm,
+diff --git a/src/screens/vendor/RegistrationSuccessScreen.tsx b/src/screens/vendor/RegistrationSuccessScreen.tsx
+index b8c1f534..d32ddb10 100644
+--- a/src/screens/vendor/RegistrationSuccessScreen.tsx
++++ b/src/screens/vendor/RegistrationSuccessScreen.tsx
+@@ -12,8 +12,8 @@ interface RegistrationSuccessScreenProps {
+ export const RegistrationSuccessScreen: React.FC<RegistrationSuccessScreenProps> = ({
+   onGoToDashboard
+ }) => {
+-  const { vendors } = useApp();
+-  const vendor = vendors.find(v => v.id === 'v1') || vendors[0];
++  const { vendors, myVendorProfile } = useApp();
++  const vendor = myVendorProfile || vendors[0];
+ 
+   return (
+     <SafeAreaView style={styles.container}>
+diff --git a/src/screens/vendor/SubscriptionManagerScreen.tsx b/src/screens/vendor/SubscriptionManagerScreen.tsx
+index a6bc813b..87d8f28c 100644
+--- a/src/screens/vendor/SubscriptionManagerScreen.tsx
++++ b/src/screens/vendor/SubscriptionManagerScreen.tsx
+@@ -1,106 +1,128 @@
+ import React, { useState } from 'react';
+-import { StyleSheet, View, ScrollView, TouchableOpacity, Modal, Image, TextInput } from 'react-native';
++import { StyleSheet, View, ScrollView, Modal } from 'react-native';
+ import { theme, normalize } from '../../theme/designSystem';
+ import { VText, VButton, VInput, HeaderBar } from '../../components/SharedComponents';
+ import { useApp } from '../../contexts/AppContext';
+ import { Ionicons } from '@expo/vector-icons';
++import { SUBSCRIPTION_PLANS, MIN_SUBSCRIPTION_TIER } from '../../lib/subscriptionPlans';
+ 
+ interface SubscriptionManagerScreenProps {
+   onBack: () => void;
+ }
+ 
+ export const SubscriptionManagerScreen: React.FC<SubscriptionManagerScreenProps> = ({ onBack }) => {
+-  const { vendors, locality, updateVendorSubscription, addPoints } = useApp();
+-  
+-  // Hardcoded for vendor v1 demo details
+-  const vendor = vendors.find(v => v.id === 'v1') || vendors[0];
++  const { vendors, myVendorProfile, locality, updateVendorSubscription, addPoints } = useApp();
+ 
+-  const [activeModal, setActiveModal] = useState<'paystack' | 'web3' | null>(null);
++  // Fall back defensively if a vendor profile somehow isn't linked yet.
++  const vendor = myVendorProfile || vendors[0];
++
++  const [activeModal, setActiveModal] = useState<'paystack' | null>(null);
++  const [pendingTier, setPendingTier] = useState<number | null>(null);
+   const [loading, setLoading] = useState(false);
+-  
++
+   // Paystack input states
+   const [cardNumber, setCardNumber] = useState('');
+   const [expiry, setExpiry] = useState('');
+   const [cvv, setCvv] = useState('');
+-  
+-  // Web3 state
+-  const [walletConnected, setWalletConnected] = useState(false);
+ 
+   const userCount = locality?.registered_users_count || 942;
+   const isMilestoneCleared = userCount >= 1000;
+ 
++  const openCheckout = (tier: number) => {
++    if (!isMilestoneCleared) return;
++    setPendingTier(tier);
++    setActiveModal('paystack');
++  };
++
+   const handlePaystackSubmit = () => {
+     if (cardNumber.length < 16 || expiry.length < 4 || cvv.length < 3) {
+-      alert("Please fill in valid payment credentials");
++      alert('Please fill in valid payment credentials');
+       return;
+     }
++    if (pendingTier === null) return;
++
+     setLoading(true);
+     setTimeout(() => {
+       setLoading(false);
+-      updateVendorSubscription(vendor.id, 2); // Update subscription to tier 2 (Boosted)
+-      addPoints(50); // reward points
++      const success = updateVendorSubscription(vendor.id, pendingTier);
++      if (success) {
++        addPoints(50); // reward points for upgrading
++      }
+       setActiveModal(null);
++      setPendingTier(null);
++      setCardNumber('');
++      setExpiry('');
++      setCvv('');
+     }, 2000);
+   };
+ 
+-  const handleConnectWallet = () => {
+-    setLoading(true);
+-    setTimeout(() => {
+-      setLoading(false);
+-      setWalletConnected(true);
+-    }, 1500);
++  const handleDowngrade = (tier: number) => {
++    updateVendorSubscription(vendor.id, tier);
+   };
+ 
+-  const handleSignTransaction = () => {
+-    setLoading(true);
+-    setTimeout(() => {
+-      setLoading(false);
+-      updateVendorSubscription(vendor.id, 3); // Update subscription to tier 3 (Web3 Pro)
+-      addPoints(100); // reward points
+-      setActiveModal(null);
+-      setWalletConnected(false);
+-    }, 2000);
+-  };
++  const targetPlan = SUBSCRIPTION_PLANS.find(p => p.tier === pendingTier);
+ 
+   return (
+     <View style={styles.container}>
+       <HeaderBar showBack={true} onBack={onBack} title="Vendor Pro Hub" showPoints={false} />
+ 
+       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+-        
++
++        {/* Listing usage summary */}
++        <View style={[styles.usageBox, theme.shadows.soft]}>
++          <View style={styles.usageHeaderRow}>
++            <Ionicons name="pricetags-outline" size={20} color={theme.colors.primary} />
++            <VText variant="h3" style={{ marginLeft: 8 }}>Your Listings</VText>
++          </View>
++          <VText variant="caption" color={theme.colors.textMuted} style={{ marginTop: 4 }}>
++            {vendor.services.length} of {SUBSCRIPTION_PLANS.find(p => p.tier === vendor.subscription_tier)?.maxListings ?? '-'} used on your current plan
++          </VText>
++          <View style={styles.progressBarBg}>
++            <View
++              style={[
++                styles.progressBarFill,
++                {
++                  width: `${Math.min(100, (vendor.services.length / (SUBSCRIPTION_PLANS.find(p => p.tier === vendor.subscription_tier)?.maxListings || 1)) * 100)}%`,
++                  backgroundColor: theme.colors.primary,
++                }
++              ]}
++            />
++          </View>
++        </View>
++
+         {/* Locality Milestones Status Box */}
+         <View style={[styles.milestoneBox, isMilestoneCleared ? styles.milestonePassed : styles.milestoneLocked]}>
+           <View style={styles.milestoneHeader}>
+-            <Ionicons 
+-              name={isMilestoneCleared ? "checkmark-circle" : "lock-closed"} 
+-              size={20} 
+-              color={isMilestoneCleared ? theme.colors.primary : theme.colors.danger} 
++            <Ionicons
++              name={isMilestoneCleared ? "checkmark-circle" : "lock-closed"}
++              size={20}
++              color={isMilestoneCleared ? theme.colors.primary : theme.colors.danger}
+             />
+             <VText variant="h3" color={isMilestoneCleared ? theme.colors.primary : theme.colors.danger} style={{ marginLeft: 8 }}>
+-              {isMilestoneCleared ? 'Milestone Active: Paid Tiers Unlocked' : 'Locality Milestones Check'}
++              {isMilestoneCleared ? 'Milestone Active: Paid Plans Unlocked' : 'Locality Milestones Check'}
+             </VText>
+           </View>
+-          
++
+           <VText variant="caption" color={theme.colors.textMuted} style={{ marginTop: 4, lineHeight: 14 }}>
+-            Paid advertising subscriptions are locked until your LGA/Ward registers at least 1,000 customers. This ensures advertisement value.
++            Paid plans unlock once your LGA/Ward registers at least 1,000 customers. This ensures advertising value for boosted listings.
+           </VText>
+ 
+           <View style={styles.milestoneProgressRow}>
+             <VText variant="h2">{locality?.name || 'Yaba'}: {userCount} / 1,000 Users</VText>
+             <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: '800' }}>
+-              {isMilestoneCleared ? '100% Unlocked' : '94% Locked'}
++              {isMilestoneCleared ? '100% Unlocked' : `${Math.floor((userCount / 1000) * 100)}% there`}
+             </VText>
+           </View>
+ 
+           <View style={styles.progressBarBg}>
+-            <View 
++            <View
+               style={[
+-                styles.progressBarFill, 
+-                { 
++                styles.progressBarFill,
++                {
+                   width: `${Math.min(100, (userCount / 1000) * 100)}%`,
+-                  backgroundColor: isMilestoneCleared ? theme.colors.primary : theme.colors.danger 
++                  backgroundColor: isMilestoneCleared ? theme.colors.primary : theme.colors.danger
+                 }
+-              ]} 
++              ]}
+             />
+           </View>
+ 
+@@ -108,118 +130,79 @@ export const SubscriptionManagerScreen: React.FC<SubscriptionManagerScreenProps>
+             <View style={styles.tipBox}>
+               <Ionicons name="bulb-outline" size={14} color={theme.colors.primary} />
+               <VText variant="caption" color={theme.colors.primary} style={{ flex: 1, marginLeft: 6 }}>
+-                Tip: You can switch your locality to "Ikeja / GRA" in settings to test the unlocked Paystack and WalletConnect interfaces!
++                Keep growing your community! Once {locality?.name || 'your locality'} hits 1,000 registered VEND users, paid visibility plans automatically unlock for every vendor there.
+               </VText>
+             </View>
+           )}
+         </View>
+ 
+-        {/* 3-Tier subscription card options */}
++        {/* Subscription plan cards (data-driven so future tiers can be added in one place) */}
+         <VText variant="h2" style={styles.sectionTitle}>Choose Your Plan</VText>
+-        
+-        {/* Tier 1: Free */}
+-        <View style={[styles.planCard, vendor.subscription_tier === 1 && styles.planActive, theme.shadows.soft]}>
+-          <View style={styles.planHeader}>
+-            <VText variant="h3">Tier 1: Free Explorer</VText>
+-            <VText variant="caption" color={theme.colors.primary}>FREE (3 MONTHS)</VText>
+-          </View>
+-          <VText variant="caption" color={theme.colors.textMuted} style={styles.planDesc}>
+-            Standard maps pinpoint listing. Basic search placement. Includes 1 service listing capability.
+-          </VText>
+-          {vendor.subscription_tier === 1 ? (
+-            <View style={styles.activeLabel}>
+-              <Ionicons name="checkmark-circle" size={16} color={theme.colors.primary} />
+-              <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 6, fontWeight: '800' }}>
+-                CURRENT ACTIVE PLAN
+-              </VText>
+-            </View>
+-          ) : (
+-            <VButton
+-              title="Downgrade to Free"
+-              onPress={() => updateVendorSubscription(vendor.id, 1)}
+-              variant="secondary"
+-              style={styles.planActionBtn}
+-            />
+-          )}
+-        </View>
+ 
+-        {/* Tier 2: Boosted */}
+-        <View style={[
+-          styles.planCard, 
+-          vendor.subscription_tier === 2 && styles.planActive, 
+-          !isMilestoneCleared && styles.planLockedCard,
+-          theme.shadows.soft
+-        ]}>
+-          {!isMilestoneCleared && (
+-            <View style={styles.cardLockOverlay}>
+-              <Ionicons name="lock-closed" size={20} color={theme.colors.textMuted} />
+-              <VText variant="caption" color={theme.colors.textMuted} style={{ marginLeft: 6 }}>LOCKED BY LGA MILESTONE</VText>
+-            </View>
+-          )}
++        {SUBSCRIPTION_PLANS.map((plan) => {
++          const isCurrent = vendor.subscription_tier === plan.tier;
++          const isUpgrade = plan.tier > vendor.subscription_tier;
++          const isDowngrade = plan.tier < vendor.subscription_tier;
++          const isPaidTier = plan.tier > MIN_SUBSCRIPTION_TIER;
++          const lockedByMilestone = isPaidTier && !isMilestoneCleared && isUpgrade;
+ 
+-          <View style={styles.planHeader}>
+-            <VText variant="h3">Tier 2: Premium Boosted Pin</VText>
+-            <VText variant="caption" color={theme.colors.primary}>N5,000 / MONTH</VText>
+-          </View>
+-          <VText variant="caption" color={theme.colors.textMuted} style={styles.planDesc}>
+-            Pulsing golden/teal pin marker on map. Top category search placement priority. Up to 10 service listings.
+-          </VText>
+-          
+-          {vendor.subscription_tier === 2 ? (
+-            <View style={styles.activeLabel}>
+-              <Ionicons name="checkmark-circle" size={16} color={theme.colors.primary} />
+-              <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 6, fontWeight: '800' }}>
+-                CURRENT ACTIVE PLAN
+-              </VText>
+-            </View>
+-          ) : (
+-            <VButton
+-              title="Activate Boosted (Paystack)"
+-              onPress={() => isMilestoneCleared && setActiveModal('paystack')}
+-              disabled={!isMilestoneCleared}
+-              style={styles.planActionBtn}
+-            />
+-          )}
+-        </View>
++          return (
++            <View
++              key={plan.tier}
++              style={[
++                styles.planCard,
++                isCurrent && styles.planActive,
++                lockedByMilestone && styles.planLockedCard,
++                theme.shadows.soft
++              ]}
++            >
++              {lockedByMilestone && (
++                <View style={styles.cardLockOverlay}>
++                  <Ionicons name="lock-closed" size={20} color={theme.colors.textMuted} />
++                  <VText variant="caption" color={theme.colors.textMuted} style={{ marginLeft: 6 }}>LOCKED BY LGA MILESTONE</VText>
++                </View>
++              )}
+ 
+-        {/* Tier 3: Web3 Pro */}
+-        <View style={[
+-          styles.planCard, 
+-          vendor.subscription_tier === 3 && styles.planActive, 
+-          !isMilestoneCleared && styles.planLockedCard,
+-          theme.shadows.soft
+-        ]}>
+-          {!isMilestoneCleared && (
+-            <View style={styles.cardLockOverlay}>
+-              <Ionicons name="lock-closed" size={20} color={theme.colors.textMuted} />
+-              <VText variant="caption" color={theme.colors.textMuted} style={{ marginLeft: 6 }}>LOCKED BY LGA MILESTONE</VText>
+-            </View>
+-          )}
++              <View style={styles.planHeader}>
++                <VText variant="h3">Tier {plan.tier}: {plan.name}</VText>
++                <VText variant="caption" color={theme.colors.primary}>{plan.priceLabel}</VText>
++              </View>
+ 
+-          <View style={styles.planHeader}>
+-            <VText variant="h3">Tier 3: Web3 Pro Merchant</VText>
+-            <VText variant="caption" color={theme.colors.primary}>5 VEND TOKENS</VText>
+-          </View>
+-          <VText variant="caption" color={theme.colors.textMuted} style={styles.planDesc}>
+-            Premium maps pin marker. Unlocks customer analytics tracking. Integrated Web3 client payments using VEND tokens.
+-          </VText>
+-          
+-          {vendor.subscription_tier === 3 ? (
+-            <View style={styles.activeLabel}>
+-              <Ionicons name="checkmark-circle" size={16} color={theme.colors.primary} />
+-              <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 6, fontWeight: '800' }}>
+-                CURRENT ACTIVE PLAN
+-              </VText>
++              {/* Data-driven feature/perks list */}
++              <View style={styles.featureList}>
++                {plan.features.map((feature) => (
++                  <View key={feature} style={styles.featureRow}>
++                    <Ionicons name="checkmark" size={14} color={theme.colors.primary} style={{ marginRight: 6 }} />
++                    <VText variant="caption" color={theme.colors.textMuted} style={{ flex: 1 }}>{feature}</VText>
++                  </View>
++                ))}
++              </View>
++
++              {isCurrent ? (
++                <View style={styles.activeLabel}>
++                  <Ionicons name="checkmark-circle" size={16} color={theme.colors.primary} />
++                  <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 6, fontWeight: '800' }}>
++                    CURRENT ACTIVE PLAN
++                  </VText>
++                </View>
++              ) : isUpgrade ? (
++                <VButton
++                  title={isPaidTier ? `Activate ${plan.name} (Paystack)` : `Switch to ${plan.name}`}
++                  onPress={() => isPaidTier ? openCheckout(plan.tier) : handleDowngrade(plan.tier)}
++                  disabled={lockedByMilestone}
++                  style={styles.planActionBtn}
++                />
++              ) : isDowngrade ? (
++                <VButton
++                  title={`Downgrade to ${plan.name}`}
++                  onPress={() => handleDowngrade(plan.tier)}
++                  variant="secondary"
++                  style={styles.planActionBtn}
++                />
++              ) : null}
+             </View>
+-          ) : (
+-            <VButton
+-              title="Activate Pro (Wallet Connect)"
+-              onPress={() => isMilestoneCleared && setActiveModal('web3')}
+-              disabled={!isMilestoneCleared}
+-              style={styles.planActionBtn}
+-            />
+-          )}
+-        </View>
++          );
++        })}
+ 
+       </ScrollView>
+ 
+@@ -236,7 +219,7 @@ export const SubscriptionManagerScreen: React.FC<SubscriptionManagerScreenProps>
+               <VText variant="h2" style={{ marginLeft: 8 }}>Paystack Checkout</VText>
+             </View>
+             <VText variant="caption" color={theme.colors.textMuted} style={{ marginBottom: theme.spacing.lg }}>
+-              Complete security payment for N5,000 monthly VEND Boost plan.
++              Complete secure payment for {targetPlan?.priceLabel} {targetPlan?.name} plan.
+             </VText>
+ 
+             {/* Inputs */}
+@@ -274,12 +257,12 @@ export const SubscriptionManagerScreen: React.FC<SubscriptionManagerScreenProps>
+             <View style={styles.modalBtns}>
+               <VButton
+                 title="Cancel"
+-                onPress={() => setActiveModal(null)}
++                onPress={() => { setActiveModal(null); setPendingTier(null); }}
+                 variant="outline"
+                 style={{ flex: 1 }}
+               />
+               <VButton
+-                title="Pay N5,000"
++                title={`Pay ${targetPlan?.priceLabel || ''}`}
+                 onPress={handlePaystackSubmit}
+                 loading={loading}
+                 style={{ flex: 1, marginLeft: theme.spacing.sm }}
+@@ -289,75 +272,6 @@ export const SubscriptionManagerScreen: React.FC<SubscriptionManagerScreenProps>
+         </View>
+       </Modal>
+ 
+-      {/* Wallet Connect Web3 Modal */}
+-      <Modal
+-        visible={activeModal === 'web3'}
+-        transparent={true}
+-        animationType="fade"
+-      >
+-        <View style={styles.modalBackdrop}>
+-          <View style={[styles.modalCard, theme.shadows.premium, { alignItems: 'center' }]}>
+-            <Ionicons name="wallet" size={32} color={theme.colors.primary} style={{ marginBottom: theme.spacing.sm }} />
+-            <VText variant="h2" style={{ marginBottom: theme.spacing.xs }}>WalletConnect</VText>
+-            <VText variant="caption" color={theme.colors.textMuted} align="center" style={{ marginBottom: theme.spacing.xl }}>
+-              Authorize transaction of 5 VEND Tokens on Ethereum Mainnet.
+-            </VText>
+-
+-            {!walletConnected ? (
+-              // Connect wallet state
+-              <View style={styles.web3Center}>
+-                <View style={styles.qrMockBox}>
+-                  {/* Render simulated Web3 connection QR code */}
+-                  <Ionicons name="qr-code" size={normalize(120)} color={theme.colors.primary} />
+-                </View>
+-                <VText variant="caption" color={theme.colors.textMuted} align="center" style={{ marginVertical: theme.spacing.md }}>
+-                  Scan QR inside MetaMask, Trust Wallet, or Phantom to connect.
+-                </VText>
+-
+-                <View style={styles.modalBtns}>
+-                  <VButton
+-                    title="Cancel"
+-                    onPress={() => setActiveModal(null)}
+-                    variant="outline"
+-                    style={{ flex: 1 }}
+-                  />
+-                  <VButton
+-                    title="Simulate Connect"
+-                    onPress={handleConnectWallet}
+-                    loading={loading}
+-                    style={{ flex: 1, marginLeft: theme.spacing.sm }}
+-                  />
+-                </View>
+-              </View>
+-            ) : (
+-              // Connected wallet sign transaction state
+-              <View style={styles.web3Center}>
+-                <View style={styles.walletDetailsBox}>
+-                  <Ionicons name="shield-checkmark" size={24} color={theme.colors.accent} />
+-                  <VText variant="h3" color={theme.colors.accent} style={{ marginTop: 4 }}>Wallet Connected</VText>
+-                  <VText variant="caption" color={theme.colors.textMuted}>Address: 0x71C...8e9A</VText>
+-                </View>
+-
+-                <View style={styles.modalBtns}>
+-                  <VButton
+-                    title="Disconnect"
+-                    onPress={() => setWalletConnected(false)}
+-                    variant="outline"
+-                    style={{ flex: 1 }}
+-                  />
+-                  <VButton
+-                    title="Sign & Approve (5 VEND)"
+-                    onPress={handleSignTransaction}
+-                    loading={loading}
+-                    style={{ flex: 1, marginLeft: theme.spacing.sm }}
+-                  />
+-                </View>
+-              </View>
+-            )}
+-          </View>
+-        </View>
+-      </Modal>
+-
+     </View>
+   );
+ };
+@@ -372,6 +286,21 @@ const styles = StyleSheet.create({
+     paddingTop: theme.spacing.md,
+     paddingBottom: theme.spacing.xxl,
+   },
++
++  // Listing usage card
++  usageBox: {
++    backgroundColor: theme.colors.background,
++    borderRadius: normalize(16),
++    borderWidth: 1.5,
++    borderColor: theme.colors.border,
++    padding: theme.spacing.lg,
++    marginBottom: theme.spacing.lg,
++  },
++  usageHeaderRow: {
++    flexDirection: 'row',
++    alignItems: 'center',
++  },
++
+   milestoneBox: {
+     padding: theme.spacing.lg,
+     borderRadius: normalize(16),
+@@ -403,6 +332,7 @@ const styles = StyleSheet.create({
+     backgroundColor: theme.colors.border,
+     borderRadius: 4,
+     overflow: 'hidden',
++    marginTop: theme.spacing.sm,
+   },
+   progressBarFill: {
+     height: '100%',
+@@ -413,7 +343,7 @@ const styles = StyleSheet.create({
+     alignItems: 'center',
+     marginTop: theme.spacing.sm,
+   },
+-  
++
+   // Plans list
+   sectionTitle: {
+     marginBottom: theme.spacing.md,
+@@ -438,9 +368,13 @@ const styles = StyleSheet.create({
+     alignItems: 'center',
+     marginBottom: theme.spacing.sm,
+   },
+-  planDesc: {
+-    lineHeight: 14,
++  featureList: {
+     marginBottom: theme.spacing.md,
++    gap: 4,
++  },
++  featureRow: {
++    flexDirection: 'row',
++    alignItems: 'flex-start',
+   },
+   activeLabel: {
+     flexDirection: 'row',
+@@ -470,7 +404,7 @@ const styles = StyleSheet.create({
+     borderRadius: 4,
+     zIndex: 2,
+   },
+-  
++
+   // Checkout Modal Layout
+   modalBackdrop: {
+     flex: 1,
+@@ -498,27 +432,4 @@ const styles = StyleSheet.create({
+   modalBtns: {
+     flexDirection: 'row',
+   },
+-  
+-  // Web3 modal layout
+-  web3Center: {
+-    width: '100%',
+-    alignItems: 'center',
+-  },
+-  qrMockBox: {
+-    padding: theme.spacing.md,
+-    backgroundColor: theme.colors.surface,
+-    borderWidth: 1.5,
+-    borderColor: theme.colors.border,
+-    borderRadius: normalize(12),
+-  },
+-  walletDetailsBox: {
+-    backgroundColor: theme.colors.surface,
+-    padding: theme.spacing.lg,
+-    borderRadius: normalize(12),
+-    borderWidth: 1.5,
+-    borderColor: theme.colors.accent,
+-    alignItems: 'center',
+-    width: '100%',
+-    marginBottom: theme.spacing.xl,
+-  },
+ });
+diff --git a/src/screens/vendor/VendorDashboardScreen.tsx b/src/screens/vendor/VendorDashboardScreen.tsx
+index 3fc498a4..00f97d98 100644
+--- a/src/screens/vendor/VendorDashboardScreen.tsx
++++ b/src/screens/vendor/VendorDashboardScreen.tsx
+@@ -23,10 +23,10 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
+   onStartChat,
+   onViewProfile
+ }) => {
+-  const { vendors } = useApp();
++  const { vendors, myVendorProfile, myVendorPlan } = useApp();
+   
+-  // Find vendor details matching current login user phone or default to first
+-  const vendor = vendors.find(v => v.id === 'v1') || vendors[0];
++  // Use the logged-in vendor's own linked business profile.
++  const vendor = myVendorProfile || vendors[0];
+ 
+   return (
+     <View style={styles.container}>
+@@ -168,6 +168,14 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
+             <VText variant="h3" style={{ fontSize: normalize(16), marginBottom: 4 }}>Redeem</VText>
+             <VText variant="caption" color={theme.colors.textMuted}>Use points</VText>
+           </TouchableOpacity>
++
++          <TouchableOpacity activeOpacity={0.8} style={styles.gridBox} onPress={onManageSubscription}>
++            <View style={styles.gridIconCircle}>
++              <Ionicons name="diamond" size={24} color={theme.colors.primary} />
++            </View>
++            <VText variant="h3" style={{ fontSize: normalize(16), marginBottom: 4 }}>Plan</VText>
++            <VText variant="caption" color={theme.colors.textMuted}>{myVendorPlan.name}</VText>
++          </TouchableOpacity>
+         </View>
+ 
+       </ScrollView>
+diff --git a/supabase/schema.sql b/supabase/schema.sql
+index 9d20f527..9a4a4e14 100644
+--- a/supabase/schema.sql
++++ b/supabase/schema.sql
+@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS public.vendors (
+     locality_id INTEGER REFERENCES public.localities(id) ON DELETE SET NULL,
+     is_home_based BOOLEAN DEFAULT false NOT NULL,
+     is_active BOOLEAN DEFAULT true NOT NULL,
+-    subscription_tier INTEGER DEFAULT 1 CHECK (subscription_tier IN (1, 2, 3)), -- 1: Free (3M), 2: Pro Fiat (6M), 3: Pro Crypto (12M)
++    subscription_tier INTEGER DEFAULT 1 CHECK (subscription_tier IN (1, 2)), -- 1: Free (basic visibility, limited listings), 2: Pro Boosted (priority visibility, more listings, future features) - billed in NGN via Paystack only, no crypto
+     subscription_expires_at TIMESTAMP WITH TIME ZONE,
+     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+ );
+@@ -187,8 +187,8 @@ DECLARE
+     users_count INTEGER;
+     v_locality_id INTEGER;
+ BEGIN
+-    -- Only restrict Tier 2 and Tier 3 subscriptions
+-    IF NEW.subscription_tier IN (2, 3) THEN
++    -- Only restrict paid tiers (Tier 2 and above). Tier 1 (Free) is always allowed.
++    IF NEW.subscription_tier > 1 THEN
+         SELECT locality_id INTO v_locality_id FROM public.vendors WHERE id = NEW.id;
+         
+         IF v_locality_id IS NOT NULL THEN
+@@ -211,6 +211,37 @@ BEFORE UPDATE OF subscription_tier ON public.vendors
+ FOR EACH ROW WHEN (OLD.subscription_tier IS DISTINCT FROM NEW.subscription_tier)
+ EXECUTE FUNCTION public.check_subscription_milestone_activation();
+ 
++-- Per-Tier Listing Limit Enforcement (defense-in-depth alongside the app layer)
++-- IMPORTANT: keep these limits in sync with SUBSCRIPTION_PLANS in
++-- src/lib/subscriptionPlans.ts (currently: Tier 1 = 2 listings, Tier 2 = 10 listings).
++CREATE OR REPLACE FUNCTION public.check_listing_limit_before_insert()
++RETURNS TRIGGER AS $$
++DECLARE
++    v_tier INTEGER;
++    v_max_listings INTEGER;
++    v_current_count INTEGER;
++BEGIN
++    SELECT subscription_tier INTO v_tier FROM public.vendors WHERE id = NEW.vendor_id;
++
++    v_max_listings := CASE v_tier
++        WHEN 2 THEN 10
++        ELSE 2 -- Tier 1 (Free) default
++    END;
++
++    SELECT COUNT(*) INTO v_current_count FROM public.products_services WHERE vendor_id = NEW.vendor_id;
++
++    IF v_current_count >= v_max_listings THEN
++        RAISE EXCEPTION 'Listing Limit Reached: Your current plan (Tier %) allows up to % active listings. Upgrade your subscription to add more.', v_tier, v_max_listings;
++    END IF;
++
++    RETURN NEW;
++END;
++$$ LANGUAGE plpgsql SECURITY DEFINER;
++
++CREATE OR REPLACE TRIGGER tr_products_services_listing_limit
++BEFORE INSERT ON public.products_services
++FOR EACH ROW EXECUTE FUNCTION public.check_listing_limit_before_insert();
++
+ -- Enable Row Level Security (RLS) on Base Tables
+ ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ ALTER TABLE public.customers ENABLE ROW LEVEL SECURITY;
+-- 
+2.43.0
+

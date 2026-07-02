@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, HeaderBar } from '../../components/SharedComponents';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '../../components/VIcons';
 
 const { width } = Dimensions.get('window');
 

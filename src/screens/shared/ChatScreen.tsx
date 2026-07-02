@@ -11,7 +11,7 @@ import {
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, HeaderBar } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '../../components/VIcons';
 
 interface ChatScreenProps {
   recipientId: string; // vendorId or customerId
@@ -42,7 +42,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     if (!message.trim()) return;
     
     const newMsg = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: Math.random().toString(36).substring(2, 11),
       text: message.trim(),
       sender: 'me' as const,
       time: '10:08 AM'
@@ -55,7 +55,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     // Trigger mock response after a delay
     setTimeout(() => {
       const mockResponse = {
-        id: Math.random().toString(36).substr(2, 9),
+        id: Math.random().toString(36).substring(2, 11),
         text: "Perfect! We're ready for you. Let us know when you request directions.",
         sender: 'them' as const,
         time: '10:09 AM'

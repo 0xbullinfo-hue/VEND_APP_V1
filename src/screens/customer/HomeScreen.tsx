@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { 
   StyleSheet, 
   View, 
@@ -6,16 +6,16 @@ import {
   TouchableOpacity, 
   Dimensions, 
   Image,
-  Animated,
-  PanResponder,
   Platform
 } from 'react-native';
+import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import MapView, { Marker, Circle, PROVIDER_GOOGLE } from 'react-native-maps';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, HeaderBar, VButton } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '../../components/VIcons';
 import { uberMapStyle } from '../../theme/mapStyles';
+import { CATEGORY_CATALOG, getCategoryMeta } from '../../lib/categoryCatalog';
 
 const { width } = Dimensions.get('window');
 
@@ -33,15 +33,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const { vendors, addPoints, locality } = useApp();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedVendorId, setSelectedVendorId] = useState<string | null>(null); // Starts with no selection, showing promo bar
-  const [zoomScale, setZoomScale] = useState(1.0);
 
-  const categories = [
-    { name: 'All', icon: 'grid-outline' },
-    { name: 'Food & Farming', icon: 'restaurant-outline' },
-    { name: 'Clothing & Accessories', icon: 'shirt-outline' },
-    { name: 'Repair & Construction', icon: 'construct-outline' },
-    { name: 'Personal Care', icon: 'color-palette-outline' },
-  ];
+  const categories = useMemo(
+    () => [
+      { name: 'All', icon: 'grid-outline' },
+      ...CATEGORY_CATALOG.map((item) => ({ name: item.name, icon: item.icon })),
+    ],
+    []
+  );
 
   // Filter vendors based on active category
   const filteredVendors = selectedCategory && selectedCategory !== 'All'
@@ -49,125 +48,62 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     : vendors;
 
   // Track the active vendor for sheet display (prevents blank card during close animation)
-  const [activeVendor, setActiveVendor] = useState<any>(vendors[0]);
-  const [isExpanded, setIsExpanded] = useState(false);
-  const translateY = useRef(new Animated.Value(340)).current;
-  const lastSnap = useRef(210);
+  const [activeVendor, setActiveVendor] = useState<typeof vendors[number] | null>(vendors[0] ?? null);
+  const bottomSheetRef = useRef<BottomSheet>(null);
+  const snapPoints = useMemo(() => ['30%', '45%'], []);
 
   useEffect(() => {
     if (selectedVendorId) {
       const vendor = vendors.find(v => v.id === selectedVendorId);
       if (vendor) {
         setActiveVendor(vendor);
-        setIsExpanded(false);
-        lastSnap.current = 210;
-        Animated.spring(translateY, {
-          toValue: 210,
-          useNativeDriver: true,
-          tension: 40,
-          friction: 7,
-        }).start();
+        bottomSheetRef.current?.snapToIndex(0);
       }
     } else {
-      Animated.spring(translateY, {
-        toValue: 360,
-        useNativeDriver: true,
-        tension: 40,
-        friction: 7,
-      }).start(() => {
-        // Keeps the activeVendor set to prevent unmounting crashes during slide-out
-      });
+      bottomSheetRef.current?.close();
     }
-  }, [selectedVendorId]);
+  }, [selectedVendorId, vendors]);
 
-  const toggleExpand = () => {
-    const toValue = isExpanded ? 210 : 0;
-    setIsExpanded(!isExpanded);
-    lastSnap.current = toValue;
-    Animated.spring(translateY, {
-      toValue,
-      useNativeDriver: true,
-      tension: 40,
-      friction: 7,
-    }).start();
-  };
-
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => false,
-      onMoveShouldSetPanResponder: (_, gestureState) => {
-        return Math.abs(gestureState.dy) > 5;
-      },
-      onPanResponderGrant: () => {
-        translateY.setOffset((translateY as any)._value);
-        translateY.setValue(0);
-      },
-      onPanResponderMove: (_, gestureState) => {
-        const val = gestureState.dy;
-        const currentOffset = (translateY as any)._offset;
-        const projectedValue = currentOffset + val;
-
-        // Apply resisted movement boundaries (rubber banding)
-        if (projectedValue < 0) {
-          translateY.setValue(val * 0.3);
-        } else if (projectedValue > 250) {
-          translateY.setValue(val * 0.8);
-        } else {
-          translateY.setValue(val);
-        }
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        translateY.flattenOffset();
-        const currentVal = (translateY as any)._value;
-
-        // Toggle on tap
-        if (Math.abs(gestureState.dy) < 5 && Math.abs(gestureState.dx) < 5) {
-          toggleExpand();
-          return;
-        }
-
-        let target = 210;
-        let expanded = false;
-
-        if (currentVal < 105) {
-          target = 0;
-          expanded = true;
-        } else if (currentVal > 280) {
-          target = 340;
-          setSelectedVendorId(null);
-        } else {
-          target = 210;
-          expanded = false;
-        }
-
-        setIsExpanded(expanded);
-        lastSnap.current = target;
-
-        Animated.spring(translateY, {
-          toValue: target,
-          useNativeDriver: true,
-          tension: 40,
-          friction: 7,
-        }).start();
-      },
-    })
-  ).current;
+  const handleSheetChanges = useCallback((index: number) => {
+    if (index === -1) {
+      setSelectedVendorId(null);
+    }
+  }, []);
 
   const handlePinPress = (id: string) => {
     setSelectedVendorId(id);
     addPoints(2); // Earning points for exploring maps!
   };
 
+  const mapRef = useRef<MapView>(null);
+  // Track the current displayed region so zoom buttons can adjust it incrementally
+  const currentRegion = useRef({
+    latitude: locality?.center_location?.latitude || 6.5165,
+    longitude: locality?.center_location?.longitude || 3.3792,
+    latitudeDelta: 0.05,
+    longitudeDelta: 0.05,
+  });
+
   const handleZoomIn = () => {
-    setZoomScale(prev => Math.min(prev + 0.25, 2.5));
+    const next = {
+      ...currentRegion.current,
+      latitudeDelta: Math.max(currentRegion.current.latitudeDelta / 2, 0.002),
+      longitudeDelta: Math.max(currentRegion.current.longitudeDelta / 2, 0.002),
+    };
+    currentRegion.current = next;
+    mapRef.current?.animateToRegion(next, 300);
   };
 
   const handleZoomOut = () => {
-    setZoomScale(prev => Math.max(prev - 0.25, 0.75));
+    const next = {
+      ...currentRegion.current,
+      latitudeDelta: Math.min(currentRegion.current.latitudeDelta * 2, 0.5),
+      longitudeDelta: Math.min(currentRegion.current.longitudeDelta * 2, 0.5),
+    };
+    currentRegion.current = next;
+    mapRef.current?.animateToRegion(next, 300);
   };
 
-  const mapRef = useRef<MapView>(null);
-  
   const initialRegion = {
     latitude: locality?.center_location?.latitude || 6.5165,
     longitude: locality?.center_location?.longitude || 3.3792,
@@ -189,6 +125,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           customMapStyle={uberMapStyle}
           initialRegion={initialRegion}
           onPress={() => setSelectedVendorId(null)}
+          onRegionChangeComplete={(region) => { currentRegion.current = region; }}
           showsUserLocation={true}
           showsMyLocationButton={false}
           showsCompass={false}
@@ -198,11 +135,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             const isBoosted = vendor.subscription_tier > 1;
             const coordinate = vendor.exact_location || initialRegion;
             
-            let catIcon = 'storefront';
-            if (vendor.category === 'Food & Farming') catIcon = 'restaurant';
-            else if (vendor.category === 'Clothing & Accessories') catIcon = 'shirt';
-            else if (vendor.category === 'Repair & Construction') catIcon = 'construct';
-            else if (vendor.category === 'Personal Care') catIcon = 'color-palette';
+            const { icon } = getCategoryMeta(vendor.category);
+            const catIcon = icon.replace('-outline', '');
 
             if (vendor.is_home_based) {
               return (
@@ -354,24 +288,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         </View>
       )}
 
-      {/* Selected Vendor Detail Slideup Animated Bottom Sheet */}
-      {activeVendor && (
-        <Animated.View 
-          style={[
-            styles.bottomSheet, 
-            theme.shadows.premium,
-            { transform: [{ translateY }] }
-          ]}
-        >
-          {/* Drag Handle & Tap header to toggle */}
-          <TouchableOpacity 
-            activeOpacity={1} 
-            onPress={toggleExpand}
-            {...panResponder.panHandlers}
-            style={styles.sheetDragHeader}
-          >
-            <View style={styles.sheetHandle} />
-            
+      {/* Selected Vendor Detail Bottom Sheet */}
+      <BottomSheet
+        ref={bottomSheetRef}
+        index={-1}
+        snapPoints={snapPoints}
+        enablePanDownToClose={true}
+        onChange={handleSheetChanges}
+        backgroundStyle={{
+          backgroundColor: theme.colors.background,
+          borderTopLeftRadius: normalize(24),
+          borderTopRightRadius: normalize(24),
+          borderTopWidth: 1.5,
+          borderTopColor: theme.colors.primaryLight,
+        }}
+        handleIndicatorStyle={styles.sheetHandle}
+      >
+        {activeVendor && (
+          <BottomSheetView style={styles.sheetContentWrapper}>
             <View style={styles.sheetHeader}>
               <View style={{ flex: 1 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -399,19 +333,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               </View>
             </View>
 
-            {/* Hint for collapsed state */}
-            {!isExpanded && (
-              <View style={styles.sheetHintContainer}>
-                <Ionicons name="chevron-up" size={14} color={theme.colors.primary} style={{ marginRight: 4 }} />
-                <VText variant="caption" color={theme.colors.textMuted}>
-                  Swipe up or tap to see services & bio
-                </VText>
-              </View>
-            )}
-          </TouchableOpacity>
-
-          {/* Expanded State Details */}
-          {isExpanded && (
             <View style={styles.sheetContent}>
               <VText variant="body" color={theme.colors.textMuted} numberOfLines={2} style={styles.sheetBio}>
                 {activeVendor.bio}
@@ -442,9 +363,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 />
               </View>
             </View>
-          )}
-        </Animated.View>
-      )}
+          </BottomSheetView>
+        )}
+      </BottomSheet>
     </View>
   );
 };
@@ -672,6 +593,10 @@ const styles = StyleSheet.create({
   },
 
   // Sheet styling
+  sheetContentWrapper: {
+    flex: 1,
+    paddingHorizontal: theme.spacing.lg,
+  },
   bottomSheet: {
     position: 'absolute',
     bottom: 0,

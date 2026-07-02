@@ -12,7 +12,7 @@ import {
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, VButton, HeaderBar } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '../../components/VIcons';
 
 interface VendorProfileScreenProps {
   vendorId: string;
@@ -109,7 +109,7 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({
         <View style={[styles.locationGuardBox, theme.shadows.soft]}>
           <View style={styles.guardHeader}>
             <Ionicons 
-              name={vendor.is_home_based ? "shield-half-outline" : "map-outline"} 
+              name={vendor.is_home_based ? "shield-checkmark-outline" : "map-outline"} 
               size={20} 
               color={theme.colors.primary} 
             />

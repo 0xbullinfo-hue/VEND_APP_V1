@@ -3,7 +3,7 @@ import { StyleSheet, View, SafeAreaView, TouchableOpacity, ScrollView, KeyboardA
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, VButton, VInput } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '../../components/VIcons';
 
 interface PhoneAuthScreenProps {
   onAuthSuccess: (role: 'customer' | 'vendor') => void;

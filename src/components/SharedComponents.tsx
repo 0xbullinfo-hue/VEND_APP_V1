@@ -9,7 +9,7 @@ import {
   Platform,
   SafeAreaView
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from './VIcons';
 import { theme, normalize } from '../theme/designSystem';
 import { useApp } from '../contexts/AppContext';
 
@@ -280,7 +280,7 @@ export const NotificationToast: React.FC = () => {
       }, 4000);
       return () => clearTimeout(timer);
     }
-  }, [notification]);
+  }, [notification, dismissNotification]);
 
   if (!notification) return null;
 

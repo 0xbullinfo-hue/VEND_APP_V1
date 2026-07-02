@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, ScrollView, TouchableOpacity, Image, Platform } from 'react-native';
+import { StyleSheet, View, ScrollView, TouchableOpacity, Image, Platform, Alert } from 'react-native';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, VButton, VInput, HeaderBar } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '../../components/VIcons';
 
 interface ProductManagementScreenProps {
   onBack: () => void;
@@ -31,7 +31,7 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
       if (onUpgrade) {
         onUpgrade();
       } else {
-        alert(`You've reached the ${myVendorPlan.maxListings}-listing limit on the ${myVendorPlan.name} plan. Upgrade your plan to add more.`);
+        Alert.alert(`You've reached the ${myVendorPlan.maxListings}-listing limit on the ${myVendorPlan.name} plan. Upgrade your plan to add more.`);
       }
       return;
     }

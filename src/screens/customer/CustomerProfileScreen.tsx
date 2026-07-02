@@ -12,7 +12,7 @@ import {
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, VButton, VInput, HeaderBar } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '../../components/VIcons';
 
 interface CustomerProfileScreenProps {
   onBackToHome: () => void;
@@ -108,7 +108,7 @@ export const CustomerProfileScreen: React.FC<CustomerProfileScreenProps> = ({
           style={[styles.tabItem, activeTab === 'favorites' && styles.tabItemActive]}
         >
           <VText variant="caption" color={activeTab === 'favorites' ? theme.colors.primary : theme.colors.textMuted}>
-            SAVED SHops ({savedVendors.length})
+            SAVED SHOPS ({savedVendors.length})
           </VText>
         </TouchableOpacity>
 
@@ -131,28 +131,28 @@ export const CustomerProfileScreen: React.FC<CustomerProfileScreenProps> = ({
             
             {/* Account Settings Menu */}
             <View style={styles.menuGroup}>
-              <TouchableOpacity activeOpacity={0.7} style={styles.menuItem} onPress={() => Alert.alert('Edit Profile', 'Profile editor will be available soon.')}>
+              <TouchableOpacity activeOpacity={0.7} style={styles.menuItem} onPress={() => { /* TODO: [FEATURE-001] Edit Profile */ Alert.alert('Edit Profile', 'Profile editor will be available soon.'); }}>
                 <View style={styles.menuLeft}>
                   <Ionicons name="person-outline" size={32} color={theme.colors.primary} />
                   <VText variant="h3" align="center" style={{ marginTop: 8 }}>Edit Profile</VText>
                 </View>
               </TouchableOpacity>
 
-              <TouchableOpacity activeOpacity={0.7} style={styles.menuItem} onPress={() => Alert.alert('Notifications', 'Notification settings will be available soon.')}>
+              <TouchableOpacity activeOpacity={0.7} style={styles.menuItem} onPress={() => { /* TODO: [FEATURE-002] Notifications Settings */ Alert.alert('Notifications', 'Notification settings will be available soon.'); }}>
                 <View style={styles.menuLeft}>
                   <Ionicons name="notifications-outline" size={32} color={theme.colors.primary} />
                   <VText variant="h3" align="center" style={{ marginTop: 8 }}>Notifications</VText>
                 </View>
               </TouchableOpacity>
 
-              <TouchableOpacity activeOpacity={0.7} style={styles.menuItem} onPress={() => Alert.alert('Terms', 'Loading Terms & Agreements...')}>
+              <TouchableOpacity activeOpacity={0.7} style={styles.menuItem} onPress={() => { /* TODO: [FEATURE-003] Terms and Conditions */ Alert.alert('Terms', 'Loading Terms & Agreements...'); }}>
                 <View style={styles.menuLeft}>
                   <Ionicons name="document-text-outline" size={32} color={theme.colors.primary} />
                   <VText variant="h3" align="center" style={{ marginTop: 8 }}>Terms</VText>
                 </View>
               </TouchableOpacity>
 
-              <TouchableOpacity activeOpacity={0.7} style={styles.menuItem} onPress={() => Alert.alert('Support', 'Contacting support...')}>
+              <TouchableOpacity activeOpacity={0.7} style={styles.menuItem} onPress={() => { /* TODO: [FEATURE-004] Support Center */ Alert.alert('Support', 'Contacting support...'); }}>
                 <View style={styles.menuLeft}>
                   <Ionicons name="help-buoy-outline" size={32} color={theme.colors.primary} />
                   <VText variant="h3" align="center" style={{ marginTop: 8 }}>Support</VText>

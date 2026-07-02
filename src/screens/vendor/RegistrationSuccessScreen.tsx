@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet, SafeAreaView, Image } from 'react-native';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, VButton } from '../../components/SharedComponents';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '../../components/VIcons';
 import { useApp } from '../../contexts/AppContext';
 
 interface RegistrationSuccessScreenProps {

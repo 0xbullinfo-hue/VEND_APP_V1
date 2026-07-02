@@ -3,7 +3,7 @@ import { StyleSheet, View, SafeAreaView } from 'react-native';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, VButton } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '../../components/VIcons';
 
 interface OnboardingCompleteScreenProps {
   onEnterApp: () => void;

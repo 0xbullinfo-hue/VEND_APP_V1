@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, SafeAreaView, TouchableOpacity, Modal, Animated } from 'react-native';
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { StyleSheet, View, SafeAreaView, TouchableOpacity, Modal, Animated, TextInput } from 'react-native';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, VButton } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '../../components/VIcons';
 
 interface QRScannerScreenProps {
   vendorId: string;
@@ -12,16 +11,29 @@ interface QRScannerScreenProps {
   onScanSuccess: () => void;
 }
 
+/**
+ * QRScannerScreen — Simulated Verification Flow
+ *
+ * The camera-based QR scanner (expo-camera) has been replaced with a
+ * simulated presence-verification flow. In production, this will use the
+ * device camera via react-native-vision-camera or similar. For the MVP,
+ * the vendor shows their 4-digit code on screen and the customer types it in.
+ */
 export const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ vendorId, onCancel, onScanSuccess }) => {
-  const { vendors, addPoints } = useApp();
-  const [permission, requestPermission] = useCameraPermissions();
-  const [scanned, setScanned] = useState(false);
+  const { vendors, directionRequests, verifyDirectionCode } = useApp();
+  const [code, setCode] = useState('');
+  const [error, setError] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
-  
+
   // Animation value for the handshake/success icon
   const scaleAnim = useState(new Animated.Value(0))[0];
 
   const vendor = vendors.find(v => v.id === vendorId);
+
+  // Find the pending direction request for this vendor to get the code
+  const pendingRequest = directionRequests.find(
+    r => r.vendorId === vendorId && (r.status === 'pending' || r.status === 'verified')
+  );
 
   useEffect(() => {
     if (showSuccess) {
@@ -34,39 +46,19 @@ export const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ vendorId, onCa
     }
   }, [showSuccess]);
 
-  if (!permission) {
-    return <View style={styles.container} />;
-  }
+  const handleVerify = () => {
+    if (code.length < 4) {
+      setError('Please enter the 4-digit code shown by the vendor.');
+      return;
+    }
 
-  if (!permission.granted) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.centered}>
-          <Ionicons name="camera-outline" size={64} color={theme.colors.primary} />
-          <VText variant="h2" style={{ marginTop: 20 }}>Camera Access Required</VText>
-          <VText variant="body" color={theme.colors.textMuted} align="center" style={{ marginVertical: 20, paddingHorizontal: 40 }}>
-            VEND needs camera access to scan the vendor's QR code and verify your arrival.
-          </VText>
-          <VButton title="Grant Permission" onPress={requestPermission} />
-          <TouchableOpacity onPress={onCancel} style={{ marginTop: 20 }}>
-            <VText variant="subtext" color={theme.colors.textMuted}>Cancel</VText>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  const handleBarcodeScanned = ({ type, data }: { type: string; data: string }) => {
-    if (scanned) return;
-    setScanned(true);
-
-    // In a real app, verify that 'data' matches the vendor's cryptographic QR signature.
-    // For this mock, any QR code will trigger success.
-    
-    // Reward points logic
-    addPoints(100); // 100 points for a verified physical visit
-    
-    setShowSuccess(true);
+    const success = verifyDirectionCode(vendorId, code);
+    if (success) {
+      setError('');
+      setShowSuccess(true);
+    } else {
+      setError('Incorrect code. Ask the vendor to confirm the 4 digits on their screen.');
+    }
   };
 
   const handleFinish = () => {
@@ -84,25 +76,65 @@ export const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ vendorId, onCa
         <View style={{ width: 40 }} />
       </View>
 
-      <View style={styles.scannerContainer}>
-        <CameraView
-          style={StyleSheet.absoluteFillObject}
-          facing="back"
-          onBarcodeScanned={scanned ? undefined : handleBarcodeScanned}
-        />
-        
-        {/* Scanner Overlay UI */}
-        <View style={styles.overlay}>
-          <View style={styles.scanTarget}>
-            <View style={[styles.corner, styles.topLeft]} />
-            <View style={[styles.corner, styles.topRight]} />
-            <View style={[styles.corner, styles.bottomLeft]} />
-            <View style={[styles.corner, styles.bottomRight]} />
-          </View>
-          <VText variant="h3" color="#FFFFFF" style={styles.scanInstruction}>
-            Scan {vendor?.business_name}'s QR Code
-          </VText>
+      {/* Demo mode banner */}
+      <View style={styles.demoBanner}>
+        <Ionicons name="information-circle-outline" size={16} color={theme.colors.primary} style={{ marginRight: 6 }} />
+        <VText variant="caption" color={theme.colors.primary}>
+          DEMO MODE — Camera scanner coming in production build
+        </VText>
+      </View>
+
+      {/* Code entry area */}
+      <View style={styles.body}>
+        {/* Simulated QR viewfinder graphic */}
+        <View style={styles.viewfinderBox}>
+          <View style={[styles.corner, styles.topLeft]} />
+          <View style={[styles.corner, styles.topRight]} />
+          <View style={[styles.corner, styles.bottomLeft]} />
+          <View style={[styles.corner, styles.bottomRight]} />
+          <Ionicons name="qr-code-outline" size={normalize(80)} color={theme.colors.primary} style={{ opacity: 0.25 }} />
         </View>
+
+        <VText variant="h3" align="center" style={{ marginTop: 24, marginBottom: 8 }}>
+          Enter Vendor's Code
+        </VText>
+        <VText variant="body" color={theme.colors.textMuted} align="center" style={{ paddingHorizontal: 32, marginBottom: 24 }}>
+          Ask <VText variant="body" color={theme.colors.primary}>{vendor?.business_name || 'the vendor'}</VText> to show
+          the 4-digit code on their dashboard, then type it below.
+        </VText>
+
+        {/* Show the pending code hint in demo mode */}
+        {pendingRequest && (
+          <View style={styles.hintBox}>
+            <Ionicons name="eye-outline" size={14} color={theme.colors.textMuted} style={{ marginRight: 4 }} />
+            <VText variant="caption" color={theme.colors.textMuted}>
+              Demo hint — code is: <VText variant="caption" color={theme.colors.primary}>{pendingRequest.code}</VText>
+            </VText>
+          </View>
+        )}
+
+        <TextInput
+          value={code}
+          onChangeText={(t) => { setCode(t.replace(/\D/g, '').slice(0, 4)); setError(''); }}
+          keyboardType="number-pad"
+          maxLength={4}
+          placeholder="_ _ _ _"
+          placeholderTextColor={theme.colors.border}
+          style={styles.codeInput}
+        />
+
+        {error !== '' && (
+          <VText variant="caption" color={theme.colors.danger} align="center" style={{ marginTop: 8 }}>
+            {error}
+          </VText>
+        )}
+
+        <VButton
+          title="Confirm Visit ✓"
+          onPress={handleVerify}
+          style={{ marginTop: 24, width: '100%' }}
+          disabled={code.length < 4}
+        />
       </View>
 
       {/* Handshake Success Modal */}
@@ -112,7 +144,7 @@ export const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ vendorId, onCa
             <Animated.View style={[styles.iconCircle, { transform: [{ scale: scaleAnim }] }]}>
               <Ionicons name="shield-checkmark" size={48} color={theme.colors.background} />
             </Animated.View>
-            
+
             <VText variant="h1" color={theme.colors.primary} style={{ marginVertical: 10 }}>
               Visit Verified!
             </VText>
@@ -138,56 +170,72 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.md,
-    zIndex: 10,
   },
   backBtn: {
     padding: 8,
   },
-  scannerContainer: {
-    flex: 1,
-    position: 'relative',
-    backgroundColor: '#000',
+  demoBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.primaryLight,
+    paddingVertical: 8,
+    paddingHorizontal: theme.spacing.lg,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: 'rgba(17, 92, 85, 0.15)',
   },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+  body: {
+    flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.xl,
+    paddingTop: theme.spacing.xl,
+  },
+  viewfinderBox: {
+    width: normalize(200),
+    height: normalize(200),
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  scanTarget: {
-    width: normalize(250),
-    height: normalize(250),
-    backgroundColor: 'transparent',
     position: 'relative',
-  },
-  scanInstruction: {
-    marginTop: 40,
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
-    textShadowOffset: { width: -1, height: 1 },
-    textShadowRadius: 10,
   },
   corner: {
     position: 'absolute',
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
     borderColor: theme.colors.primary,
   },
   topLeft: { top: 0, left: 0, borderTopWidth: 4, borderLeftWidth: 4 },
   topRight: { top: 0, right: 0, borderTopWidth: 4, borderRightWidth: 4 },
   bottomLeft: { bottom: 0, left: 0, borderBottomWidth: 4, borderLeftWidth: 4 },
   bottomRight: { bottom: 0, right: 0, borderBottomWidth: 4, borderRightWidth: 4 },
-  
+  hintBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.surface,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  codeInput: {
+    width: '60%',
+    height: normalize(64),
+    borderWidth: 2,
+    borderColor: theme.colors.primary,
+    borderRadius: normalize(16),
+    textAlign: 'center',
+    fontSize: normalize(28),
+    fontWeight: '800',
+    color: theme.colors.textMain,
+    letterSpacing: 8,
+  },
   modalBackdrop: {
     flex: 1,
     backgroundColor: theme.colors.overlay,

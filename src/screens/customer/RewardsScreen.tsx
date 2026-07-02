@@ -3,7 +3,7 @@ import { StyleSheet, View, ScrollView, TouchableOpacity, Image, Modal, Dimension
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, VButton, HeaderBar } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '../../components/VIcons';
 
 const { width } = Dimensions.get('window');
 

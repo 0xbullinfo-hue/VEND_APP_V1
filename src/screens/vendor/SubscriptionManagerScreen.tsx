@@ -3,7 +3,7 @@ import { StyleSheet, View, ScrollView, Modal } from 'react-native';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, VButton, VInput, HeaderBar } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '../../components/VIcons';
 import { SUBSCRIPTION_PLANS, MIN_SUBSCRIPTION_TIER } from '../../lib/subscriptionPlans';
 
 interface SubscriptionManagerScreenProps {
@@ -20,11 +20,6 @@ export const SubscriptionManagerScreen: React.FC<SubscriptionManagerScreenProps>
   const [pendingTier, setPendingTier] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Paystack input states
-  const [cardNumber, setCardNumber] = useState('');
-  const [expiry, setExpiry] = useState('');
-  const [cvv, setCvv] = useState('');
-
   const userCount = locality?.registered_users_count || 942;
   const isMilestoneCleared = userCount >= 1000;
 
@@ -35,10 +30,6 @@ export const SubscriptionManagerScreen: React.FC<SubscriptionManagerScreenProps>
   };
 
   const handlePaystackSubmit = () => {
-    if (cardNumber.length < 16 || expiry.length < 4 || cvv.length < 3) {
-      alert('Please fill in valid payment credentials');
-      return;
-    }
     if (pendingTier === null) return;
 
     setLoading(true);
@@ -50,9 +41,6 @@ export const SubscriptionManagerScreen: React.FC<SubscriptionManagerScreenProps>
       }
       setActiveModal(null);
       setPendingTier(null);
-      setCardNumber('');
-      setExpiry('');
-      setCvv('');
     }, 2000);
   };
 
@@ -216,42 +204,17 @@ export const SubscriptionManagerScreen: React.FC<SubscriptionManagerScreenProps>
           <View style={[styles.modalCard, theme.shadows.premium]}>
             <View style={styles.paystackHeader}>
               <Ionicons name="card" size={22} color={theme.colors.primary} />
-              <VText variant="h2" style={{ marginLeft: 8 }}>Paystack Checkout</VText>
+              <VText variant="h2" style={{ marginLeft: 8 }}>Simulated Gateway</VText>
             </View>
             <VText variant="caption" color={theme.colors.textMuted} style={{ marginBottom: theme.spacing.lg }}>
-              Complete secure payment for {targetPlan?.priceLabel} {targetPlan?.name} plan.
+              DEMO MODE: No real payment required. Click below to simulate completing the transaction for the {targetPlan?.priceLabel} {targetPlan?.name} plan.
             </VText>
 
-            {/* Inputs */}
-            <VInput
-              placeholder="Card Number (16 Digits)"
-              value={cardNumber}
-              onChangeText={setCardNumber}
-              keyboardType="numeric"
-              icon="card-outline"
-              maxLength={16}
-              style={{ marginBottom: theme.spacing.sm }}
-            />
-
-            <View style={styles.expiryRow}>
-              <VInput
-                placeholder="MM/YY"
-                value={expiry}
-                onChangeText={setExpiry}
-                keyboardType="numeric"
-                icon="calendar-outline"
-                maxLength={4}
-                style={{ flex: 1 }}
-              />
-              <VInput
-                placeholder="CVV"
-                value={cvv}
-                onChangeText={setCvv}
-                keyboardType="numeric"
-                icon="lock-closed-outline"
-                maxLength={3}
-                style={{ flex: 1, marginLeft: theme.spacing.sm }}
-              />
+            <View style={styles.demoWarningBox}>
+              <Ionicons name="information-circle" size={24} color={theme.colors.warning} />
+              <VText variant="caption" style={{ marginLeft: 8, flex: 1 }}>
+                In production, this will open the official Paystack secure SDK.
+              </VText>
             </View>
 
             <View style={styles.modalBtns}>
@@ -424,9 +387,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  expiryRow: {
+  demoWarningBox: {
     flexDirection: 'row',
-    gap: theme.spacing.sm,
+    alignItems: 'center',
+    backgroundColor: '#FFF8E1',
+    padding: theme.spacing.md,
+    borderRadius: normalize(8),
     marginBottom: theme.spacing.xl,
   },
   modalBtns: {

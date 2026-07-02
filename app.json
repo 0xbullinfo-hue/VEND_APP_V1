@@ -1,46 +1,4 @@
 {
-  "expo": {
-    "name": "VEND",
-    "slug": "vend-mobile-app",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "userInterfaceStyle": "light",
-    "scheme": "vendapp",
-    "splash": {
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
-    "ios": {
-      "supportsTablet": false,
-      "bundleIdentifier": "com.vend.app",
-      "config": {
-        "googleMapsApiKey": "AQ.Ab8RN6IgGs25ExGkvrPHwqWh_XeFGdoUdyn5Ow2IJ4X0-ZB7EQ"
-      },
-      "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "VEND requires location access to find live local vendors in your proximity."
-      }
-    },
-    "android": {
-      "adaptiveIcon": {
-        "backgroundColor": "#ffffff"
-      },
-      "package": "com.vend.app",
-      "config": {
-        "googleMaps": {
-          "apiKey": "AQ.Ab8RN6IgGs25ExGkvrPHwqWh_XeFGdoUdyn5Ow2IJ4X0-ZB7EQ"
-        }
-      },
-      "permissions": [
-        "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION"
-      ]
-    },
-    "web": {},
-    "plugins": [
-      "expo-font"
-    ]
-  }
+  "name": "VEND",
+  "displayName": "VEND"
 }

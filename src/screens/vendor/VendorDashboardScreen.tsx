@@ -3,7 +3,7 @@ import { StyleSheet, View, ScrollView, TouchableOpacity, Image, Dimensions, Plat
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, HeaderBar } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '../../components/VIcons';
 
 const { width } = Dimensions.get('window');
 
@@ -19,6 +19,7 @@ interface VendorDashboardScreenProps {
 export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
   onManageProducts,
   onManageSubscription,
+  onLogout,
   onViewGrowth,
   onStartChat,
   onViewProfile
@@ -33,10 +34,19 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
       {/* Header bar */}
       <View style={styles.header}>
         <VText variant="h2" style={{ fontSize: normalize(22) }}>Dashboard</VText>
-        <TouchableOpacity style={styles.bellIcon}>
-          <Ionicons name="notifications-outline" size={24} color={theme.colors.textMain} />
-          <View style={styles.notificationBadge} />
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          <TouchableOpacity style={styles.bellIcon}>
+            <Ionicons name="notifications-outline" size={24} color={theme.colors.textMain} />
+            <View style={styles.notificationBadge} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.logoutBtn}
+            onPress={onLogout}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="log-out-outline" size={22} color={theme.colors.danger} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -197,9 +207,17 @@ const styles = StyleSheet.create({
     paddingBottom: theme.spacing.md,
     backgroundColor: theme.colors.background,
   },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
   bellIcon: {
     padding: 8,
     position: 'relative',
+  },
+  logoutBtn: {
+    padding: 8,
   },
   notificationBadge: {
     position: 'absolute',

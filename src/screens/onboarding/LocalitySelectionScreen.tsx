@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, SafeAreaView, TouchableOpacity, ScrollView } from 'react-native';
+import { StyleSheet, View, SafeAreaView, TouchableOpacity, ScrollView, Platform, PermissionsAndroid } from 'react-native';
+import Geolocation from '@react-native-community/geolocation';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, VButton } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
-import { MOCK_LOCALITIES } from '../../lib/supabase';
-import { Ionicons } from '@expo/vector-icons';
-import * as Location from 'expo-location';
+import { MOCK_LOCALITIES } from '../../lib/mockData';
+import { Ionicons } from '../../components/VIcons';
 
 interface LocalitySelectionScreenProps {
   onLocalityConfirmed: () => void;
@@ -19,26 +19,48 @@ export const LocalitySelectionScreen: React.FC<LocalitySelectionScreenProps> = (
 
   const handleRequestPermission = async () => {
     setLoading(true);
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      
-      setLoading(false);
-      if (status === 'granted') {
-        setPermissionGranted(true);
-        // Optional: you could actually fetch their location here
-        // const location = await Location.getCurrentPositionAsync({});
-        // For now, auto-select first locality as a convenience based on mock flow
-        setSelectedId(1);
-      } else {
-        // Handle denied permission (e.g. alert user or force manual selection)
-        alert('Location permission denied. Please select your locality manually.');
-        setPermissionGranted(true); // fall back to manual list
+
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+          {
+            title: 'VEND Location Permission',
+            message: 'VEND needs access to your location to show nearby vendors.',
+            buttonNeutral: 'Ask Me Later',
+            buttonNegative: 'Cancel',
+            buttonPositive: 'OK',
+          }
+        );
+        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+          setLoading(false);
+          setPermissionGranted(true);
+          return;
+        }
+      } catch (err) {
+        console.warn(err);
       }
-    } catch (error) {
-      setLoading(false);
-      console.error('Error requesting location permission:', error);
-      setPermissionGranted(true); // fall back
+    } else {
+      Geolocation.requestAuthorization();
     }
+
+    Geolocation.getCurrentPosition(
+      (position) => {
+        setLoading(false);
+        setPermissionGranted(true);
+        
+        // Find nearest locality based on coordinates (mocked to ID 1 for now)
+        // In a real app, you would use Turf.js or a backend spatial query
+        setSelectedId(1);
+      },
+      (error) => {
+        setLoading(false);
+        console.log(error);
+        setPermissionGranted(true);
+        setSelectedId(1);
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+    );
   };
 
   const handleConfirm = () => {

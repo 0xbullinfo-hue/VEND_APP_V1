@@ -2,20 +2,25 @@ import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, ScrollView, Alert, Modal, TextInput } from 'react-native';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, HeaderBar, VButton, VInput } from '../../components/SharedComponents';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '../../components/VIcons';
 import { useApp } from '../../contexts/AppContext';
 
 interface VendorProfileScreenProps {
   onBack?: () => void;
+  onTestRegistration?: () => void;
+  onLogout?: () => void;
 }
 
-export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({ onBack }) => {
+export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({ onBack, onTestRegistration, onLogout }) => {
   const { logout, user } = useApp();
   const [showEdit, setShowEdit] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [editName, setEditName] = useState(user?.name || '');
+  const [editPhone, setEditPhone] = useState(user?.phone || '');
   
   const handleLogout = () => {
     logout();
+    onLogout?.();
   };
   return (
     <View style={styles.container}>
@@ -75,8 +80,21 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({ onBack
         <View style={styles.modalBackdrop}>
           <View style={[styles.modalCard, theme.shadows.premium]}>
             <VText variant="h2" style={{ marginBottom: theme.spacing.md }}>Edit Store Info</VText>
-            <VInput placeholder="Business Name" defaultValue={user?.name} icon="storefront-outline" style={{ marginBottom: theme.spacing.sm }} />
-            <VInput placeholder="Phone Number" defaultValue={user?.phone} icon="call-outline" keyboardType="phone-pad" style={{ marginBottom: theme.spacing.lg }} />
+            <VInput
+              placeholder="Business Name"
+              value={editName}
+              onChangeText={setEditName}
+              icon="storefront-outline"
+              style={{ marginBottom: theme.spacing.sm }}
+            />
+            <VInput
+              placeholder="Phone Number"
+              value={editPhone}
+              onChangeText={setEditPhone}
+              icon="call-outline"
+              keyboardType="phone-pad"
+              style={{ marginBottom: theme.spacing.lg }}
+            />
             
             <View style={{ flexDirection: 'row', gap: theme.spacing.sm }}>
               <VButton title="Cancel" variant="outline" onPress={() => setShowEdit(false)} style={{ flex: 1 }} />

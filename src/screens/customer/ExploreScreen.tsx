@@ -1,17 +1,17 @@
-import React, { useState } from 'react';
-import { 
-  StyleSheet, 
-  View, 
-  ScrollView, 
-  TouchableOpacity, 
+import React, { useMemo, useState } from 'react';
+import {
+  StyleSheet,
+  View,
+  ScrollView,
+  TouchableOpacity,
   TextInput,
-  Image
+  Image,
 } from 'react-native';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, HeaderBar } from '../../components/SharedComponents';
-import { MOCK_CATEGORIES } from '../../lib/supabase';
 import { useApp } from '../../contexts/AppContext';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '../../components/VIcons';
+import { CATEGORY_CATALOG } from '../../lib/categoryCatalog';
 
 interface ExploreScreenProps {
   onBackToHome: () => void;
@@ -28,21 +28,28 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
   const [activeCategoryIndex, setActiveCategoryIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'split' | 'grid'>('grid');
 
-  const activeCategory = MOCK_CATEGORIES[activeCategoryIndex];
+  const activeCategory = CATEGORY_CATALOG[activeCategoryIndex];
 
-  // List of vendors matching selected subcategory
-  const filteredVendors = vendors.filter(v => {
-    const matchesSearch = searchQuery.trim() === '' || 
-      v.business_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      v.bio.toLowerCase().includes(searchQuery.toLowerCase());
-      
-    if (selectedSubcategory) {
-      return v.sub_category === selectedSubcategory && matchesSearch;
-    }
-    
-    return v.category === activeCategory.name && matchesSearch;
-  });
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+
+  const filteredVendors = useMemo(
+    () =>
+      vendors.filter((v) => {
+        const matchesSearch =
+          normalizedQuery === '' ||
+          v.business_name.toLowerCase().includes(normalizedQuery) ||
+          v.bio.toLowerCase().includes(normalizedQuery);
+
+        if (selectedSubcategory) {
+          return v.sub_category === selectedSubcategory && matchesSearch;
+        }
+
+        return v.category === activeCategory.name && matchesSearch;
+      }),
+    [activeCategory.name, normalizedQuery, selectedSubcategory, vendors]
+  );
 
   const handleCategoryPress = (index: number) => {
     setActiveCategoryIndex(index);
@@ -55,71 +62,161 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
     addPoints(2); // Earn points for narrowing down
   };
 
-  return (
-    <View style={styles.container}>
-      {/* Search Header Bar */}
-      <HeaderBar 
-        title="Explore" 
-        showBack={true} 
-        onBack={onBackToHome} 
-        onPointsPress={onViewRewards} 
-      />
-      
-      {/* Local Search Input Area */}
-      <View style={styles.searchContainer}>
-        <View style={styles.searchFieldBox}>
-          <Ionicons name="search" size={20} color={theme.colors.textMuted} style={{ marginRight: 8 }} />
-          <TextInput
-            placeholder="Search tailored services, plumbing, foods..."
-            placeholderTextColor={theme.colors.textMuted}
-            value={searchQuery}
-            onChangeText={(text) => {
-              setSearchQuery(text);
-              if(text.length % 3 === 0 && text.length > 0) addPoints(1); // Small points reward for query search engagement
-            }}
-            style={[styles.searchInput, { fontFamily: theme.typography.fontSans }]}
-          />
-          {searchQuery !== '' && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Ionicons name="close-circle" size={18} color={theme.colors.textMuted} />
-            </TouchableOpacity>
-          )}
+  const renderVendors = () => {
+    if (filteredVendors.length === 0) {
+      return (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="search-outline" size={normalize(48)} color={theme.colors.textMuted} />
+          <VText variant="body" color={theme.colors.textMuted} align="center" style={{ marginTop: theme.spacing.sm }}>
+            No active vendors found in this category right now.
+          </VText>
         </View>
-      </View>
+      );
+    }
 
-      {/* Main Split Pane Layout (Adopted from 2clicks.ng UI/UX) */}
+    return filteredVendors.map((vendor) => {
+      const isPremium = vendor.subscription_tier > 1;
+      return (
+        <TouchableOpacity
+          key={vendor.id}
+          activeOpacity={0.85}
+          onPress={() => onViewVendorProfile(vendor.id)}
+          style={[
+            styles.vendorResultCard,
+            isPremium ? styles.cardPremium : styles.cardNormal,
+            theme.shadows.soft,
+          ]}
+        >
+          <Image source={{ uri: vendor.image }} style={styles.vendorCardImg} />
+          <View style={styles.vendorCardInfo}>
+            <View style={styles.vendorTitleRow}>
+              <VText variant="h3" numberOfLines={1} style={{ maxWidth: '70%' }}>
+                {vendor.business_name}
+              </VText>
+              {isPremium && (
+                <View style={styles.premiumBadge}>
+                  <Ionicons name="sparkles" size={8} color="#FFFFFF" style={{ marginRight: 2 }} />
+                  <VText variant="caption" color="#FFFFFF" style={{ fontSize: normalize(8) }}>
+                    BOOSTED
+                  </VText>
+                </View>
+              )}
+            </View>
+
+            <VText variant="caption" color={theme.colors.textMuted} numberOfLines={1}>
+              {vendor.sub_category} • {vendor.is_home_based ? 'Home-Based' : 'Physical Shop'}
+            </VText>
+
+            <View style={styles.ratingRow}>
+              <Ionicons name="star" size={normalize(12)} color={theme.colors.warning} />
+              <VText variant="caption" style={{ marginLeft: 4 }}>
+                {vendor.rating}
+              </VText>
+              <View
+                style={[
+                  styles.statusDot,
+                  { backgroundColor: vendor.is_open ? theme.colors.accent : theme.colors.textMuted },
+                ]}
+              />
+              <VText
+                variant="caption"
+                color={vendor.is_open ? theme.colors.accent : theme.colors.textMuted}
+                style={{ fontSize: 9 }}
+              >
+                {vendor.is_open ? 'ONLINE' : 'OFFLINE'}
+              </VText>
+            </View>
+          </View>
+        </TouchableOpacity>
+      );
+    });
+  };
+
+  const renderGridMode = () => {
+    return (
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.gridModeContent}>
+        <View style={styles.gridCategoryWrap}>
+          {CATEGORY_CATALOG.map((cat, idx) => {
+            const isActive = idx === activeCategoryIndex;
+            return (
+              <TouchableOpacity
+                key={cat.name}
+                activeOpacity={0.85}
+                onPress={() => handleCategoryPress(idx)}
+                style={[styles.gridCategoryCard, isActive && styles.gridCategoryCardActive]}
+              >
+                <View style={[styles.gridIconShell, { backgroundColor: isActive ? '#FFFFFF' : cat.color }]}>
+                  <Ionicons
+                    name={cat.icon as any}
+                    size={normalize(20)}
+                    color={theme.colors.primary}
+                  />
+                </View>
+                <VText
+                  variant="subtext"
+                  align="center"
+                  color={isActive ? '#FFFFFF' : theme.colors.textMain}
+                  style={styles.gridCategoryText}
+                >
+                  {cat.name}
+                </VText>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        <View style={styles.subcategoryBarGridMode}>
+          <VText variant="h3" style={{ marginBottom: theme.spacing.sm }}>
+            {activeCategory.name}
+          </VText>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.subTagScroll}>
+            {activeCategory.subcategories.map((sub) => {
+              const isSelected = selectedSubcategory === sub;
+              return (
+                <TouchableOpacity
+                  key={sub}
+                  activeOpacity={0.8}
+                  onPress={() => handleSubcategoryPress(sub)}
+                  style={[styles.subTag, isSelected ? styles.subTagActive : styles.subTagInactive]}
+                >
+                  <VText variant="caption" color={isSelected ? theme.colors.background : theme.colors.primary}>
+                    {sub}
+                  </VText>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+
+        <View style={styles.resultsHeader}>
+          <VText variant="caption" color={theme.colors.textMuted}>
+            {filteredVendors.length} VENDORS FOUND
+          </VText>
+        </View>
+        {renderVendors()}
+      </ScrollView>
+    );
+  };
+
+  const renderSplitMode = () => {
+    return (
       <View style={styles.splitPaneContainer}>
-        
-        {/* Left Sidebar Pane: Main Categories list */}
         <View style={styles.leftPane}>
-          <ScrollView 
-            showsVerticalScrollIndicator={false} 
-            contentContainerStyle={styles.leftScroll}
-          >
-            {MOCK_CATEGORIES.map((cat, idx) => {
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.leftScroll}>
+            {CATEGORY_CATALOG.map((cat, idx) => {
               const isActive = activeCategoryIndex === idx;
               return (
                 <TouchableOpacity
                   key={cat.name}
                   activeOpacity={0.8}
                   onPress={() => handleCategoryPress(idx)}
-                  style={[
-                    styles.categoryMenuItem,
-                    isActive ? styles.itemActive : styles.itemInactive
-                  ]}
+                  style={[styles.categoryMenuItem, isActive ? styles.itemActive : styles.itemInactive]}
                 >
-                  <View style={[
-                    styles.iconBox, 
-                    { backgroundColor: isActive ? theme.colors.background : cat.color }
-                  ]}>
-                    <Ionicons 
-                      name={cat.icon as any} 
-                      size={normalize(18)} 
-                      color={theme.colors.primary} 
-                    />
+                  <View style={[styles.iconBox, { backgroundColor: isActive ? theme.colors.background : cat.color }]}>
+                    <Ionicons name={cat.icon as any} size={normalize(18)} color={theme.colors.primary} />
                   </View>
-                  <VText 
-                    variant="caption" 
+                  <VText
+                    variant="caption"
                     align="center"
                     color={isActive ? theme.colors.background : theme.colors.textMain}
                     style={styles.categoryMenuText}
@@ -133,18 +230,12 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
           </ScrollView>
         </View>
 
-        {/* Right Content Pane: Subcategories and matching results */}
         <View style={styles.rightPane}>
-          {/* Subcategories Horizontal Scroll Filter Tags */}
           <View style={styles.subcategoryBar}>
             <VText variant="h3" style={{ marginBottom: theme.spacing.sm }}>
               {activeCategory.name}
             </VText>
-            <ScrollView 
-              horizontal 
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.subTagScroll}
-            >
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.subTagScroll}>
               {activeCategory.subcategories.map((sub) => {
                 const isSelected = selectedSubcategory === sub;
                 return (
@@ -152,15 +243,9 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
                     key={sub}
                     activeOpacity={0.8}
                     onPress={() => handleSubcategoryPress(sub)}
-                    style={[
-                      styles.subTag,
-                      isSelected ? styles.subTagActive : styles.subTagInactive
-                    ]}
+                    style={[styles.subTag, isSelected ? styles.subTagActive : styles.subTagInactive]}
                   >
-                    <VText 
-                      variant="caption" 
-                      color={isSelected ? theme.colors.background : theme.colors.primary}
-                    >
+                    <VText variant="caption" color={isSelected ? theme.colors.background : theme.colors.primary}>
                       {sub}
                     </VText>
                   </TouchableOpacity>
@@ -169,75 +254,90 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
             </ScrollView>
           </View>
 
-          {/* Results Grid List */}
-          <ScrollView 
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.resultsScroll}
-          >
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.resultsScroll}>
             <View style={styles.resultsHeader}>
               <VText variant="caption" color={theme.colors.textMuted}>
                 {filteredVendors.length} VENDORS FOUND
               </VText>
             </View>
-
-            {filteredVendors.length > 0 ? (
-              filteredVendors.map((vendor) => {
-                const isPremium = vendor.subscription_tier > 1;
-                return (
-                  <TouchableOpacity
-                    key={vendor.id}
-                    activeOpacity={0.8}
-                    onPress={() => onViewVendorProfile(vendor.id)}
-                    style={[
-                      styles.vendorResultCard, 
-                      isPremium ? styles.cardPremium : styles.cardNormal,
-                      theme.shadows.soft
-                    ]}
-                  >
-                    <Image source={{ uri: vendor.image }} style={styles.vendorCardImg} />
-                    <View style={styles.vendorCardInfo}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
-                        <VText variant="h3" numberOfLines={1} style={{ maxWidth: '70%' }}>
-                          {vendor.business_name}
-                        </VText>
-                        {isPremium && (
-                          <View style={styles.premiumBadge}>
-                            <Ionicons name="sparkles" size={8} color="#FFFFFF" style={{ marginRight: 2 }} />
-                            <VText variant="caption" color="#FFFFFF" style={{ fontSize: normalize(8) }}>BOOSTED</VText>
-                          </View>
-                        )}
-                      </View>
-
-                      <VText variant="caption" color={theme.colors.textMuted} numberOfLines={1}>
-                        {vendor.sub_category} • {vendor.is_home_based ? 'Home-Based' : 'Physical Shop'}
-                      </VText>
-
-                      <View style={styles.ratingRow}>
-                        <Ionicons name="star" size={normalize(12)} color={theme.colors.warning} />
-                        <VText variant="caption" style={{ marginLeft: 4 }}>
-                          {vendor.rating}
-                        </VText>
-                        <View style={[styles.statusDot, { backgroundColor: vendor.is_open ? theme.colors.accent : theme.colors.textMuted }]} />
-                        <VText variant="caption" color={vendor.is_open ? theme.colors.accent : theme.colors.textMuted} style={{ fontSize: 9 }}>
-                          {vendor.is_open ? 'ONLINE' : 'OFFLINE'}
-                        </VText>
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })
-            ) : (
-              <View style={styles.emptyContainer}>
-                <Ionicons name="search-outline" size={normalize(48)} color={theme.colors.textMuted} />
-                <VText variant="body" color={theme.colors.textMuted} align="center" style={{ marginTop: theme.spacing.sm }}>
-                  No active vendors found in this category right now.
-                </VText>
-              </View>
-            )}
+            {renderVendors()}
           </ScrollView>
         </View>
-
       </View>
+    );
+  };
+
+  return (
+    <View style={styles.container}>
+      <HeaderBar 
+        title="Explore" 
+        showBack={true} 
+        onBack={onBackToHome} 
+        onPointsPress={onViewRewards} 
+      />
+
+      <View style={styles.searchContainer}>
+        <View style={styles.searchFieldBox}>
+          <Ionicons name="search" size={20} color={theme.colors.textMuted} style={{ marginRight: 8 }} />
+          <TextInput
+            placeholder="Search tailored services, plumbing, foods..."
+            placeholderTextColor={theme.colors.textMuted}
+            value={searchQuery}
+            onChangeText={(text) => {
+              setSearchQuery(text);
+              if (text.length % 3 === 0 && text.length > 0) addPoints(1);
+            }}
+            style={[styles.searchInput, { fontFamily: theme.typography.fontSans }]}
+          />
+          {searchQuery !== '' && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Ionicons name="close-circle" size={18} color={theme.colors.textMuted} />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <View style={styles.modeSwitchRow}>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => setViewMode('grid')}
+            style={[styles.modeChip, viewMode === 'grid' ? styles.modeChipActive : styles.modeChipInactive]}
+          >
+            <Ionicons
+              name="grid-outline"
+              size={normalize(14)}
+              color={viewMode === 'grid' ? '#FFFFFF' : theme.colors.primary}
+            />
+            <VText
+              variant="caption"
+              color={viewMode === 'grid' ? '#FFFFFF' : theme.colors.primary}
+              style={{ marginLeft: 6 }}
+            >
+              Grid
+            </VText>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => setViewMode('split')}
+            style={[styles.modeChip, viewMode === 'split' ? styles.modeChipActive : styles.modeChipInactive]}
+          >
+            <Ionicons
+              name="list-outline"
+              size={normalize(14)}
+              color={viewMode === 'split' ? '#FFFFFF' : theme.colors.primary}
+            />
+            <VText
+              variant="caption"
+              color={viewMode === 'split' ? '#FFFFFF' : theme.colors.primary}
+              style={{ marginLeft: 6 }}
+            >
+              Split
+            </VText>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {viewMode === 'grid' ? renderGridMode() : renderSplitMode()}
     </View>
   );
 };
@@ -269,6 +369,69 @@ const styles = StyleSheet.create({
     height: '100%',
     color: theme.colors.textMain,
     fontSize: normalize(13),
+  },
+  modeSwitchRow: {
+    flexDirection: 'row',
+    marginTop: theme.spacing.sm,
+    gap: theme.spacing.sm,
+  },
+  modeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 999,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+  },
+  modeChipActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  modeChipInactive: {
+    backgroundColor: theme.colors.background,
+    borderColor: theme.colors.primaryLight,
+  },
+
+  gridModeContent: {
+    padding: theme.spacing.md,
+    paddingBottom: normalize(120),
+  },
+  gridCategoryWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: theme.spacing.md,
+  },
+  gridCategoryCard: {
+    width: '48.5%',
+    borderRadius: normalize(16),
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: '#F9FAFB',
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.sm,
+    alignItems: 'center',
+    marginBottom: theme.spacing.sm,
+  },
+  gridCategoryCardActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+    ...theme.shadows.soft,
+  },
+  gridIconShell: {
+    width: normalize(42),
+    height: normalize(42),
+    borderRadius: normalize(12),
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  gridCategoryText: {
+    fontSize: normalize(11),
+    fontWeight: '700',
+  },
+  subcategoryBarGridMode: {
+    paddingVertical: theme.spacing.sm,
   },
   
   // Split pane layout
@@ -379,6 +542,11 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: theme.spacing.sm,
     justifyContent: 'space-between',
+  },
+  vendorTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
   },
   premiumBadge: {
     flexDirection: 'row',
