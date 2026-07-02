@@ -30,7 +30,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onViewVendorProfile,
   onViewRewards
 }) => {
-  const { vendors, addPoints, locality } = useApp();
+  const { vendors, addPoints, locality, dataSource, isRealtimeConnected, isLoadingVendors } = useApp();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedVendorId, setSelectedVendorId] = useState<string | null>(null); // Starts with no selection, showing promo bar
 
@@ -115,6 +115,32 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     <View style={styles.container}>
       {/* Top Header */}
       <HeaderBar onPointsPress={onViewRewards} />
+
+      <View style={styles.dataStatusBar}>
+        <View style={styles.dataStatusLeft}>
+          <View
+            style={[
+              styles.dataStatusDot,
+              {
+                backgroundColor:
+                  dataSource === 'supabase' && isRealtimeConnected
+                    ? theme.colors.accent
+                    : theme.colors.warning,
+              },
+            ]}
+          />
+          <VText variant="caption" color={theme.colors.textMuted}>
+            {isLoadingVendors
+              ? 'Refreshing nearby vendors...'
+              : dataSource === 'supabase' && isRealtimeConnected
+              ? 'Live locality feed connected'
+              : 'Using local demo dataset'}
+          </VText>
+        </View>
+        <VText variant="caption" color={theme.colors.primary}>
+          {filteredVendors.length} visible
+        </VText>
+      </View>
 
       {/* Interactive Map Viewport */}
       <View style={styles.mapContainer}>
@@ -379,6 +405,28 @@ const styles = StyleSheet.create({
     flex: 1,
     position: 'relative',
     backgroundColor: '#E5E9F0',
+  },
+  dataStatusBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: 6,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    backgroundColor: '#FCFCFC',
+  },
+  dataStatusLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  dataStatusDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    marginRight: 6,
   },
   mapGrid: {
     ...StyleSheet.absoluteFillObject,

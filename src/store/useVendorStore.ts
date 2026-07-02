@@ -1,14 +1,19 @@
 import { create } from 'zustand';
 import { MOCK_VENDORS } from '../lib/mockData';
-import { getPlanForTier, clampTier, SubscriptionPlan } from '../lib/subscriptionPlans';
+import { getPlanForTier, clampTier } from '../lib/subscriptionPlans';
 import { useUIStore } from './useUIStore';
-import { UserProfile } from '../types';
+import { UserProfile, VendorProfile } from '../types';
 import { useLocationStore } from './useLocationStore';
-import { useAuthStore } from './useAuthStore';
+import { fetchVendorsByLocality, subscribeToVendorRealtime } from '../lib/vendorDataProvider';
 
 interface VendorState {
-  vendors: typeof MOCK_VENDORS;
+  vendors: VendorProfile[];
   savedVendors: string[];
+  dataSource: 'mock' | 'supabase';
+  isRealtimeConnected: boolean;
+  isLoadingVendors: boolean;
+  refreshVendorsForLocality: (localityId?: number) => Promise<void>;
+  connectVendorRealtime: (localityId?: number) => () => void;
   
   ensureVendorProfile: (user: UserProfile) => void;
   toggleSaveVendor: (vendorId: string) => void;
@@ -40,6 +45,37 @@ interface VendorState {
 export const useVendorStore = create<VendorState>((set, get) => ({
   vendors: MOCK_VENDORS,
   savedVendors: [],
+  dataSource: 'mock',
+  isRealtimeConnected: false,
+  isLoadingVendors: false,
+
+  refreshVendorsForLocality: async (localityId) => {
+    set({ isLoadingVendors: true });
+    const rows = await fetchVendorsByLocality(localityId);
+    set({
+      vendors: rows,
+      dataSource: rows.some((v) => v.realtime_source === 'supabase') ? 'supabase' : 'mock',
+      isLoadingVendors: false,
+    });
+  },
+
+  connectVendorRealtime: (localityId) => {
+    if (!localityId) {
+      set({ isRealtimeConnected: false });
+      return () => {};
+    }
+
+    const cleanup = subscribeToVendorRealtime(localityId, async () => {
+      await get().refreshVendorsForLocality(localityId);
+    });
+
+    set({ isRealtimeConnected: true });
+
+    return () => {
+      cleanup();
+      set({ isRealtimeConnected: false });
+    };
+  },
 
   ensureVendorProfile: (user) => {
     set((state) => {
