@@ -25,11 +25,13 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
   onViewVendorProfile,
   onViewRewards
 }) => {
-  const { vendors, addPoints } = useApp();
+  const { vendors, addPoints, locality, isRealtimeConnected, dataSource } = useApp();
   const [activeCategoryIndex, setActiveCategoryIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'split' | 'grid'>('grid');
+  const [onlyBoosted, setOnlyBoosted] = useState(false);
+  const [onlyOpen, setOnlyOpen] = useState(true);
 
   const activeCategory = CATEGORY_CATALOG[activeCategoryIndex];
 
@@ -43,15 +45,18 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
           v.business_name.toLowerCase().includes(normalizedQuery) ||
           v.bio.toLowerCase().includes(normalizedQuery);
 
+        const matchesBoost = !onlyBoosted || v.subscription_tier > 1;
+        const matchesOpen = !onlyOpen || v.is_open;
+
         if (selectedSubcategory) {
-          return v.sub_category === selectedSubcategory && matchesSearch;
+          return v.sub_category === selectedSubcategory && matchesSearch && matchesBoost && matchesOpen;
         }
 
-        return v.category === activeCategory.name && matchesSearch;
+        return v.category === activeCategory.name && matchesSearch && matchesBoost && matchesOpen;
       });
       return rankVendorsForCustomer(scoped);
     },
-    [activeCategory.name, normalizedQuery, selectedSubcategory, vendors]
+    [activeCategory.name, normalizedQuery, onlyBoosted, onlyOpen, selectedSubcategory, vendors]
   );
 
   const handleCategoryPress = (index: number) => {
@@ -309,6 +314,52 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
           )}
         </View>
 
+        <View style={styles.discoveryMetaRow}>
+          <View style={styles.metaPill}>
+            <Ionicons name="location" size={12} color={theme.colors.primary} />
+            <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 5 }}>
+              {locality?.name || 'Yaba / Mainland'}
+            </VText>
+          </View>
+          <View style={styles.metaPill}>
+            <View style={[styles.feedDot, { backgroundColor: isRealtimeConnected ? theme.colors.accent : theme.colors.warning }]} />
+            <VText variant="caption" color={theme.colors.textMain}>
+              {dataSource === 'supabase' && isRealtimeConnected ? 'Live Feed' : 'Demo Feed'}
+            </VText>
+          </View>
+        </View>
+
+        <View style={styles.quickFilterRow}>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => setOnlyBoosted((value) => !value)}
+            style={[styles.quickFilterChip, onlyBoosted ? styles.quickFilterChipActive : styles.quickFilterChipInactive]}
+          >
+            <Ionicons name="sparkles" size={12} color={onlyBoosted ? '#FFFFFF' : theme.colors.primary} />
+            <VText variant="caption" color={onlyBoosted ? '#FFFFFF' : theme.colors.primary} style={{ marginLeft: 5 }}>
+              Boosted
+            </VText>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => setOnlyOpen((value) => !value)}
+            style={[styles.quickFilterChip, onlyOpen ? styles.quickFilterChipActive : styles.quickFilterChipInactive]}
+          >
+            <Ionicons name="radio-button-on" size={12} color={onlyOpen ? '#FFFFFF' : theme.colors.primary} />
+            <VText variant="caption" color={onlyOpen ? '#FFFFFF' : theme.colors.primary} style={{ marginLeft: 5 }}>
+              Open Now
+            </VText>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.priorityLegendCard}>
+          <VText variant="caption" color={theme.colors.textMuted}>RANKING ORDER</VText>
+          <VText variant="caption" color={theme.colors.textMain} style={{ marginTop: 2 }}>
+            Boosted first, then open status, rating, and name.
+          </VText>
+        </View>
+
         <View style={styles.modeSwitchRow}>
           <TouchableOpacity
             activeOpacity={0.85}
@@ -387,6 +438,59 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginTop: theme.spacing.sm,
     gap: theme.spacing.sm,
+  },
+  discoveryMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: theme.spacing.sm,
+  },
+  metaPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    marginRight: theme.spacing.xs,
+  },
+  feedDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    marginRight: 5,
+  },
+  quickFilterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: theme.spacing.sm,
+  },
+  quickFilterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    marginRight: theme.spacing.xs,
+  },
+  quickFilterChipActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  quickFilterChipInactive: {
+    backgroundColor: theme.colors.background,
+    borderColor: theme.colors.primaryLight,
+  },
+  priorityLegendCard: {
+    marginTop: theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(17, 92, 85, 0.12)',
+    borderRadius: normalize(12),
+    backgroundColor: '#F8FAFC',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
   },
   modeChip: {
     flexDirection: 'row',

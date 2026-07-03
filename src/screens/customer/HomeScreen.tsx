@@ -478,6 +478,31 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 {activeVendor.bio}
               </VText>
 
+              <View style={styles.rankReasonRow}>
+                {activeVendor.subscription_tier > 1 ? (
+                  <View style={[styles.rankReasonChip, styles.rankReasonBoosted]}>
+                    <Ionicons name="sparkles" size={11} color="#FFFFFF" />
+                    <VText variant="caption" color="#FFFFFF" style={{ marginLeft: 4 }}>
+                      Ranked for Boost Priority
+                    </VText>
+                  </View>
+                ) : (
+                  <View style={styles.rankReasonChip}>
+                    <Ionicons name="medal-outline" size={11} color={theme.colors.primary} />
+                    <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 4 }}>
+                      Ranked by Quality Signals
+                    </VText>
+                  </View>
+                )}
+
+                <View style={styles.rankReasonChip}>
+                  <Ionicons name={activeVendor.is_open ? 'radio-button-on' : 'pause-circle-outline'} size={11} color={theme.colors.primary} />
+                  <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 4 }}>
+                    {activeVendor.is_open ? 'Open Right Now' : 'Currently Offline'}
+                  </VText>
+                </View>
+              </View>
+
               {/* Popular Services Section */}
               <View style={styles.servicesContainer}>
                 <VText variant="caption" color={theme.colors.textMuted} style={{ fontWeight: '700', marginBottom: 6 }}>
@@ -824,6 +849,26 @@ const styles = StyleSheet.create({
   sheetBio: {
     marginBottom: theme.spacing.sm,
     lineHeight: normalize(18),
+  },
+  rankReasonRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.spacing.xs,
+    marginBottom: theme.spacing.sm,
+  },
+  rankReasonChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.primaryLight,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+  },
+  rankReasonBoosted: {
+    backgroundColor: '#F59E0B',
+    borderColor: '#F59E0B',
   },
   servicesContainer: {
     marginBottom: theme.spacing.md,
