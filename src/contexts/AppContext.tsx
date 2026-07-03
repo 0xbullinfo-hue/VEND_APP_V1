@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useAuthStore, useLocationStore, useTripStore, useUIStore, useVendorStore } from '../store';
+import { useAnalyticsStore, useAuthStore, useLocationStore, useTripStore, useUIStore, useVendorStore } from '../store';
 import { getPlanForTier } from '../lib/subscriptionPlans';
 
 // Export types so components importing from AppContext don't break
@@ -81,6 +81,7 @@ export const useApp = () => {
   const trip = useTripStore();
   const ui = useUIStore();
   const vendor = useVendorStore();
+  const analytics = useAnalyticsStore();
 
   const myVendorProfile = vendor.vendors.find(v => v.id === auth.user?.id) ?? null;
   const myVendorPlan = getPlanForTier(myVendorProfile?.subscription_tier);
@@ -91,6 +92,7 @@ export const useApp = () => {
     ...trip,
     ...ui,
     ...vendor,
+    ...analytics,
     myVendorProfile,
     myVendorPlan
   };

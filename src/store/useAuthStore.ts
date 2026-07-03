@@ -5,6 +5,7 @@ import { useUIStore } from './useUIStore';
 import { useVendorStore } from './useVendorStore';
 import { useTripStore } from './useTripStore';
 import { useLocationStore } from './useLocationStore';
+import { useAnalyticsStore } from './useAnalyticsStore';
 
 const AUTH_STORAGE_KEY = 'vend.auth.v1';
 
@@ -148,5 +149,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     useVendorStore.getState().resetSavedVendors();
     useTripStore.getState().resetTrips();
     useLocationStore.getState().resetLocality();
+    useAnalyticsStore.getState().resetAnalytics();
   }
 }));

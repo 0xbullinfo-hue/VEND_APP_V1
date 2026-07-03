@@ -563,6 +563,67 @@ function createAuthSessionModel(storage) {
   console.log("\n=================================================");
   console.log("   TEST CASE 8 COMPLETE                          ");
   console.log("=================================================");
+
+  // =================================================
+  // TEST CASE 9: Engagement Telemetry Aggregation (7-Day)
+  // =================================================
+  console.log("\n--- TEST CASE 9: Engagement Telemetry Aggregation (7-Day) ---");
+
+  const nowTs = Date.now();
+  const days = (d) => d * 24 * 60 * 60 * 1000;
+  const events = [
+    { vendorId: 'v1', type: 'profile_view', timestamp: nowTs - days(1) },
+    { vendorId: 'v1', type: 'profile_view', timestamp: nowTs - days(2) },
+    { vendorId: 'v1', type: 'directions_request', timestamp: nowTs - days(3) },
+    { vendorId: 'v1', type: 'chat_start', timestamp: nowTs - days(4) },
+    { vendorId: 'v1', type: 'profile_view', timestamp: nowTs - days(9) },
+    { vendorId: 'v1', type: 'chat_start', timestamp: nowTs - days(11) },
+    { vendorId: 'v2', type: 'profile_view', timestamp: nowTs - days(1) },
+  ];
+
+  function getVendorWindowMetrics(allEvents, vendorId, now) {
+    const sevenDaysAgo = now - days(7);
+    const fourteenDaysAgo = now - days(14);
+
+    const vendorEvents = allEvents.filter((e) => e.vendorId === vendorId);
+    const current = vendorEvents.filter((e) => e.timestamp >= sevenDaysAgo);
+    const previous = vendorEvents.filter((e) => e.timestamp >= fourteenDaysAgo && e.timestamp < sevenDaysAgo);
+
+    const profileViews7d = current.filter((e) => e.type === 'profile_view').length;
+    const directions7d = current.filter((e) => e.type === 'directions_request').length;
+    const chats7d = current.filter((e) => e.type === 'chat_start').length;
+
+    const growthDeltaPct = previous.length === 0
+      ? (current.length > 0 ? 100 : 0)
+      : Math.round(((current.length - previous.length) / previous.length) * 100);
+
+    return {
+      total7d: current.length,
+      totalPrev: previous.length,
+      profileViews7d,
+      directions7d,
+      chats7d,
+      growthDeltaPct,
+    };
+  }
+
+  const metrics = getVendorWindowMetrics(events, 'v1', nowTs);
+  if (
+    metrics.total7d === 4 &&
+    metrics.totalPrev === 2 &&
+    metrics.profileViews7d === 2 &&
+    metrics.directions7d === 1 &&
+    metrics.chats7d === 1 &&
+    metrics.growthDeltaPct === 100
+  ) {
+    console.log('✅ Success: 7-day engagement telemetry aggregates and trend calculations are correct.');
+  } else {
+    console.error('❌ Error: Telemetry aggregation mismatch.', metrics);
+  }
+
+  console.log("\n=================================================");
+  console.log("   TEST CASE 9 COMPLETE                          ");
+  console.log("=================================================");
 })().catch((err) => {
   console.error('❌ Error: Test Case 6 failed with exception:', err);
   process.exitCode = 1;

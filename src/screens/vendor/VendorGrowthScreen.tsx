@@ -3,6 +3,7 @@ import { View, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'reac
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, HeaderBar } from '../../components/SharedComponents';
 import { Ionicons } from '../../components/VIcons';
+import { useApp } from '../../contexts/AppContext';
 
 const { width } = Dimensions.get('window');
 
@@ -11,6 +12,36 @@ interface VendorGrowthScreenProps {
 }
 
 export const VendorGrowthScreen: React.FC<VendorGrowthScreenProps> = ({ onBack }) => {
+  const { analyticsEvents, myVendorProfile, vendors } = useApp();
+
+  const vendor = myVendorProfile || vendors[0];
+  const now = Date.now();
+  const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+  const fourteenDaysAgo = now - 14 * 24 * 60 * 60 * 1000;
+
+  const vendorEvents = analyticsEvents.filter((event) => event.vendorId === vendor.id);
+  const currentWindow = vendorEvents.filter((event) => event.timestamp >= sevenDaysAgo);
+  const previousWindow = vendorEvents.filter(
+    (event) => event.timestamp >= fourteenDaysAgo && event.timestamp < sevenDaysAgo
+  );
+
+  const profileViews7d = currentWindow.filter((event) => event.type === 'profile_view').length;
+  const directions7d = currentWindow.filter((event) => event.type === 'directions_request').length;
+  const chats7d = currentWindow.filter((event) => event.type === 'chat_start').length;
+  const total7dInteractions = currentWindow.length;
+  const totalPrevInteractions = previousWindow.length;
+  const growthDeltaPct =
+    totalPrevInteractions === 0
+      ? total7dInteractions > 0
+        ? 100
+        : 0
+      : Math.round(((total7dInteractions - totalPrevInteractions) / totalPrevInteractions) * 100);
+
+  const localityVendors = vendors.filter((item) => item.locality_id === vendor.locality_id);
+  const rankNow = Math.max(1, localityVendors.findIndex((item) => item.id === vendor.id) + 1);
+  const estimatedRank7dAgo = Math.min(localityVendors.length || 1, rankNow + (growthDeltaPct > 0 ? 1 : 0));
+  const rankMovement = Math.max(0, estimatedRank7dAgo - rankNow);
+
   return (
     <View style={styles.container}>
       <HeaderBar 
@@ -29,6 +60,46 @@ export const VendorGrowthScreen: React.FC<VendorGrowthScreenProps> = ({ onBack }
         
         <View style={styles.headerRow}>
           <VText variant="h2" style={{ fontSize: normalize(22) }}>Growth Hub</VText>
+        </View>
+
+        <View style={styles.sectionHeader}>
+          <VText variant="h3" color={theme.colors.textMuted} style={{ fontSize: normalize(12), letterSpacing: 1 }}>7-DAY IMPACT SNAPSHOT</VText>
+        </View>
+
+        <View style={styles.impactCard}>
+          <View style={styles.impactTopRow}>
+            <View>
+              <VText variant="caption" color={theme.colors.textMuted}>DISCOVERY MOMENTUM</VText>
+              <VText variant="h1" style={{ fontSize: normalize(28), marginTop: 2 }}>
+                {growthDeltaPct >= 0 ? '+' : ''}{growthDeltaPct}%
+              </VText>
+            </View>
+            <View style={styles.rankBadge}>
+              <Ionicons name="trending-up" size={14} color={theme.colors.primary} />
+              <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 5, fontWeight: '700' }}>
+                #{rankNow} in locality
+              </VText>
+            </View>
+          </View>
+
+          <View style={styles.impactMetricsRow}>
+            <View style={styles.impactMetricCell}>
+              <VText variant="caption" color={theme.colors.textMuted}>Profile Views</VText>
+              <VText variant="h2" style={{ marginTop: 2 }}>{profileViews7d}</VText>
+            </View>
+            <View style={styles.impactMetricCell}>
+              <VText variant="caption" color={theme.colors.textMuted}>Direction Requests</VText>
+              <VText variant="h2" style={{ marginTop: 2 }}>{directions7d}</VText>
+            </View>
+            <View style={styles.impactMetricCell}>
+              <VText variant="caption" color={theme.colors.textMuted}>Chat Starts</VText>
+              <VText variant="h2" style={{ marginTop: 2 }}>{chats7d}</VText>
+            </View>
+          </View>
+
+          <VText variant="caption" color={theme.colors.textMuted} style={{ marginTop: theme.spacing.sm }}>
+            Rank moved +{rankMovement} this week based on recent customer interactions across profile views, directions, and chats.
+          </VText>
         </View>
 
         {/* HERO CARD - POINTS */}
@@ -207,6 +278,44 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.lg,
     marginBottom: theme.spacing.sm,
     marginTop: theme.spacing.sm,
+  },
+  impactCard: {
+    backgroundColor: theme.colors.background,
+    marginHorizontal: theme.spacing.lg,
+    borderRadius: normalize(16),
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    padding: theme.spacing.lg,
+    marginBottom: theme.spacing.xl,
+  },
+  impactTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: theme.spacing.sm,
+  },
+  rankBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: theme.colors.primaryLight,
+    backgroundColor: '#F8FAFC',
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+  },
+  impactMetricsRow: {
+    flexDirection: 'row',
+    gap: theme.spacing.xs,
+  },
+  impactMetricCell: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+    borderRadius: normalize(12),
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.sm,
   },
   optimizerCard: {
     backgroundColor: theme.colors.surface,

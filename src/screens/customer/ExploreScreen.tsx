@@ -25,7 +25,7 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
   onViewVendorProfile,
   onViewRewards
 }) => {
-  const { vendors, addPoints, locality, isRealtimeConnected, dataSource } = useApp();
+  const { vendors, addPoints, locality, isRealtimeConnected, dataSource, trackProfileView } = useApp();
   const [activeCategoryIndex, setActiveCategoryIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
@@ -88,7 +88,10 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
         <TouchableOpacity
           key={vendor.id}
           activeOpacity={0.85}
-          onPress={() => onViewVendorProfile(vendor.id)}
+          onPress={() => {
+            trackProfileView(vendor.id);
+            onViewVendorProfile(vendor.id);
+          }}
           style={[
             styles.vendorResultCard,
             isPremium ? styles.cardPremium : styles.cardNormal,
