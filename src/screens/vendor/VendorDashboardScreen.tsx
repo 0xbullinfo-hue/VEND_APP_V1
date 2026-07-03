@@ -28,6 +28,14 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
   
   // Use the logged-in vendor's own linked business profile.
   const vendor = myVendorProfile || vendors[0];
+  const rankedLocalityVendors = vendors.filter((item) => item.locality_id === vendor.locality_id);
+  const rankingPosition = Math.max(1, rankedLocalityVendors.findIndex((item) => item.id === vendor.id) + 1);
+  const boostedCompetitors = rankedLocalityVendors.filter((item) => item.subscription_tier > 1).length;
+  const visibilityDelta = myVendorPlan.boosted ? '+38%' : '+7%';
+  const estimatedWeeklyLeads = myVendorPlan.boosted ? 24 : 11;
+  const rankingHint = myVendorPlan.boosted
+    ? 'Boost tier keeps your profile above standard listings when customers browse your locality.'
+    : 'Upgrade to Premium Boosted to move ahead of standard listings in customer discovery.';
 
   return (
     <View style={styles.container}>
@@ -64,6 +72,57 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
             </View>
           </View>
         </TouchableOpacity>
+
+        <View style={[styles.sectionHeader, { marginTop: theme.spacing.xs }]}>
+          <VText variant="h2" style={{ fontSize: normalize(18) }}>Boost Impact Analytics</VText>
+        </View>
+
+        <View style={[styles.boostImpactCard, theme.shadows.soft]}>
+          <View style={styles.boostImpactHeaderRow}>
+            <View>
+              <VText variant="caption" color={theme.colors.textMuted}>LOCALITY RANK POSITION</VText>
+              <VText variant="h1" style={{ fontSize: normalize(28), marginTop: 2 }}>#{rankingPosition}</VText>
+            </View>
+            <View style={styles.planPill}>
+              <Ionicons name={myVendorPlan.boosted ? 'sparkles' : 'diamond-outline'} size={14} color={theme.colors.primary} />
+              <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 6, fontWeight: '700' }}>
+                {myVendorPlan.name}
+              </VText>
+            </View>
+          </View>
+
+          <View style={styles.analyticsGrid}>
+            <View style={styles.analyticsCell}>
+              <VText variant="caption" color={theme.colors.textMuted}>Visibility Lift</VText>
+              <VText variant="h2" color={theme.colors.primary} style={{ marginTop: 2 }}>{visibilityDelta}</VText>
+            </View>
+            <View style={styles.analyticsCell}>
+              <VText variant="caption" color={theme.colors.textMuted}>Boosted Competitors</VText>
+              <VText variant="h2" style={{ marginTop: 2 }}>{boostedCompetitors}</VText>
+            </View>
+            <View style={styles.analyticsCell}>
+              <VText variant="caption" color={theme.colors.textMuted}>Est. Weekly Leads</VText>
+              <VText variant="h2" style={{ marginTop: 2 }}>{estimatedWeeklyLeads}</VText>
+            </View>
+          </View>
+
+          <VText variant="caption" color={theme.colors.textMuted} style={{ marginTop: theme.spacing.sm }}>
+            {rankingHint}
+          </VText>
+
+          {!myVendorPlan.boosted && (
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={onManageSubscription}
+              style={styles.upgradePromptBtn}
+            >
+              <Ionicons name="rocket-outline" size={16} color="#FFFFFF" />
+              <VText variant="caption" color="#FFFFFF" style={{ marginLeft: 8, fontWeight: '700' }}>
+                Upgrade To Premium Boosted
+              </VText>
+            </TouchableOpacity>
+          )}
+        </View>
 
         {/* VISIBILITY OPTIMIZER */}
         <View style={styles.sectionHeader}>
@@ -268,6 +327,57 @@ const styles = StyleSheet.create({
   sectionHeader: {
     paddingHorizontal: theme.spacing.lg,
     marginBottom: theme.spacing.sm,
+  },
+  boostImpactCard: {
+    marginHorizontal: theme.spacing.lg,
+    marginBottom: theme.spacing.lg,
+    backgroundColor: theme.colors.background,
+    borderRadius: normalize(16),
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    padding: theme.spacing.lg,
+  },
+  boostImpactHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: theme.spacing.sm,
+  },
+  planPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: theme.colors.primaryLight,
+    backgroundColor: '#F8FAFC',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+  },
+  analyticsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: theme.spacing.sm,
+    gap: theme.spacing.xs,
+  },
+  analyticsCell: {
+    flex: 1,
+    backgroundColor: theme.colors.surface,
+    borderRadius: normalize(12),
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.sm,
+  },
+  upgradePromptBtn: {
+    marginTop: theme.spacing.md,
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.primary,
+    borderRadius: 999,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
   },
   taskContainer: {
     backgroundColor: theme.colors.surface,
