@@ -6,7 +6,8 @@ import {
   TouchableOpacity, 
   Dimensions, 
   Image,
-  Platform
+  Platform,
+  TextInput,
 } from 'react-native';
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import MapView, { Marker, Circle, PROVIDER_GOOGLE } from 'react-native-maps';
@@ -34,6 +35,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const { vendors, addPoints, locality, dataSource, isRealtimeConnected, isLoadingVendors } = useApp();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedVendorId, setSelectedVendorId] = useState<string | null>(null); // Starts with no selection, showing promo bar
+  const [searchQuery, setSearchQuery] = useState('');
+  const [onlyBoosted, setOnlyBoosted] = useState(false);
+  const [onlyOpen, setOnlyOpen] = useState(true);
+  const [onlyHomeBased, setOnlyHomeBased] = useState(false);
 
   const categories = useMemo(
     () => [
@@ -45,11 +50,28 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
   // Filter vendors based on active category
   const filteredVendors = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+
     const scoped = selectedCategory && selectedCategory !== 'All'
       ? vendors.filter(v => v.category === selectedCategory)
       : vendors;
-    return rankVendorsForCustomer(scoped);
-  }, [selectedCategory, vendors]);
+
+    const searched = scoped.filter((v) => {
+      const matchesSearch =
+        normalizedQuery === '' ||
+        v.business_name.toLowerCase().includes(normalizedQuery) ||
+        v.category.toLowerCase().includes(normalizedQuery) ||
+        v.sub_category.toLowerCase().includes(normalizedQuery);
+
+      const matchesBoost = !onlyBoosted || v.subscription_tier > 1;
+      const matchesOpen = !onlyOpen || v.is_open;
+      const matchesHome = !onlyHomeBased || v.is_home_based;
+
+      return matchesSearch && matchesBoost && matchesOpen && matchesHome;
+    });
+
+    return rankVendorsForCustomer(searched);
+  }, [selectedCategory, vendors, searchQuery, onlyBoosted, onlyOpen, onlyHomeBased]);
 
   const promoVendors = useMemo(() => rankVendorsForCustomer(vendors), [vendors]);
 
@@ -155,6 +177,72 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
       {/* Interactive Map Viewport */}
       <View style={styles.mapContainer}>
+        <View style={styles.discoveryRail}>
+          <View style={styles.discoveryTopRow}>
+            <View style={styles.localityPill}>
+              <Ionicons name="location" size={14} color={theme.colors.primary} />
+              <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 6 }}>
+                {locality?.name || 'Yaba / Mainland'}
+              </VText>
+            </View>
+            <View style={styles.livePill}>
+              <View style={styles.liveDot} />
+              <VText variant="caption" color={theme.colors.textMain}>Live</VText>
+            </View>
+          </View>
+
+          <View style={styles.searchRailBox}>
+            <Ionicons name="search" size={18} color={theme.colors.textMuted} style={{ marginRight: 8 }} />
+            <TextInput
+              placeholder="Search vendors, categories, locality services..."
+              placeholderTextColor={theme.colors.textMuted}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              style={[styles.searchRailInput, { fontFamily: theme.typography.fontSans }]}
+            />
+            {searchQuery ? (
+              <TouchableOpacity activeOpacity={0.8} onPress={() => setSearchQuery('')}>
+                <Ionicons name="close-circle" size={18} color={theme.colors.textMuted} />
+              </TouchableOpacity>
+            ) : null}
+          </View>
+
+          <View style={styles.priorityChipRow}>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => setOnlyBoosted((v) => !v)}
+              style={[styles.priorityChip, onlyBoosted ? styles.priorityChipActive : styles.priorityChipInactive]}
+            >
+              <Ionicons name="sparkles" size={12} color={onlyBoosted ? '#FFFFFF' : theme.colors.primary} />
+              <VText variant="caption" color={onlyBoosted ? '#FFFFFF' : theme.colors.primary} style={{ marginLeft: 4 }}>
+                Boosted
+              </VText>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => setOnlyOpen((v) => !v)}
+              style={[styles.priorityChip, onlyOpen ? styles.priorityChipActive : styles.priorityChipInactive]}
+            >
+              <Ionicons name="radio-button-on" size={12} color={onlyOpen ? '#FFFFFF' : theme.colors.primary} />
+              <VText variant="caption" color={onlyOpen ? '#FFFFFF' : theme.colors.primary} style={{ marginLeft: 4 }}>
+                Open Now
+              </VText>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => setOnlyHomeBased((v) => !v)}
+              style={[styles.priorityChip, onlyHomeBased ? styles.priorityChipActive : styles.priorityChipInactive]}
+            >
+              <Ionicons name="home" size={12} color={onlyHomeBased ? '#FFFFFF' : theme.colors.primary} />
+              <VText variant="caption" color={onlyHomeBased ? '#FFFFFF' : theme.colors.primary} style={{ marginLeft: 4 }}>
+                Home-Based
+              </VText>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         <MapView
           ref={mapRef}
           style={StyleSheet.absoluteFillObject}
@@ -245,6 +333,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           <TouchableOpacity activeOpacity={0.8} onPress={handleZoomOut} style={styles.zoomBtn}>
             <Ionicons name="remove" size={24} color={theme.colors.primary} />
           </TouchableOpacity>
+        </View>
+
+        <View style={styles.tierLegendCard}>
+          <View style={styles.legendRow}>
+            <View style={[styles.legendDot, { backgroundColor: '#F59E0B' }]} />
+            <VText variant="caption" color={theme.colors.textMain}>Boosted</VText>
+          </View>
+          <View style={styles.legendRow}>
+            <View style={[styles.legendDot, { backgroundColor: '#2563EB' }]} />
+            <VText variant="caption" color={theme.colors.textMain}>Verified</VText>
+          </View>
+          <View style={styles.legendRow}>
+            <View style={[styles.legendDot, { backgroundColor: '#6B7280' }]} />
+            <VText variant="caption" color={theme.colors.textMain}>Home-Based</VText>
+          </View>
         </View>
 
         {/* Floating Category Quick Filter bar */}
@@ -563,7 +666,7 @@ const styles = StyleSheet.create({
   // Floating menus
   floatingCategoryBar: {
     position: 'absolute',
-    top: theme.spacing.md,
+    top: normalize(132),
     left: 0,
     right: 0,
     height: normalize(38),
@@ -601,7 +704,7 @@ const styles = StyleSheet.create({
   },
   floatingExploreBtn: {
     position: 'absolute',
-    top: normalize(60),
+    top: normalize(176),
     right: theme.spacing.lg,
     flexDirection: 'row',
     backgroundColor: theme.colors.primary,
@@ -758,7 +861,7 @@ const styles = StyleSheet.create({
   zoomControls: {
     position: 'absolute',
     right: theme.spacing.md,
-    top: '30%',
+    top: '42%',
     backgroundColor: theme.colors.surface,
     borderRadius: normalize(12),
     ...theme.shadows.soft
@@ -772,6 +875,107 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: theme.colors.border,
     marginHorizontal: normalize(8),
+  },
+  discoveryRail: {
+    position: 'absolute',
+    top: theme.spacing.sm,
+    left: theme.spacing.md,
+    right: theme.spacing.md,
+    zIndex: 12,
+    gap: theme.spacing.xs,
+  },
+  discoveryTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  localityPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.94)',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(17, 92, 85, 0.14)',
+  },
+  livePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.94)',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  liveDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: theme.colors.accent,
+    marginRight: 6,
+  },
+  searchRailBox: {
+    height: normalize(44),
+    backgroundColor: 'rgba(255,255,255,0.97)',
+    borderRadius: normalize(14),
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingHorizontal: theme.spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    ...theme.shadows.soft,
+  },
+  searchRailInput: {
+    flex: 1,
+    height: '100%',
+    color: theme.colors.textMain,
+    fontSize: normalize(13),
+  },
+  priorityChipRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+  },
+  priorityChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  priorityChipActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  priorityChipInactive: {
+    backgroundColor: 'rgba(255,255,255,0.96)',
+    borderColor: theme.colors.primaryLight,
+  },
+  tierLegendCard: {
+    position: 'absolute',
+    right: theme.spacing.md,
+    top: normalize(238),
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderRadius: normalize(12),
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    gap: 5,
+    ...theme.shadows.soft,
+  },
+  legendRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  legendDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
   },
 });
 
