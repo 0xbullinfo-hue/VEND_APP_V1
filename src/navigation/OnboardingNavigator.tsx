@@ -53,12 +53,14 @@ const LocalityAdapter = () => {
 };
 
 const OnboardingCompleteAdapter = () => {
-  const { login } = useApp();
+  const { completeOnboarding } = useApp();
   return (
     <OnboardingCompleteScreen
-      // The login call sets the user in AppContext — RootNavigator reacts and
-      // automatically switches to CustomerApp or VendorApp.
-      onEnterApp={() => login('08012345678', 'customer', 'New User')}
+      // Auth is already established in PhoneAuth; this marks onboarding complete
+      // so RootNavigator can route to the appropriate app stack.
+      onEnterApp={() => {
+        void completeOnboarding();
+      }}
     />
   );
 };

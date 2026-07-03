@@ -6,18 +6,30 @@ import { getPlanForTier } from '../lib/subscriptionPlans';
 export type { UserProfile, DirectionRequest, EmergencyContact } from '../types';
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const isHydrated = useAuthStore((state) => state.isHydrated);
+  const hydrateAuthSession = useAuthStore((state) => state.hydrateAuthSession);
   const localityId = useLocationStore((state) => state.locality?.id);
   const refreshVendorsForLocality = useVendorStore((state) => state.refreshVendorsForLocality);
   const connectVendorRealtime = useVendorStore((state) => state.connectVendorRealtime);
 
   useEffect(() => {
-    void refreshVendorsForLocality(localityId);
-  }, [localityId, refreshVendorsForLocality]);
+    void hydrateAuthSession();
+  }, [hydrateAuthSession]);
 
   useEffect(() => {
+    if (!isHydrated) {
+      return;
+    }
+    void refreshVendorsForLocality(localityId);
+  }, [isHydrated, localityId, refreshVendorsForLocality]);
+
+  useEffect(() => {
+    if (!isHydrated) {
+      return;
+    }
     const cleanup = connectVendorRealtime(localityId);
     return () => cleanup();
-  }, [localityId, connectVendorRealtime]);
+  }, [isHydrated, localityId, connectVendorRealtime]);
 
   return <>{children}</>;
 };
