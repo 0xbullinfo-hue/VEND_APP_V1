@@ -16,7 +16,20 @@ Expected:
 - `npm run test:logic` prints all success checks in the verification suite.
 - `npm run test:review` runs both checks in sequence and passes.
 
-## 2) Manual Premium UX Review Checklist
+## 2) Preview with Expo
+Use this fast preview flow during development:
+
+1. Start the Expo dev server:
+  - `npm run expo:start`
+2. Open the app on Android emulator directly:
+  - `npm run expo:android`
+3. Optional browser preview:
+  - `npm run expo:web`
+
+If the bundler acts stale, clear cache with:
+- `npx expo start -c`
+
+## 3) Manual Premium UX Review Checklist
 Use this checklist before pushing release-level changes.
 
 ### A. Navigation and IA
@@ -40,7 +53,7 @@ Use this checklist before pushing release-level changes.
 - Vendor cards show coherent open/closed state.
 - Locality-scoped vendor results look correct for selected locality.
 
-## 3) Real-Time Locality Validation (Supabase On)
+## 4) Real-Time Locality Validation (Supabase On)
 Precondition:
 - Set real values for `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY`.
 - Ensure backend rows exist in locality and vendor tables.
@@ -58,7 +71,7 @@ Pass criteria:
 - Vendor changes are reflected in UI after realtime events.
 - Locality switch triggers new locality dataset.
 
-## 4) Fallback Validation (Supabase Off)
+## 5) Fallback Validation (Supabase Off)
 Steps:
 1. Run app without real Supabase env values.
 2. Confirm status reads `Using local demo dataset`.
@@ -68,9 +81,9 @@ Pass criteria:
 - App is fully usable in mock mode.
 - No crash or blank list when backend config is missing.
 
-## 5) Release Gate
+## 6) Release Gate
 Minimum gate to merge:
 - `npm run test:review` passes.
-- Manual checklist sections 2A-2D pass.
-- One realtime validation pass (Section 3) recorded by QA/dev.
-- One fallback validation pass (Section 4) recorded by QA/dev.
+- Manual checklist sections 3A-3D pass.
+- One realtime validation pass (Section 4) recorded by QA/dev.
+- One fallback validation pass (Section 5) recorded by QA/dev.

@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Expo: Attach to Packager",
+      "cwd": "${workspaceFolder}",
+      "type": "reactnative",
+      "request": "attach",
+      "port": 19002
+    },
+    {
+      "name": "Expo: Launch on Android",
+      "cwd": "${workspaceFolder}",
+      "type": "reactnative",
+      "request": "launch",
+      "platform": "android",
+      "enableDebug": true,
+      "preLaunchTask": "Expo: Start"
+    }
+  ]
+}

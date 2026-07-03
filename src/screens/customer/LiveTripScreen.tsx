@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { StyleSheet, View, SafeAreaView, TouchableOpacity, Share, Alert, Platform } from 'react-native';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
-import MapViewDirections from 'react-native-maps-directions';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, VButton, HeaderBar } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
@@ -38,6 +37,15 @@ export const LiveTripScreen: React.FC<LiveTripScreenProps> = ({ onTripEnd, onArr
     latitudeDelta: 0.05,
     longitudeDelta: 0.05,
   };
+
+  useEffect(() => {
+    const latDiff = destination.latitude - origin.latitude;
+    const lngDiff = destination.longitude - origin.longitude;
+    const approxDistanceKm = Math.sqrt(latDiff * latDiff + lngDiff * lngDiff) * 111;
+
+    setDistance(Math.round(approxDistanceKm * 10) / 10);
+    setEta(Math.max(3, Math.ceil(approxDistanceKm * 4.5)));
+  }, [destination.latitude, destination.longitude, origin.latitude, origin.longitude]);
 
   const handleShareTrip = async () => {
     try {
@@ -125,26 +133,6 @@ export const LiveTripScreen: React.FC<LiveTripScreenProps> = ({ onTripEnd, onArr
             lineDashPattern={[5, 5]}
           />
 
-          {/* Directions Polyline */}
-          <MapViewDirections
-            origin={origin}
-            destination={destination}
-            apikey="AQ.Ab8RN6IgGs25ExGkvrPHwqWh_XeFGdoUdyn5Ow2IJ4X0-ZB7EQ" 
-            strokeWidth={5}
-            strokeColor={theme.colors.primary}
-            onReady={(result) => {
-              setDistance(Math.round(result.distance * 10) / 10);
-              setEta(Math.ceil(result.duration));
-              mapRef.current?.fitToCoordinates(result.coordinates, {
-                edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
-                animated: true,
-              });
-            }}
-            onError={(errorMessage) => {
-              // Fallback if API key is missing or invalid
-              console.warn("MapViewDirections Error: ", errorMessage);
-            }}
-          />
         </MapView>
 
         {/* Floating SOS Panic Button */}

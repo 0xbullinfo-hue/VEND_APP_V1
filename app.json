@@ -1,4 +1,7 @@
 {
   "name": "VEND",
-  "displayName": "VEND"
+  "displayName": "VEND",
+  "android": {
+    "package": "com.anonymous.vend"
+  }
 }
