@@ -12,7 +12,7 @@ interface LocalitySelectionScreenProps {
 }
 
 export const LocalitySelectionScreen: React.FC<LocalitySelectionScreenProps> = ({ onLocalityConfirmed }) => {
-  const { setLocalityById } = useApp();
+  const { setLocalityById, setOnboardingLocality } = useApp();
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -63,9 +63,10 @@ export const LocalitySelectionScreen: React.FC<LocalitySelectionScreenProps> = (
     );
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (selectedId !== null) {
       setLocalityById(selectedId);
+      await setOnboardingLocality(selectedId);
       onLocalityConfirmed();
     }
   };

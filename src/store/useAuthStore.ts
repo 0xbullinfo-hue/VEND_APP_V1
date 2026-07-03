@@ -20,6 +20,8 @@ interface AuthState {
   onboardingCompleted: boolean;
   isHydrated: boolean;
   login: (phone: string, role: 'customer' | 'vendor', name: string) => Promise<void>;
+  setOnboardingLocality: (localityId: number) => Promise<void>;
+  setReferralCode: (code: string) => Promise<void>;
   completeOnboarding: () => Promise<void>;
   hydrateAuthSession: () => Promise<void>;
   logout: () => void;
@@ -62,6 +64,45 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (selectedRole === 'vendor') {
       useVendorStore.getState().ensureVendorProfile(mockUser);
     }
+  },
+
+  setOnboardingLocality: async (localityId) => {
+    const { user, role, onboardingCompleted } = get();
+    if (!user || !role) {
+      return;
+    }
+
+    const updatedUser: UserProfile = {
+      ...user,
+      localityId,
+    };
+
+    set({ user: updatedUser });
+    await persistAuth({
+      user: updatedUser,
+      role,
+      onboardingCompleted,
+    });
+  },
+
+  setReferralCode: async (code) => {
+    const { user, role, onboardingCompleted } = get();
+    if (!user || !role) {
+      return;
+    }
+
+    const normalizedCode = code.trim();
+    const updatedUser: UserProfile = {
+      ...user,
+      referralCode: normalizedCode || undefined,
+    };
+
+    set({ user: updatedUser });
+    await persistAuth({
+      user: updatedUser,
+      role,
+      onboardingCompleted,
+    });
   },
 
   completeOnboarding: async () => {

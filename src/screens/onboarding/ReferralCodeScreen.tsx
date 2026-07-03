@@ -10,20 +10,22 @@ interface ReferralCodeScreenProps {
 }
 
 export const ReferralCodeScreen: React.FC<ReferralCodeScreenProps> = ({ onContinue }) => {
-  const { addPoints } = useApp();
+  const { addPoints, setReferralCode } = useApp();
   const [code, setCode] = useState('');
   const [showOverlay, setShowOverlay] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!code.trim()) {
+      await setReferralCode('');
       onContinue();
       return;
     }
     
     setLoading(true);
-    setTimeout(() => {
+    setTimeout(async () => {
       setLoading(false);
+      await setReferralCode(code);
       // Give points to user!
       addPoints(50);
       setShowOverlay(true);
