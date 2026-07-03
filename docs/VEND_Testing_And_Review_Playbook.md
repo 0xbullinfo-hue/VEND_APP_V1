@@ -29,6 +29,11 @@ Use this fast preview flow during development:
 If the bundler acts stale, clear cache with:
 - `npx expo start -c`
 
+Network notes for phone preview:
+- Keep phone and laptop on the same Wi-Fi network.
+- Current workspace default uses LAN host mode on port `19002`.
+- If QR scan fails, manually enter the `exp://<LAN_IP>:19002` URL shown in terminal.
+
 ## 3) Manual Premium UX Review Checklist
 Use this checklist before pushing release-level changes.
 

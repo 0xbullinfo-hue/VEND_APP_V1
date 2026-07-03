@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "expo:start": "expo start --port 19002",
+    "expo:start": "set REACT_NATIVE_PACKAGER_HOSTNAME=192.168.11.37 && expo start --lan --port 19002",
     "expo:android": "expo start --android --port 19002",
     "expo:web": "expo start --web --port 19002",
     "start": "expo start --dev-client",
