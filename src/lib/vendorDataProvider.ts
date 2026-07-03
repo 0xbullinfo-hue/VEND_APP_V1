@@ -101,6 +101,14 @@ export const fetchVendorsByLocality = async (localityId?: number): Promise<Vendo
       vendorQuery = vendorQuery.eq('locality_id', localityId);
     }
 
+    // Apply server-side ranking for consistency with client ranking:
+    // boosted first, then online, then rating.
+    vendorQuery = vendorQuery
+      .order('subscription_tier', { ascending: false })
+      .order('is_open', { ascending: false })
+      .order('rating', { ascending: false })
+      .order('business_name', { ascending: true });
+
     const { data: vendorRows, error: vendorError } = await vendorQuery;
 
     if (vendorError) {

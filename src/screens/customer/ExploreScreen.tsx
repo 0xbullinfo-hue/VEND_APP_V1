@@ -192,9 +192,14 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
         </View>
 
         <View style={styles.resultsHeader}>
-          <VText variant="caption" color={theme.colors.textMuted}>
-            {filteredVendors.length} VENDORS FOUND
-          </VText>
+          <View>
+            <VText variant="caption" color={theme.colors.textMuted}>
+              {filteredVendors.length} VENDORS FOUND
+            </VText>
+            <VText variant="caption" color={theme.colors.primary}>
+              Boosted profiles prioritized in your locality
+            </VText>
+          </View>
         </View>
         {renderVendors()}
       </ScrollView>
@@ -259,9 +264,14 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
 
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.resultsScroll}>
             <View style={styles.resultsHeader}>
-              <VText variant="caption" color={theme.colors.textMuted}>
-                {filteredVendors.length} VENDORS FOUND
-              </VText>
+              <View>
+                <VText variant="caption" color={theme.colors.textMuted}>
+                  {filteredVendors.length} VENDORS FOUND
+                </VText>
+                <VText variant="caption" color={theme.colors.primary}>
+                  Boosted profiles prioritized in your locality
+                </VText>
+              </View>
             </View>
             {renderVendors()}
           </ScrollView>

@@ -143,9 +143,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               : 'Using local demo dataset'}
           </VText>
         </View>
-        <VText variant="caption" color={theme.colors.primary}>
-          {filteredVendors.length} visible
-        </VText>
+        <View style={{ alignItems: 'flex-end' }}>
+          <VText variant="caption" color={theme.colors.primary}>
+            {filteredVendors.length} visible
+          </VText>
+          <VText variant="caption" color={theme.colors.textMuted}>
+            Boosted vendors prioritized
+          </VText>
+        </View>
       </View>
 
       {/* Interactive Map Viewport */}
@@ -293,7 +298,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         <View style={styles.promoBar}>
           <View style={styles.promoHeader}>
             <VText variant="h3">Unvisited Gems Nearby</VText>
-            <VText variant="caption" color={theme.colors.primary}>EARN +20 PTS</VText>
+            <VText variant="caption" color={theme.colors.primary}>BOOST FIRST • EARN +20 PTS</VText>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.promoScroll}>
             {promoVendors.map((v) => (
