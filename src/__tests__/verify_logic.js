@@ -277,3 +277,166 @@ if (cryptoAttempt === MIN_TIER && MAX_TIER === 2) {
 console.log("\n=================================================");
 console.log("   TEST CASE 5 COMPLETE                          ");
 console.log("=================================================");
+
+
+// =================================================
+// TEST CASE 6: Auth Session Hydration + Onboarding Gate
+// =================================================
+// Mirrors the new useAuthStore + RootNavigator contract:
+// 1) App waits until auth is hydrated.
+// 2) If no user, route to onboarding.
+// 3) If user exists but onboarding is incomplete, stay in onboarding.
+// 4) Only hydrated + authenticated + onboarding complete enters app stack.
+
+console.log("\n--- TEST CASE 6: Auth Session Hydration + Onboarding Gate ---");
+
+const AUTH_STORAGE_KEY = 'vend.auth.v1';
+
+function createMemoryStorage() {
+  const db = {};
+  return {
+    async getItem(key) {
+      return Object.prototype.hasOwnProperty.call(db, key) ? db[key] : null;
+    },
+    async setItem(key, value) {
+      db[key] = value;
+    },
+    async removeItem(key) {
+      delete db[key];
+    }
+  };
+}
+
+function getRootRoute(state) {
+  if (!state.isHydrated) return 'HydrationLoading';
+  if (!state.user || !state.onboardingCompleted) return 'Onboarding';
+  return state.role === 'vendor' ? 'VendorApp' : 'CustomerApp';
+}
+
+function createAuthSessionModel(storage) {
+  const state = {
+    user: null,
+    role: null,
+    onboardingCompleted: false,
+    isHydrated: false
+  };
+
+  return {
+    getState() {
+      return { ...state };
+    },
+    async login(phone, role, name) {
+      state.user = {
+        id: 'u_test_auth_1',
+        phone,
+        role,
+        name,
+      };
+      state.role = role;
+      state.onboardingCompleted = false;
+      await storage.setItem(AUTH_STORAGE_KEY, JSON.stringify({
+        user: state.user,
+        role: state.role,
+        onboardingCompleted: state.onboardingCompleted,
+      }));
+    },
+    async completeOnboarding() {
+      if (!state.user || !state.role) return;
+      state.onboardingCompleted = true;
+      await storage.setItem(AUTH_STORAGE_KEY, JSON.stringify({
+        user: state.user,
+        role: state.role,
+        onboardingCompleted: state.onboardingCompleted,
+      }));
+    },
+    async hydrateAuthSession() {
+      try {
+        const raw = await storage.getItem(AUTH_STORAGE_KEY);
+        if (!raw) {
+          state.isHydrated = true;
+          return;
+        }
+        const parsed = JSON.parse(raw);
+        state.user = parsed.user;
+        state.role = parsed.role;
+        state.onboardingCompleted = !!parsed.onboardingCompleted;
+        state.isHydrated = true;
+      } catch {
+        state.isHydrated = true;
+      }
+    },
+    async logout() {
+      state.user = null;
+      state.role = null;
+      state.onboardingCompleted = false;
+      state.isHydrated = true;
+      await storage.removeItem(AUTH_STORAGE_KEY);
+    }
+  };
+}
+
+(async () => {
+  const storage = createMemoryStorage();
+
+  // 6a. Initial cold state: before hydration we should show loading gate.
+  const appA = createAuthSessionModel(storage);
+  let route = getRootRoute(appA.getState());
+  if (route === 'HydrationLoading') {
+    console.log('✅ Success: Root gate blocks navigation until hydration completes.');
+  } else {
+    console.error('❌ Error: App should not route before hydration.');
+  }
+
+  // 6b. Hydrated with empty storage: onboarding should show.
+  await appA.hydrateAuthSession();
+  route = getRootRoute(appA.getState());
+  if (route === 'Onboarding') {
+    console.log('✅ Success: Empty hydrated session correctly routes to onboarding.');
+  } else {
+    console.error('❌ Error: Empty hydrated session routed incorrectly.');
+  }
+
+  // 6c. After login but before onboarding completion: still onboarding.
+  await appA.login('08011112222', 'customer', 'Hydration Test User');
+  route = getRootRoute(appA.getState());
+  if (route === 'Onboarding' && appA.getState().onboardingCompleted === false) {
+    console.log('✅ Success: Logged-in but incomplete onboarding remains in onboarding flow.');
+  } else {
+    console.error('❌ Error: Incomplete onboarding should not enter app stack.');
+  }
+
+  // 6d. Onboarding completion should unlock customer app stack.
+  await appA.completeOnboarding();
+  route = getRootRoute(appA.getState());
+  if (route === 'CustomerApp') {
+    console.log('✅ Success: Completing onboarding unlocks customer app stack.');
+  } else {
+    console.error('❌ Error: Completed onboarding did not unlock customer app route.');
+  }
+
+  // 6e. Persistence check: fresh app instance should hydrate straight into app stack.
+  const appB = createAuthSessionModel(storage);
+  await appB.hydrateAuthSession();
+  route = getRootRoute(appB.getState());
+  if (route === 'CustomerApp') {
+    console.log('✅ Success: Persisted session hydrates directly into customer app.');
+  } else {
+    console.error('❌ Error: Persisted session hydration route mismatch.');
+  }
+
+  // 6f. Logout should clear storage and return to onboarding.
+  await appB.logout();
+  route = getRootRoute(appB.getState());
+  if (route === 'Onboarding') {
+    console.log('✅ Success: Logout clears session and routes back to onboarding.');
+  } else {
+    console.error('❌ Error: Logout did not reset routing state.');
+  }
+
+  console.log("\n=================================================");
+  console.log("   TEST CASE 6 COMPLETE                          ");
+  console.log("=================================================");
+})().catch((err) => {
+  console.error('❌ Error: Test Case 6 failed with exception:', err);
+  process.exitCode = 1;
+});
