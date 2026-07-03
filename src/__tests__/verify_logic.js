@@ -502,6 +502,67 @@ function createAuthSessionModel(storage) {
   console.log("\n=================================================");
   console.log("   TEST CASE 7 COMPLETE                          ");
   console.log("=================================================");
+
+  // =================================================
+  // TEST CASE 8: Boosted Vendor Ranking Priority
+  // =================================================
+  console.log("\n--- TEST CASE 8: Boosted Vendor Ranking Priority ---");
+
+  const rankVendorsForCustomer = (rows) => {
+    return [...rows].sort((a, b) => {
+      const aBoost = a.subscription_tier > 1 ? 1 : 0;
+      const bBoost = b.subscription_tier > 1 ? 1 : 0;
+      if (bBoost !== aBoost) return bBoost - aBoost;
+
+      const aOpen = a.is_open ? 1 : 0;
+      const bOpen = b.is_open ? 1 : 0;
+      if (bOpen !== aOpen) return bOpen - aOpen;
+
+      if (b.rating !== a.rating) return b.rating - a.rating;
+
+      return a.business_name.localeCompare(b.business_name);
+    });
+  };
+
+  const rankingCandidates = [
+    { id: 'v_low', business_name: 'Alpha Services', subscription_tier: 1, is_open: true, rating: 5.0 },
+    { id: 'v_boost_closed', business_name: 'Boosted Closed', subscription_tier: 2, is_open: false, rating: 4.9 },
+    { id: 'v_boost_open', business_name: 'Boosted Open', subscription_tier: 2, is_open: true, rating: 4.2 },
+    { id: 'v_normal_open', business_name: 'Normal Open', subscription_tier: 1, is_open: true, rating: 4.9 },
+  ];
+
+  const ranked = rankVendorsForCustomer(rankingCandidates);
+
+  // 8a. Any boosted vendor should be ranked ahead of non-boosted vendors.
+  const boostedIndices = ranked
+    .map((v, idx) => ({ tier: v.subscription_tier, idx }))
+    .filter(x => x.tier > 1)
+    .map(x => x.idx);
+  const normalIndices = ranked
+    .map((v, idx) => ({ tier: v.subscription_tier, idx }))
+    .filter(x => x.tier === 1)
+    .map(x => x.idx);
+
+  const boostedBeforeNormal = boostedIndices.length > 0 && normalIndices.length > 0
+    ? Math.max(...boostedIndices) < Math.min(...normalIndices)
+    : false;
+
+  if (boostedBeforeNormal) {
+    console.log('✅ Success: Boosted vendors are prioritized ahead of standard vendors.');
+  } else {
+    console.error('❌ Error: Standard vendors ranked ahead of boosted vendors.');
+  }
+
+  // 8b. Within boosted vendors, open status should outrank closed status.
+  if (ranked[0].id === 'v_boost_open') {
+    console.log('✅ Success: Open boosted vendors rank above closed boosted vendors.');
+  } else {
+    console.error('❌ Error: Closed boosted vendor outranked open boosted vendor.');
+  }
+
+  console.log("\n=================================================");
+  console.log("   TEST CASE 8 COMPLETE                          ");
+  console.log("=================================================");
 })().catch((err) => {
   console.error('❌ Error: Test Case 6 failed with exception:', err);
   process.exitCode = 1;

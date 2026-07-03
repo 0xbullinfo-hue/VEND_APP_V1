@@ -12,6 +12,7 @@ import { VText, HeaderBar } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
 import { Ionicons } from '../../components/VIcons';
 import { CATEGORY_CATALOG } from '../../lib/categoryCatalog';
+import { rankVendorsForCustomer } from '../../lib/vendorRanking';
 
 interface ExploreScreenProps {
   onBackToHome: () => void;
@@ -35,8 +36,8 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
   const normalizedQuery = searchQuery.trim().toLowerCase();
 
   const filteredVendors = useMemo(
-    () =>
-      vendors.filter((v) => {
+    () => {
+      const scoped = vendors.filter((v) => {
         const matchesSearch =
           normalizedQuery === '' ||
           v.business_name.toLowerCase().includes(normalizedQuery) ||
@@ -47,7 +48,9 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
         }
 
         return v.category === activeCategory.name && matchesSearch;
-      }),
+      });
+      return rankVendorsForCustomer(scoped);
+    },
     [activeCategory.name, normalizedQuery, selectedSubcategory, vendors]
   );
 

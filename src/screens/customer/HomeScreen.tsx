@@ -16,6 +16,7 @@ import { useApp } from '../../contexts/AppContext';
 import { Ionicons } from '../../components/VIcons';
 import { uberMapStyle } from '../../theme/mapStyles';
 import { CATEGORY_CATALOG, getCategoryMeta } from '../../lib/categoryCatalog';
+import { rankVendorsForCustomer } from '../../lib/vendorRanking';
 
 const { width } = Dimensions.get('window');
 
@@ -43,9 +44,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   );
 
   // Filter vendors based on active category
-  const filteredVendors = selectedCategory && selectedCategory !== 'All'
-    ? vendors.filter(v => v.category === selectedCategory)
-    : vendors;
+  const filteredVendors = useMemo(() => {
+    const scoped = selectedCategory && selectedCategory !== 'All'
+      ? vendors.filter(v => v.category === selectedCategory)
+      : vendors;
+    return rankVendorsForCustomer(scoped);
+  }, [selectedCategory, vendors]);
+
+  const promoVendors = useMemo(() => rankVendorsForCustomer(vendors), [vendors]);
 
   // Track the active vendor for sheet display (prevents blank card during close animation)
   const [activeVendor, setActiveVendor] = useState<typeof vendors[number] | null>(vendors[0] ?? null);
@@ -290,7 +296,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <VText variant="caption" color={theme.colors.primary}>EARN +20 PTS</VText>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.promoScroll}>
-            {vendors.map((v, index) => (
+            {promoVendors.map((v) => (
               <TouchableOpacity 
                 key={v.id} 
                 activeOpacity={0.8}
