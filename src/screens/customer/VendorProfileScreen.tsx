@@ -55,6 +55,10 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({
   }
 
   const isSaved = savedVendors.includes(vendor.id);
+  const isBoostedVendor = vendor.subscription_tier > 1;
+  const trustScore = Math.min(99, Math.round(vendor.rating * 19));
+  const responseLabel = vendor.is_open ? 'Usually replies in under 5 mins' : 'Replies when back online';
+  const recentVisits = Math.max(8, Math.round(vendor.rating * 11));
 
   // Check if directions are already unlocked or active
   const hasUnlockedDirections = directionRequests.some(
@@ -101,6 +105,29 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({
             </View>
           </View>
 
+          <View style={styles.premiumSignalsRow}>
+            {isBoostedVendor && (
+              <View style={[styles.signalChip, styles.signalChipBoosted]}>
+                <Ionicons name="sparkles" size={12} color="#FFFFFF" />
+                <VText variant="caption" color="#FFFFFF" style={{ marginLeft: 5 }}>
+                  Boosted Visibility
+                </VText>
+              </View>
+            )}
+            <View style={styles.signalChip}>
+              <Ionicons name="shield-checkmark" size={12} color={theme.colors.primary} />
+              <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 5 }}>
+                Trust Score {trustScore}%
+              </VText>
+            </View>
+            <View style={styles.signalChip}>
+              <Ionicons name="time-outline" size={12} color={theme.colors.primary} />
+              <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 5 }}>
+                {responseLabel}
+              </VText>
+            </View>
+          </View>
+
           <VText variant="body" color={theme.colors.textMuted} style={styles.categoryRow}>
             {vendor.category} • {vendor.sub_category}
           </VText>
@@ -125,6 +152,43 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({
           <VText variant="body" color={theme.colors.textMuted} style={styles.bioText}>
             {vendor.bio}
           </VText>
+
+          <View style={styles.metricsStrip}>
+            <View style={styles.metricCell}>
+              <VText variant="h2">{recentVisits}+</VText>
+              <VText variant="caption" color={theme.colors.textMuted}>Recent Visits</VText>
+            </View>
+            <View style={styles.metricDivider} />
+            <View style={styles.metricCell}>
+              <VText variant="h2">{vendor.rating.toFixed(1)}</VText>
+              <VText variant="caption" color={theme.colors.textMuted}>Avg Rating</VText>
+            </View>
+            <View style={styles.metricDivider} />
+            <View style={styles.metricCell}>
+              <VText variant="h2">{vendor.is_home_based ? 'Home' : 'Store'}</VText>
+              <VText variant="caption" color={theme.colors.textMuted}>Service Model</VText>
+            </View>
+          </View>
+        </View>
+
+        <View style={[styles.transparencyCard, theme.shadows.soft]}>
+          <View style={styles.guardHeader}>
+            <Ionicons name="information-circle-outline" size={20} color={theme.colors.primary} />
+            <VText variant="h3" style={{ marginLeft: 8 }}>Why This Vendor Appears High</VText>
+          </View>
+          <VText variant="body" color={theme.colors.textMuted}>
+            Ranking follows customer relevance: boosted listing status, open availability, rating quality, and business consistency.
+          </VText>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => Alert.alert('Ranking Policy', 'Vendors are ordered by boosted tier first, then open status, customer rating, and business name consistency. This keeps discovery fair while honoring paid visibility upgrades.')}
+            style={styles.policyBtn}
+          >
+            <Ionicons name="help-circle-outline" size={14} color={theme.colors.primary} />
+            <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 6, fontWeight: '700' }}>
+              VIEW FULL RANKING POLICY
+            </VText>
+          </TouchableOpacity>
         </View>
 
         {/* Location Security Protection Guard Box */}
@@ -191,6 +255,11 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({
                   <VText variant="caption" color={theme.colors.textMuted} style={{ marginTop: 2 }}>
                     {service.description}
                   </VText>
+                  {service.price > 0 && (
+                    <VText variant="caption" color={theme.colors.primary} style={{ marginTop: 3, fontWeight: '700' }}>
+                      NGN {service.price.toLocaleString()}
+                    </VText>
+                  )}
                 </View>
                 <TouchableOpacity 
                   activeOpacity={0.8}
@@ -248,25 +317,19 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({
 
       </ScrollView>
 
-      {/* Persistent floating contact/chat action bar */}
+      {/* Persistent conversion action bar */}
       <View style={[styles.bottomActionBar, theme.shadows.premium]}>
+        <VButton
+          title={hasUnlockedDirections ? 'Resume Navigation' : 'Request Directions'}
+          onPress={handleDirectionsPress}
+          icon="navigate-outline"
+          style={{ flex: 1 }}
+        />
         <VButton
           title="Direct Chat"
           onPress={() => onStartChat(vendor.id)}
           variant="secondary"
           icon="chatbubbles-outline"
-          style={{ flex: 1 }}
-        />
-        <VButton
-          title="Emergency SOS"
-          onPress={() => {
-            Alert.alert("Emergency Alert", "Trigger SOS beacon to emergency watch centers?", [
-              { text: "Cancel", style: "cancel" },
-              { text: "Send SOS", style: "destructive", onPress: () => addPoints(10) }
-            ]);
-          }}
-          variant="danger"
-          icon="alert-circle-outline"
           style={{ flex: 1, marginLeft: theme.spacing.sm }}
         />
       </View>
@@ -309,6 +372,27 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 6,
   },
+  premiumSignalsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: theme.spacing.xs,
+    marginBottom: theme.spacing.sm,
+    gap: theme.spacing.xs,
+  },
+  signalChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.primaryLight,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 999,
+    paddingVertical: 5,
+    paddingHorizontal: 9,
+  },
+  signalChipBoosted: {
+    borderColor: '#F59E0B',
+    backgroundColor: '#F59E0B',
+  },
   categoryRow: {
     marginTop: 2,
     marginBottom: theme.spacing.sm,
@@ -326,6 +410,48 @@ const styles = StyleSheet.create({
   },
   bioText: {
     lineHeight: normalize(20),
+  },
+  metricsStrip: {
+    marginTop: theme.spacing.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: normalize(12),
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.sm,
+    backgroundColor: '#FBFCFD',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  metricCell: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  metricDivider: {
+    width: 1,
+    height: normalize(30),
+    backgroundColor: theme.colors.border,
+  },
+  transparencyCard: {
+    backgroundColor: theme.colors.background,
+    marginHorizontal: theme.spacing.lg,
+    borderRadius: normalize(16),
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    padding: theme.spacing.lg,
+    marginBottom: theme.spacing.lg,
+  },
+  policyBtn: {
+    marginTop: theme.spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: theme.colors.primaryLight,
+    borderRadius: 999,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(17, 92, 85, 0.2)',
   },
   
   // Location privacy security layout

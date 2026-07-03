@@ -8,6 +8,7 @@ import {
   Image,
   Platform,
   TextInput,
+  Alert,
 } from 'react-native';
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import MapView, { Marker, Circle, PROVIDER_GOOGLE } from 'react-native-maps';
@@ -164,6 +165,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               ? 'Live locality feed connected'
               : 'Using local demo dataset'}
           </VText>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() =>
+              Alert.alert(
+                'Ranking Policy',
+                'Boosted vendors are shown first, then open status, rating, and business name consistency. Visibility upgrades improve priority in your locality feed.'
+              )
+            }
+            style={styles.rankingPolicyPill}
+          >
+            <Ionicons name="information-circle-outline" size={12} color={theme.colors.primary} />
+            <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 4 }}>
+              How ranking works
+            </VText>
+          </TouchableOpacity>
         </View>
         <View style={{ alignItems: 'flex-end' }}>
           <VText variant="caption" color={theme.colors.primary}>
@@ -560,12 +576,24 @@ const styles = StyleSheet.create({
   dataStatusLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
   },
   dataStatusDot: {
     width: 7,
     height: 7,
     borderRadius: 4,
     marginRight: 6,
+  },
+  rankingPolicyPill: {
+    marginLeft: theme.spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: theme.colors.primaryLight,
+    backgroundColor: '#F8FAFC',
+    paddingVertical: 2,
+    paddingHorizontal: 8,
   },
   mapGrid: {
     ...StyleSheet.absoluteFillObject,
