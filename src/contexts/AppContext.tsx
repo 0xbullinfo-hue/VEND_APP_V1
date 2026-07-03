@@ -24,6 +24,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const setLocalityById = useLocationStore((state) => state.setLocalityById);
   const refreshVendorsForLocality = useVendorStore((state) => state.refreshVendorsForLocality);
   const connectVendorRealtime = useVendorStore((state) => state.connectVendorRealtime);
+  const hydrateAnalyticsEvents = useAnalyticsStore((state) => state.hydrateAnalyticsEvents);
 
   useEffect(() => {
     devLog('hydrateAuthSession:start');
@@ -71,6 +72,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       cleanup();
     };
   }, [isHydrated, localityId, connectVendorRealtime]);
+
+  useEffect(() => {
+    if (!isHydrated) {
+      return;
+    }
+    void hydrateAnalyticsEvents(user?.id ?? null);
+  }, [isHydrated, user?.id, hydrateAnalyticsEvents]);
 
   return <>{children}</>;
 };

@@ -108,6 +108,18 @@ CREATE TABLE IF NOT EXISTS public.help_tickets (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- 11. Analytics Events (customer interaction telemetry for vendor growth insights)
+CREATE TABLE IF NOT EXISTS public.analytics_events (
+    id TEXT PRIMARY KEY,
+    actor_user_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+    vendor_id UUID REFERENCES public.vendors(id) ON DELETE CASCADE NOT NULL,
+    locality_id INTEGER REFERENCES public.localities(id) ON DELETE SET NULL,
+    event_type VARCHAR(40) NOT NULL CHECK (event_type IN ('profile_view', 'directions_request', 'chat_start')),
+    source VARCHAR(20) NOT NULL CHECK (source IN ('customer')),
+    event_timestamp TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
 -- ── SECURITY VIEWS & PROCEDURES FOR MASKING LOCATION ──
 
 -- Public View for Vendors returning Fuzzy location for Home-Based vendors
@@ -251,6 +263,7 @@ ALTER TABLE public.products_services ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.direction_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.emergency_contacts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.analytics_events ENABLE ROW LEVEL SECURITY;
 
 -- Base Policies
 CREATE POLICY "Profiles readable by everyone" ON public.profiles FOR SELECT USING (true);
@@ -281,3 +294,9 @@ CREATE POLICY "Customers and Vendors can see relevant direction requests" ON pub
 USING (auth.uid() = customer_id OR auth.uid() = vendor_id);
 CREATE POLICY "Customers can create direction requests" ON public.direction_requests FOR INSERT WITH CHECK (auth.uid() = customer_id);
 CREATE POLICY "Involved parties can update direction requests" ON public.direction_requests FOR UPDATE USING (auth.uid() = customer_id OR auth.uid() = vendor_id);
+
+CREATE POLICY "Users can view their own analytics events" ON public.analytics_events FOR SELECT
+USING (auth.uid() = actor_user_id);
+
+CREATE POLICY "Users can insert their own analytics events" ON public.analytics_events FOR INSERT
+WITH CHECK (auth.uid() = actor_user_id);

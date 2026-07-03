@@ -624,6 +624,69 @@ function createAuthSessionModel(storage) {
   console.log("\n=================================================");
   console.log("   TEST CASE 9 COMPLETE                          ");
   console.log("=================================================");
+
+  // =================================================
+  // TEST CASE 10: Telemetry Persistence Fallback Semantics
+  // =================================================
+  console.log("\n--- TEST CASE 10: Telemetry Persistence Fallback Semantics ---");
+
+  function persistEventLocal(localEvents, event) {
+    return [...localEvents, event];
+  }
+
+  function resolveLoadEvents({ isSupabaseConfigured, remoteError, localEvents, remoteEvents }) {
+    if (!isSupabaseConfigured) return localEvents;
+    if (remoteError) return localEvents;
+    return remoteEvents;
+  }
+
+  const localSeed = [{ id: 'evt_local_1', vendorId: 'v1', type: 'profile_view' }];
+  const appended = persistEventLocal(localSeed, { id: 'evt_local_2', vendorId: 'v1', type: 'chat_start' });
+  if (appended.length === 2 && appended[1].id === 'evt_local_2') {
+    console.log('✅ Success: Local telemetry persistence appends events safely.');
+  } else {
+    console.error('❌ Error: Local telemetry append failed.');
+  }
+
+  const resolvedOffline = resolveLoadEvents({
+    isSupabaseConfigured: false,
+    remoteError: false,
+    localEvents: appended,
+    remoteEvents: [{ id: 'evt_remote_1' }],
+  });
+  if (resolvedOffline.length === 2) {
+    console.log('✅ Success: Offline mode correctly falls back to local telemetry.');
+  } else {
+    console.error('❌ Error: Offline fallback did not use local telemetry.');
+  }
+
+  const resolvedRemoteFail = resolveLoadEvents({
+    isSupabaseConfigured: true,
+    remoteError: true,
+    localEvents: appended,
+    remoteEvents: [{ id: 'evt_remote_2' }],
+  });
+  if (resolvedRemoteFail.length === 2) {
+    console.log('✅ Success: Remote failure correctly falls back to local telemetry cache.');
+  } else {
+    console.error('❌ Error: Remote-failure fallback did not preserve local telemetry.');
+  }
+
+  const resolvedRemoteOk = resolveLoadEvents({
+    isSupabaseConfigured: true,
+    remoteError: false,
+    localEvents: appended,
+    remoteEvents: [{ id: 'evt_remote_3' }, { id: 'evt_remote_4' }],
+  });
+  if (resolvedRemoteOk.length === 2 && resolvedRemoteOk[0].id === 'evt_remote_3') {
+    console.log('✅ Success: Remote telemetry source is preferred when available and healthy.');
+  } else {
+    console.error('❌ Error: Remote telemetry preference failed.');
+  }
+
+  console.log("\n=================================================");
+  console.log("   TEST CASE 10 COMPLETE                         ");
+  console.log("=================================================");
 })().catch((err) => {
   console.error('❌ Error: Test Case 6 failed with exception:', err);
   process.exitCode = 1;

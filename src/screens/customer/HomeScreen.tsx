@@ -33,7 +33,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onViewVendorProfile,
   onViewRewards
 }) => {
-  const { vendors, addPoints, locality, dataSource, isRealtimeConnected, isLoadingVendors, trackProfileView } = useApp();
+  const { vendors, addPoints, locality, dataSource, isRealtimeConnected, isLoadingVendors, trackProfileView, user } = useApp();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedVendorId, setSelectedVendorId] = useState<string | null>(null); // Starts with no selection, showing promo bar
   const [searchQuery, setSearchQuery] = useState('');
@@ -425,7 +425,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 key={v.id} 
                 activeOpacity={0.8}
                 onPress={() => {
-                  trackProfileView(v.id);
+                  trackProfileView(v.id, { actorUserId: user?.id, localityId: v.locality_id });
                   onViewVendorProfile(v.id);
                 }}
                 style={[styles.promoCard, theme.shadows.soft]}
@@ -543,7 +543,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 <VButton
                   title="View Vendor Profile"
                   onPress={() => {
-                    trackProfileView(activeVendor.id);
+                    trackProfileView(activeVendor.id, { actorUserId: user?.id, localityId: activeVendor.locality_id });
                     onViewVendorProfile(activeVendor.id);
                   }}
                   style={{ flex: 1, marginRight: 8 }}

@@ -29,7 +29,7 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({
   onLeaveReview,
   onStartChat
 }) => {
-  const { vendors, savedVendors, toggleSaveVendor, addPoints, directionRequests, trackDirectionsRequest, trackChatStart } = useApp();
+  const { vendors, savedVendors, toggleSaveVendor, addPoints, directionRequests, trackDirectionsRequest, trackChatStart, user } = useApp();
 
   const vendor = vendors.find(v => v.id === vendorId);
   if (!vendor) {
@@ -70,7 +70,7 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({
   };
 
   const handleDirectionsPress = () => {
-    trackDirectionsRequest(vendor.id);
+    trackDirectionsRequest(vendor.id, { actorUserId: user?.id, localityId: vendor.locality_id });
     onRequestDirections(vendor.id);
   };
 
@@ -266,7 +266,7 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({
                   activeOpacity={0.8}
                   onPress={() => {
                     addPoints(5); // points for inquiry interaction
-                    trackChatStart(vendor.id);
+                    trackChatStart(vendor.id, { actorUserId: user?.id, localityId: vendor.locality_id });
                     onStartChat(vendor.id);
                   }}
                   style={styles.bookBtn}
@@ -330,7 +330,7 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({
         <VButton
           title="Direct Chat"
           onPress={() => {
-            trackChatStart(vendor.id);
+            trackChatStart(vendor.id, { actorUserId: user?.id, localityId: vendor.locality_id });
             onStartChat(vendor.id);
           }}
           variant="secondary"

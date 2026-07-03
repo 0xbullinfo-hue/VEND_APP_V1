@@ -25,7 +25,7 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
   onViewVendorProfile,
   onViewRewards
 }) => {
-  const { vendors, addPoints, locality, isRealtimeConnected, dataSource, trackProfileView } = useApp();
+  const { vendors, addPoints, locality, isRealtimeConnected, dataSource, trackProfileView, user } = useApp();
   const [activeCategoryIndex, setActiveCategoryIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
@@ -89,7 +89,7 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
           key={vendor.id}
           activeOpacity={0.85}
           onPress={() => {
-            trackProfileView(vendor.id);
+            trackProfileView(vendor.id, { actorUserId: user?.id, localityId: vendor.locality_id });
             onViewVendorProfile(vendor.id);
           }}
           style={[
