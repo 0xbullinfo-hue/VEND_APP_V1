@@ -349,6 +349,31 @@ function createAuthSessionModel(storage) {
         onboardingCompleted: state.onboardingCompleted,
       }));
     },
+    async setOnboardingLocality(localityId) {
+      if (!state.user || !state.role) return;
+      state.user = {
+        ...state.user,
+        localityId,
+      };
+      await storage.setItem(AUTH_STORAGE_KEY, JSON.stringify({
+        user: state.user,
+        role: state.role,
+        onboardingCompleted: state.onboardingCompleted,
+      }));
+    },
+    async setReferralCode(code) {
+      if (!state.user || !state.role) return;
+      const normalizedCode = code.trim();
+      state.user = {
+        ...state.user,
+        referralCode: normalizedCode || undefined,
+      };
+      await storage.setItem(AUTH_STORAGE_KEY, JSON.stringify({
+        user: state.user,
+        role: state.role,
+        onboardingCompleted: state.onboardingCompleted,
+      }));
+    },
     async hydrateAuthSession() {
       try {
         const raw = await storage.getItem(AUTH_STORAGE_KEY);
@@ -435,6 +460,47 @@ function createAuthSessionModel(storage) {
 
   console.log("\n=================================================");
   console.log("   TEST CASE 6 COMPLETE                          ");
+  console.log("=================================================");
+
+  // =================================================
+  // TEST CASE 7: Persisted Onboarding Artifacts (Locality + Referral)
+  // =================================================
+  console.log("\n--- TEST CASE 7: Persisted Onboarding Artifacts (Locality + Referral) ---");
+
+  // 7a. Save locality + referral on a logged-in pending-onboarding user.
+  const appC = createAuthSessionModel(storage);
+  await appC.login('08033334444', 'customer', 'Artifact Test User');
+  await appC.setOnboardingLocality(2);
+  await appC.setReferralCode(' VEND50 ');
+
+  const appCState = appC.getState();
+  if (appCState.user?.localityId === 2 && appCState.user?.referralCode === 'VEND50') {
+    console.log('✅ Success: Onboarding locality and referral persisted in active session state.');
+  } else {
+    console.error('❌ Error: Failed to persist onboarding artifacts in active session state.');
+  }
+
+  // 7b. Hydration in a fresh instance should restore both artifacts.
+  const appD = createAuthSessionModel(storage);
+  await appD.hydrateAuthSession();
+  const appDState = appD.getState();
+  if (appDState.user?.localityId === 2 && appDState.user?.referralCode === 'VEND50') {
+    console.log('✅ Success: Fresh hydration restores locality and referral artifacts.');
+  } else {
+    console.error('❌ Error: Fresh hydration did not restore onboarding artifacts.');
+  }
+
+  // 7c. Clearing referral by skipping should remove referralCode from payload.
+  await appD.setReferralCode('   ');
+  const appDAfterClear = appD.getState();
+  if (typeof appDAfterClear.user?.referralCode === 'undefined') {
+    console.log('✅ Success: Skipping referral clears persisted referral code.');
+  } else {
+    console.error('❌ Error: Referral code should be cleared when user skips.');
+  }
+
+  console.log("\n=================================================");
+  console.log("   TEST CASE 7 COMPLETE                          ");
   console.log("=================================================");
 })().catch((err) => {
   console.error('❌ Error: Test Case 6 failed with exception:', err);
