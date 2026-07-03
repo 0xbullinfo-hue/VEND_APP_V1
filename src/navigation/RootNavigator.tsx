@@ -29,8 +29,39 @@ import type { RootStackParamList } from './types';
 
 const Root = createNativeStackNavigator<RootStackParamList>();
 
+const devLog = (message: string, payload?: unknown) => {
+  if (!__DEV__) {
+    return;
+  }
+  if (typeof payload === 'undefined') {
+    console.log(`[VEND][RootNavigator] ${message}`);
+    return;
+  }
+  console.log(`[VEND][RootNavigator] ${message}`, payload);
+};
+
 export const RootNavigator = () => {
   const { user, role, onboardingCompleted, isHydrated } = useApp();
+
+  React.useEffect(() => {
+    let route: 'HydrationLoading' | 'Onboarding' | 'VendorApp' | 'CustomerApp';
+
+    if (!isHydrated) {
+      route = 'HydrationLoading';
+    } else if (!user || !onboardingCompleted) {
+      route = 'Onboarding';
+    } else {
+      route = role === 'vendor' ? 'VendorApp' : 'CustomerApp';
+    }
+
+    devLog('routeDecision', {
+      route,
+      isHydrated,
+      hasUser: !!user,
+      role: role ?? null,
+      onboardingCompleted,
+    });
+  }, [isHydrated, user, role, onboardingCompleted]);
 
   if (!isHydrated) {
     return (
