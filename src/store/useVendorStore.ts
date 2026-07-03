@@ -5,6 +5,7 @@ import { useUIStore } from './useUIStore';
 import { UserProfile, VendorProfile } from '../types';
 import { useLocationStore } from './useLocationStore';
 import { fetchVendorsByLocality, subscribeToVendorRealtime } from '../lib/vendorDataProvider';
+import { rankVendorsForCustomer } from '../lib/vendorRanking';
 
 interface VendorState {
   vendors: VendorProfile[];
@@ -97,7 +98,7 @@ export const useVendorStore = create<VendorState>((set, get) => ({
         street_address: '',
         exact_location: locality?.center_location || { latitude: 6.5165, longitude: 3.3792 }
       };
-      return { vendors: [newVendorProfile, ...state.vendors] };
+      return { vendors: rankVendorsForCustomer([newVendorProfile, ...state.vendors]) };
     });
   },
 
@@ -131,7 +132,7 @@ export const useVendorStore = create<VendorState>((set, get) => ({
       if (existingIndex > -1) {
         const updated = [...state.vendors];
         updated[existingIndex] = { ...updated[existingIndex], ...profileFields };
-        return { vendors: updated };
+        return { vendors: rankVendorsForCustomer(updated) };
       }
 
       const newVendor = {
@@ -143,7 +144,7 @@ export const useVendorStore = create<VendorState>((set, get) => ({
         image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500&q=80',
         services: [],
       };
-      return { vendors: [newVendor, ...state.vendors] };
+      return { vendors: rankVendorsForCustomer([newVendor, ...state.vendors]) };
     });
   },
 
@@ -190,7 +191,9 @@ export const useVendorStore = create<VendorState>((set, get) => ({
     }
 
     set((state) => ({
-      vendors: state.vendors.map(v => v.id === vendorId ? { ...v, subscription_tier: targetTier } : v)
+      vendors: rankVendorsForCustomer(
+        state.vendors.map(v => v.id === vendorId ? { ...v, subscription_tier: targetTier } : v)
+      )
     }));
     useUIStore.getState().triggerNotification(`Subscription activated! ${targetPlan.name} is now active.`);
     return true;

@@ -1,6 +1,7 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import { MOCK_VENDORS } from './mockData';
 import { VendorProfile } from '../types';
+import { rankVendorsForCustomer } from './vendorRanking';
 
 interface GeoPoint {
   type: 'Point';
@@ -30,7 +31,7 @@ interface ProductServiceRow {
 
 const toMockVendors = (localityId?: number): VendorProfile[] => {
   const rows = localityId ? MOCK_VENDORS.filter((v) => v.locality_id === localityId) : MOCK_VENDORS;
-  return rows.map((v) => ({ ...v, realtime_source: 'mock' as const }));
+  return rankVendorsForCustomer(rows.map((v) => ({ ...v, realtime_source: 'mock' as const })));
 };
 
 const pointToLatLng = (point?: GeoPoint) => {
@@ -120,10 +121,10 @@ export const fetchVendorsByLocality = async (localityId?: number): Promise<Vendo
       return mapRowsToVendorProfiles(vendorRows as VendorPublicRow[], []);
     }
 
-    return mapRowsToVendorProfiles(
+    return rankVendorsForCustomer(mapRowsToVendorProfiles(
       vendorRows as VendorPublicRow[],
       (serviceRows || []) as ProductServiceRow[]
-    );
+    ));
   } catch {
     return toMockVendors(localityId);
   }

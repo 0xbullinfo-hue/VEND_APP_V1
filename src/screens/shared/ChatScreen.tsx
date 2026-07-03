@@ -27,7 +27,24 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   const { vendors, addPoints } = useApp();
   
   // Resolve recipient details
-  const vendor = vendors.find(v => v.id === recipientId) || vendors[0];
+  const vendor = vendors.find(v => v.id === recipientId);
+
+  if (!vendor) {
+    return (
+      <View style={styles.container}>
+        <HeaderBar showBack={true} onBack={onBack} title="Chat" />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: theme.spacing.lg }}>
+          <Ionicons name="alert-circle-outline" size={normalize(42)} color={theme.colors.warning} style={{ marginBottom: theme.spacing.sm }} />
+          <VText variant="h2" align="center" style={{ marginBottom: theme.spacing.xs }}>
+            Chat Unavailable
+          </VText>
+          <VText variant="body" align="center" color={theme.colors.textMuted}>
+            This vendor is no longer available in your current locality feed.
+          </VText>
+        </View>
+      </View>
+    );
+  }
 
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Array<{ id: string; text: string; sender: 'me' | 'them'; time: string }>>([

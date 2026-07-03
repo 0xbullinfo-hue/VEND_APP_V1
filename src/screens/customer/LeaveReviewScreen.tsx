@@ -15,7 +15,29 @@ export const LeaveReviewScreen: React.FC<LeaveReviewScreenProps> = ({
   onBack
 }) => {
   const { vendors, addPoints } = useApp();
-  const vendor = vendors.find(v => v.id === vendorId) || vendors[0];
+  const vendor = vendors.find(v => v.id === vendorId);
+
+  if (!vendor) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <HeaderBar showBack={true} onBack={onBack} title="Write a Review" />
+        <View style={styles.successBox}>
+          <Ionicons name="alert-circle-outline" size={normalize(42)} color={theme.colors.warning} style={{ marginBottom: theme.spacing.sm }} />
+          <VText variant="h2" align="center" style={{ marginBottom: theme.spacing.xs }}>
+            Vendor Not Found
+          </VText>
+          <VText variant="body" align="center" color={theme.colors.textMuted}>
+            We could not load this vendor in your current locality feed.
+          </VText>
+          <VButton
+            title="Back"
+            onPress={onBack}
+            style={{ marginTop: theme.spacing.lg, width: '100%' }}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');

@@ -17,8 +17,30 @@ export const LiveTripScreen: React.FC<LiveTripScreenProps> = ({ onTripEnd, onArr
   const [eta, setEta] = useState(12); // minutes
   const [distance, setDistance] = useState(2.4); // km
 
-  const vendor = vendors.find(v => v.id === activeTrip?.vendorId) || vendors[0];
+  const vendor = vendors.find(v => v.id === activeTrip?.vendorId);
   const mapRef = useRef<MapView>(null);
+
+  if (!vendor) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <HeaderBar showBack={true} onBack={onTripEnd} showPoints={false} title="Live Navigation Map" />
+        <View style={[styles.tripInfoCard, { margin: theme.spacing.lg, flex: 1, justifyContent: 'center' }]}>
+          <Ionicons name="alert-circle-outline" size={normalize(42)} color={theme.colors.warning} style={{ marginBottom: theme.spacing.sm, alignSelf: 'center' }} />
+          <VText variant="h2" align="center" style={{ marginBottom: theme.spacing.xs }}>
+            Trip Unavailable
+          </VText>
+          <VText variant="body" align="center" color={theme.colors.textMuted}>
+            The selected vendor is no longer available in your locality feed.
+          </VText>
+          <VButton
+            title="Back"
+            onPress={onTripEnd}
+            style={{ marginTop: theme.spacing.lg }}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   // Mock User Location (Ideally fetched via expo-location)
   const origin = {
