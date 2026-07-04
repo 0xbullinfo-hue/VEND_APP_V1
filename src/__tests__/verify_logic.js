@@ -1261,6 +1261,124 @@ function createAuthSessionModel(storage) {
     console.log("\n=================================================");
     console.log("   TEST CASE 15 COMPLETE                         ");
     console.log("=================================================");
+
+    // TEST CASE 16: Customer-Facing Ranking Transparency
+    console.log("\n--- TEST CASE 16: Customer-Facing Ranking Transparency ---");
+
+    // Simulate ranking transparency functions
+    const explainVendorRank = (vendor, allVendors) => {
+      const isBoosted = vendor.subscription_tier > 1;
+      const isOpen = vendor.is_open;
+      const reasons = [];
+      const factors = [];
+
+      if (isBoosted) {
+        reasons.push(`${vendor.business_name} has Premium Boosted visibility`);
+        factors.push('Premium Boost');
+      }
+      if (isOpen) {
+        reasons.push(`${vendor.business_name} is currently open`);
+        factors.push('Open Now');
+      }
+      if (vendor.rating >= 4.5) {
+        factors.push(`${vendor.rating}⭐ Rating`);
+      }
+
+      return {
+        reason: reasons.join('; '),
+        factor: factors.join(', '),
+        boost: isBoosted,
+        rating: vendor.rating >= 3.5,
+        open: isOpen,
+      };
+    };
+
+    const getRankingPolicy = () => ({
+      title: 'How Vendors Appear Here',
+      summary: 'Vendors are ranked to help you find the best match.',
+      factors: [
+        '1. Premium Boosted vendors rank above Standard vendors',
+        '2. Open stores rank above closed ones',
+        '3. Higher-rated vendors rank above lower-rated ones',
+      ],
+      boostInfo: 'Vendors can upgrade to Premium Boosted to rank higher.',
+    });
+
+    const getTransparencyScore = (vendor, localityVendors) => {
+      let score = 50;
+      if (vendor.subscription_tier > 1) score += 20;
+      if (vendor.is_open) score += 15;
+      const avgRating = localityVendors.reduce((sum, v) => sum + v.rating, 0) / localityVendors.length;
+      if (vendor.rating >= avgRating - 0.2) score += 15;
+      return Math.min(100, score);
+    };
+
+    // 16a. explainVendorRank returns all relevant factors
+    const testVendor = {
+      id: 'test-v1',
+      business_name: 'Test Vendor',
+      subscription_tier: 2,
+      is_open: true,
+      rating: 4.7,
+    };
+
+    const testVendors = [
+      testVendor,
+      { id: 'v2', business_name: 'V2', subscription_tier: 1, is_open: false, rating: 3.5 },
+      { id: 'v3', business_name: 'V3', subscription_tier: 1, is_open: true, rating: 4.2 },
+    ];
+
+    const explanation = explainVendorRank(testVendor, testVendors);
+    if (explanation.factor.includes('Premium Boost') && explanation.factor.includes('Open Now') && explanation.factor.includes('4.7⭐')) {
+      console.log('✅ Success: explainVendorRank returns all factors (Boost, Open, Rating).');
+    } else {
+      console.error('❌ Error: explainVendorRank missing factors.', explanation);
+    }
+
+    // 16b. getRankingPolicy returns complete structure
+    const policy = getRankingPolicy();
+    if (policy.title && policy.factors.length === 3 && policy.boostInfo) {
+      console.log('✅ Success: getRankingPolicy returns title, factors, and boost info.');
+    } else {
+      console.error('❌ Error: getRankingPolicy structure incomplete.', policy);
+    }
+
+    // 16c. getTransparencyScore correctly rewards boosted, open, highly-rated vendors
+    const transparencyScore = getTransparencyScore(testVendor, testVendors);
+    const expectedScore = 100; // baseline 50 + boost 20 + open 15 + rating 15 = 100
+    if (transparencyScore === expectedScore) {
+      console.log(`✅ Success: getTransparencyScore correctly computes ${expectedScore} (50 baseline + 20 boost + 15 open + 15 rating).`);
+    } else {
+      console.error(`❌ Error: transparency score should be ${expectedScore}, got ${transparencyScore}.`);
+    }
+
+    // 16d. Non-boosted vendor gets lower transparency score
+    const standardVendor = {
+      ...testVendor,
+      subscription_tier: 1,
+    };
+    const standardScore = getTransparencyScore(standardVendor, testVendors);
+    if (standardScore < transparencyScore) {
+      console.log(`✅ Success: Non-boosted vendor score (${standardScore}) is lower than boosted (${transparencyScore}).`);
+    } else {
+      console.error(`❌ Error: standard vendor score (${standardScore}) should be less than boosted (${transparencyScore}).`);
+    }
+
+    // 16e. Closed vendor transparency score is lower than open
+    const closedVendor = {
+      ...testVendor,
+      is_open: false,
+    };
+    const closedScore = getTransparencyScore(closedVendor, testVendors);
+    if (closedScore < transparencyScore) {
+      console.log(`✅ Success: Closed vendor score (${closedScore}) is lower than open (${transparencyScore}).`);
+    } else {
+      console.error(`❌ Error: closed vendor score (${closedScore}) should be less than open (${transparencyScore}).`);
+    }
+
+    console.log("\n=================================================");
+    console.log("   TEST CASE 16 COMPLETE                         ");
+    console.log("=================================================");
   }, 50);
 })().catch((err) => {
   console.error('❌ Error: Test Case 6 failed with exception:', err);

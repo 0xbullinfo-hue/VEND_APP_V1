@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   TextInput,
   Image,
+  Modal,
 } from 'react-native';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, HeaderBar } from '../../components/SharedComponents';
@@ -13,6 +14,7 @@ import { useApp } from '../../contexts/AppContext';
 import { Ionicons } from '../../components/VIcons';
 import { CATEGORY_CATALOG } from '../../lib/categoryCatalog';
 import { rankVendorsForCustomer } from '../../lib/vendorRanking';
+import { getRankingPolicy } from '../../lib/rankingTransparency';
 
 interface ExploreScreenProps {
   onBackToHome: () => void;
@@ -32,6 +34,7 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
   const [viewMode, setViewMode] = useState<'split' | 'grid'>('grid');
   const [onlyBoosted, setOnlyBoosted] = useState(false);
   const [onlyOpen, setOnlyOpen] = useState(true);
+  const [showRankingModal, setShowRankingModal] = useState(false);
 
   const activeCategory = CATEGORY_CATALOG[activeCategoryIndex];
 
@@ -136,6 +139,11 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
               >
                 {vendor.is_open ? 'ONLINE' : 'OFFLINE'}
               </VText>
+              {isPremium && (
+                <View style={[styles.rankReasonBadge]}>
+                  <VText variant="caption" color={theme.colors.primary} style={{ fontSize: 7, fontWeight: '700' }}>Boosted</VText>
+                </View>
+              )}
             </View>
           </View>
         </TouchableOpacity>
@@ -330,6 +338,12 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
               {dataSource === 'supabase' && isRealtimeConnected ? 'Live Feed' : 'Demo Feed'}
             </VText>
           </View>
+          <TouchableOpacity
+            style={styles.infoBtn}
+            onPress={() => setShowRankingModal(true)}
+          >
+            <Ionicons name="information-circle-outline" size={18} color={theme.colors.primary} />
+          </TouchableOpacity>
         </View>
 
         <View style={styles.quickFilterRow}>
@@ -405,6 +419,52 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
       </View>
 
       {viewMode === 'grid' ? renderGridMode() : renderSplitMode()}
+
+      {/* Ranking Transparency Modal */}
+      <Modal
+        visible={showRankingModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowRankingModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <VText variant="h2" style={{ fontSize: normalize(20) }}>Why Are They Here?</VText>
+              <TouchableOpacity onPress={() => setShowRankingModal(false)}>
+                <Ionicons name="close-outline" size={24} color={theme.colors.textMain} />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
+              {(() => {
+                const policy = getRankingPolicy();
+                return (
+                  <>
+                    <VText variant="body" style={{ marginBottom: theme.spacing.md, lineHeight: 20 }}>{policy.summary}</VText>
+                    {policy.factors.map((factor, idx) => (
+                      <View key={idx} style={styles.factorRow}>
+                        <VText variant="body" style={{ fontSize: normalize(14), lineHeight: 18 }}>{factor}</VText>
+                      </View>
+                    ))}
+                    <View style={[styles.boostBox, theme.shadows.soft]}>
+                      <Ionicons name="rocket-outline" size={16} color={theme.colors.primary} />
+                      <VText variant="caption" color={theme.colors.textMuted} style={{ marginLeft: 8, flex: 1, lineHeight: 16 }}>
+                        {policy.boostInfo}
+                      </VText>
+                    </View>
+                  </>
+                );
+              })()}
+            </ScrollView>
+            <TouchableOpacity
+              style={styles.modalCloseBtn}
+              onPress={() => setShowRankingModal(false)}
+            >
+              <VText variant="caption" color="#FFF" style={{ fontWeight: '700' }}>Got It</VText>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -691,6 +751,59 @@ const styles = StyleSheet.create({
   emptyContainer: {
     paddingVertical: normalize(60),
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  rankReasonBadge: {
+    marginLeft: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    backgroundColor: theme.colors.primaryLight,
+    borderRadius: 4,
+  },
+  infoBtn: {
+    marginLeft: 'auto',
+    padding: 4,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: normalize(20),
+    borderTopRightRadius: normalize(20),
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.lg,
+    maxHeight: '85%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.md,
+  },
+  modalScroll: {
+    marginVertical: theme.spacing.md,
+    marginBottom: theme.spacing.lg,
+  },
+  factorRow: {
+    marginBottom: theme.spacing.md,
+    paddingLeft: theme.spacing.sm,
+  },
+  boostBox: {
+    flexDirection: 'row',
+    backgroundColor: '#F5F5F5',
+    borderLeftWidth: 3,
+    borderLeftColor: theme.colors.primary,
+    padding: theme.spacing.md,
+    borderRadius: normalize(8),
+    marginTop: theme.spacing.lg,
+  },
+  modalCloseBtn: {
+    backgroundColor: theme.colors.primary,
+    paddingVertical: normalize(12),
+    borderRadius: normalize(8),
     alignItems: 'center',
   },
 });
