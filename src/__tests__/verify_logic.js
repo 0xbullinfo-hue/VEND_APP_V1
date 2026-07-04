@@ -1379,6 +1379,248 @@ function createAuthSessionModel(storage) {
     console.log("\n=================================================");
     console.log("   TEST CASE 16 COMPLETE                         ");
     console.log("=================================================");
+
+    // TEST CASE 17: Proximity-Based Notifications (Boosted Vendors Only)
+    console.log("\n--- TEST CASE 17: Proximity-Based Notifications ---");
+
+    // Simulate proximity notification functions
+    const calculateDistance = (lat1, lng1, lat2, lng2) => {
+      const R = 6371; // Earth's radius in km
+      const dLat = ((lat2 - lat1) * Math.PI) / 180;
+      const dLng = ((lng2 - lng1) * Math.PI) / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos((lat1 * Math.PI) / 180) *
+          Math.cos((lat2 * Math.PI) / 180) *
+          Math.sin(dLng / 2) *
+          Math.sin(dLng / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    };
+
+    const isInVicinity = (customerLat, customerLng, vendorLat, vendorLng, radiusKm = 2) => {
+      const distance = calculateDistance(customerLat, customerLng, vendorLat, vendorLng);
+      return distance <= radiusKm;
+    };
+
+    const isInSameLocality = (customerLocalityId, vendorLocalityId) => {
+      return customerLocalityId === vendorLocalityId;
+    };
+
+    const generateVendorProximityNotification = (vendor, customer, interactions) => {
+      // Only boosted vendors
+      if (vendor.subscription_tier <= 1) return null;
+
+      // Must have previous interaction
+      const hasPreviousInteraction = interactions.some(
+        (i) => i.vendor_id === vendor.id && i.customer_id === customer.id
+      );
+      if (!hasPreviousInteraction) return null;
+
+      // Must be in same locality
+      if (!isInSameLocality(customer.locality_id, vendor.locality_id)) return null;
+
+      // Calculate distance if locations available
+      let distance;
+      if (vendor.exact_location && customer.current_location) {
+        distance = calculateDistance(
+          customer.current_location.latitude,
+          customer.current_location.longitude,
+          vendor.exact_location.latitude,
+          vendor.exact_location.longitude
+        );
+      }
+
+      return {
+        id: `vendor-prox-${vendor.id}-${customer.id}`,
+        type: 'vendor_customer_nearby',
+        recipientId: vendor.id,
+        triggerEntityId: customer.id,
+        triggerEntityName: customer.phone_number,
+        localityId: vendor.locality_id,
+        distance,
+        createdAt: Date.now(),
+        read: false,
+      };
+    };
+
+    const generateCustomerProximityNotification = (customer, vendors, customerLocation) => {
+      // Filter only boosted vendors in customer's locality
+      const boostedVendors = vendors.filter(
+        (v) => v.subscription_tier > 1 && v.locality_id === customer.locality_id
+      );
+
+      if (boostedVendors.length === 0) return [];
+
+      // Filter nearby if location available
+      const nearbyVendors = customerLocation
+        ? boostedVendors.filter((v) =>
+            v.exact_location
+              ? isInVicinity(
+                  customerLocation.latitude,
+                  customerLocation.longitude,
+                  v.exact_location.latitude,
+                  v.exact_location.longitude
+                )
+              : true
+          )
+        : boostedVendors;
+
+      if (nearbyVendors.length === 0) return [];
+
+      const vendorNames = nearbyVendors.map((v) => v.business_name).join(', ');
+
+      return [
+        {
+          id: `customer-prox-${customer.id}-${Date.now()}`,
+          type: 'customer_vendor_nearby',
+          recipientId: customer.id,
+          triggerEntityId: nearbyVendors[0].id,
+          triggerEntityName: vendorNames,
+          localityId: customer.locality_id,
+          createdAt: Date.now(),
+          read: false,
+        },
+      ];
+    };
+
+    // 17a. Distance calculation: 0km within same spot
+    const dist1 = calculateDistance(6.5, 3.37, 6.5, 3.37);
+    if (dist1 === 0) {
+      console.log('✅ Success: Distance calculation correct for same coordinates (0 km).');
+    } else {
+      console.error(`❌ Error: same location distance should be 0, got ${dist1}.`);
+    }
+
+    // 17b. Distance calculation: realistic distance between two points
+    const dist2 = calculateDistance(6.5, 3.37, 6.51, 3.38);
+    if (dist2 > 0 && dist2 < 2.5) {
+      console.log(`✅ Success: Distance calculation realistic (~${dist2.toFixed(2)} km).`);
+    } else {
+      console.error(`❌ Error: distance between two close points should be < 2.5km, got ${dist2}.`);
+    }
+
+    // 17c. Vendor notification NOT generated for free tier vendor
+    const freeVendor = {
+      id: 'v_free',
+      business_name: 'Free Vendor',
+      subscription_tier: 1,
+      locality_id: 1,
+      locality_name: 'Yaba',
+      exact_location: { latitude: 6.5, longitude: 3.37 },
+    };
+    const customer1 = {
+      id: 'c1',
+      phone_number: '+2347064291234',
+      locality_id: 1,
+      locality_name: 'Yaba',
+      current_location: { latitude: 6.5, longitude: 3.37 },
+    };
+    const interactions1 = [{ vendor_id: 'v_free', customer_id: 'c1', action: 'profile_view' }];
+
+    const notifFree = generateVendorProximityNotification(freeVendor, customer1, interactions1);
+    if (notifFree === null) {
+      console.log('✅ Success: Vendor notification NOT generated for free tier vendors.');
+    } else {
+      console.error('❌ Error: free tier vendor should not generate notifications.');
+    }
+
+    // 17d. Vendor notification generated for boosted vendor with previous customer in same locality
+    const boostedVendor = {
+      id: 'v_boosted',
+      business_name: 'Boosted Vendor',
+      subscription_tier: 2,
+      locality_id: 1,
+      locality_name: 'Yaba',
+      exact_location: { latitude: 6.5, longitude: 3.37 },
+    };
+
+    const notifBoosted = generateVendorProximityNotification(boostedVendor, customer1, interactions1);
+    if (notifBoosted && notifBoosted.type === 'vendor_customer_nearby' && notifBoosted.recipientId === 'v_boosted') {
+      console.log('✅ Success: Vendor notification generated for boosted vendor with previous customer in same locality.');
+    } else {
+      console.error('❌ Error: boosted vendor should generate notification for previous customer in same locality.');
+    }
+
+    // 17e. Vendor notification NOT generated if no previous interaction
+    const interactions2 = []; // Empty history
+    const notifNoHistory = generateVendorProximityNotification(boostedVendor, customer1, interactions2);
+    if (notifNoHistory === null) {
+      console.log('✅ Success: Vendor notification NOT generated without previous customer interaction.');
+    } else {
+      console.error('❌ Error: should not notify vendor without previous interaction.');
+    }
+
+    // 17f. Customer notification generated when boosted vendors in same locality
+    const vendors = [
+      {
+        id: 'v_boosted_1',
+        business_name: 'Boosted A',
+        subscription_tier: 2,
+        locality_id: 1,
+        exact_location: { latitude: 6.5, longitude: 3.37 },
+      },
+      {
+        id: 'v_free',
+        business_name: 'Free B',
+        subscription_tier: 1,
+        locality_id: 1,
+        exact_location: { latitude: 6.51, longitude: 3.38 },
+      },
+    ];
+
+    const custNotif = generateCustomerProximityNotification(customer1, vendors, customer1.current_location);
+    if (custNotif.length > 0 && custNotif[0].type === 'customer_vendor_nearby') {
+      console.log(`✅ Success: Customer notification generated for boosted vendors in locality (${custNotif[0].triggerEntityName}).`);
+    } else {
+      console.error('❌ Error: customer should be notified of boosted vendors in their locality.');
+    }
+
+    // 17g. Customer notification filters out free tier vendors
+    const triggerNames = custNotif[0]?.triggerEntityName || '';
+    if (!triggerNames.includes('Free B')) {
+      console.log('✅ Success: Free tier vendors filtered out from customer notifications.');
+    } else {
+      console.error('❌ Error: free tier vendors should not be in customer notifications.');
+    }
+
+    // 17h. In-vicinity distance filtering works correctly
+    const farVendor = {
+      id: 'v_far',
+      business_name: 'Far Vendor',
+      subscription_tier: 2,
+      locality_id: 1,
+      exact_location: { latitude: 7.0, longitude: 3.0 }, // ~65km away
+    };
+
+    const vendorsWithFar = [
+      {
+        id: 'v_boosted_1',
+        business_name: 'Boosted A',
+        subscription_tier: 2,
+        locality_id: 1,
+        exact_location: { latitude: 6.5, longitude: 3.37 },
+      },
+      farVendor,
+    ];
+
+    const custNotifWithFar = generateCustomerProximityNotification(
+      customer1,
+      vendorsWithFar,
+      customer1.current_location
+    );
+
+    // Only nearby vendor should be included
+    const includesFar = custNotifWithFar[0]?.triggerEntityName.includes('Far Vendor');
+    if (!includesFar) {
+      console.log('✅ Success: Far vendors (>2km) filtered out from proximity notifications.');
+    } else {
+      console.error('❌ Error: vendors beyond 2km radius should be filtered out.');
+    }
+
+    console.log("\n=================================================");
+    console.log("   TEST CASE 17 COMPLETE                         ");
+    console.log("=================================================");
   }, 50);
 })().catch((err) => {
   console.error('❌ Error: Test Case 6 failed with exception:', err);
