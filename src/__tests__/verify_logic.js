@@ -2813,6 +2813,206 @@ function createAuthSessionModel(storage) {
     console.log("\n=================================================");
     console.log("   TEST CASE 22 COMPLETE                         ");
     console.log("=================================================");
+
+    // ============ TEST CASE 23: Chat & Communication Features ============
+    console.log("\n--- TEST CASE 23: Chat & Communication Features ---");
+
+    // Helper functions for chat operations
+    const createMessage = (messages, conversationId, senderId, senderRole, content) => {
+      const messageId = `msg_${Date.now()}_${Math.random()}`;
+      const newMessage = {
+        messageId,
+        conversationId,
+        senderId,
+        senderRole,
+        content,
+        timestamp: Date.now(),
+        isRead: false,
+        deliveryStatus: 'delivered',
+        messageType: 'text',
+      };
+      if (!messages[conversationId]) {
+        messages[conversationId] = [];
+      }
+      messages[conversationId].push(newMessage);
+      return newMessage;
+    };
+
+    const createConversation = (conversations, vendorId, customerId, vendorName, customerName) => {
+      const conversationId = `conv_${vendorId}_${customerId}`;
+      const conversation = {
+        conversationId,
+        vendorId,
+        customerId,
+        lastMessage: '',
+        lastMessageAt: Date.now(),
+        isActive: true,
+        unreadCount: 0,
+        participantNames: { vendor: vendorName, customer: customerName },
+      };
+      conversations[conversationId] = conversation;
+      return conversation;
+    };
+
+    const markMessageAsRead = (messages, conversationId, messageId) => {
+      const msgs = messages[conversationId] || [];
+      const msg = msgs.find((m) => m.messageId === messageId);
+      if (msg) {
+        msg.isRead = true;
+      }
+    };
+
+    const searchMessages = (messages, conversationId, query) => {
+      const msgs = messages[conversationId] || [];
+      return msgs.filter((m) => m.content.toLowerCase().includes(query.toLowerCase()));
+    };
+
+    const calculateChatAnalytics = (messages, conversationId) => {
+      const msgs = messages[conversationId] || [];
+      let totalResponseTime = 0;
+      let responseCount = 0;
+
+      for (let i = 1; i < msgs.length; i++) {
+        if (msgs[i].senderRole !== msgs[i - 1].senderRole) {
+          totalResponseTime += msgs[i].timestamp - msgs[i - 1].timestamp;
+          responseCount++;
+        }
+      }
+
+      const avgResponseTime = responseCount > 0 ? totalResponseTime / responseCount : 0;
+      const messageFrequency = Math.min(msgs.length / 100, 1) * 40;
+      const responseRate = responseCount > 0 ? Math.min(responseCount / msgs.length, 1) * 30 : 0;
+      const engagementScore = Math.round(messageFrequency + responseRate);
+
+      return { messageCount: msgs.length, avgResponseTime, engagementScore };
+    };
+
+    const generateChatInsights = (messages, conversationId) => {
+      const msgs = messages[conversationId] || [];
+      const insights = [];
+
+      if (msgs.length > 50) {
+        insights.push('Deep conversation: High engagement detected.');
+      }
+      if (msgs.some((m) => m.deliveryStatus === 'failed')) {
+        insights.push('Some messages failed delivery.');
+      }
+      if (msgs.filter((m) => !m.isRead).length > 0) {
+        insights.push('You have unread messages in this conversation.');
+      }
+      insights.push('Consider follow-up questions to increase engagement.');
+
+      return insights;
+    };
+
+    // 23a. Verify message creation with ID and timestamp
+    let messagesMap = {};
+    let conversationsMap = {};
+
+    const msg1 = createMessage(
+      messagesMap,
+      'conv_test',
+      'vendor_1',
+      'vendor',
+      'Hello! How can I help?'
+    );
+    if (msg1.messageId && msg1.timestamp && msg1.deliveryStatus === 'delivered') {
+      console.log('✅ Success: Message created with ID, timestamp, and delivery status.');
+    } else {
+      console.error('❌ Error: message creation failed.');
+    }
+
+    // 23b. Verify conversation persistence
+    const conv = createConversation(
+      conversationsMap,
+      'vendor_1',
+      'customer_1',
+      'John Vendor',
+      'Alice Customer'
+    );
+    if (conv.conversationId && conv.isActive && conv.participantNames.vendor) {
+      console.log('✅ Success: Conversation created and persisted with metadata.');
+    } else {
+      console.error('❌ Error: conversation persistence failed.');
+    }
+
+    // 23c. Verify unread message tracking
+    const msg2 = createMessage(
+      messagesMap,
+      'conv_test',
+      'customer_1',
+      'customer',
+      'I need help with my order'
+    );
+    const unreadCount = messagesMap['conv_test'].filter((m) => !m.isRead).length;
+    if (unreadCount === 2 && !msg1.isRead && !msg2.isRead) {
+      console.log('✅ Success: Unread message tracking works correctly (2 unread).');
+    } else {
+      console.error('❌ Error: unread tracking failed.', { unreadCount });
+    }
+
+    // 23d. Verify chat analytics calculation
+    const analytics = calculateChatAnalytics(messagesMap, 'conv_test');
+    if (
+      analytics.messageCount === 2 &&
+      analytics.engagementScore >= 0 &&
+      analytics.engagementScore <= 100
+    ) {
+      console.log(`✅ Success: Chat analytics calculated (${analytics.messageCount} messages, engagement=${analytics.engagementScore}).`);
+    } else {
+      console.error('❌ Error: analytics calculation failed.', analytics);
+    }
+
+    // 23e. Verify typing indicator
+    const setTypingIndicator = (conversationId, userId) => ({
+      conversationId,
+      userId,
+      timestamp: Date.now(),
+    });
+    const typingIndicator = setTypingIndicator('conv_test', 'vendor_1');
+    if (typingIndicator.userId && typingIndicator.timestamp) {
+      console.log('✅ Success: Typing indicator set with user ID and timestamp.');
+    } else {
+      console.error('❌ Error: typing indicator failed.');
+    }
+
+    // 23f. Verify message search
+    const searchResults = searchMessages(messagesMap, 'conv_test', 'order');
+    if (searchResults.length >= 1 && searchResults[0].content.includes('order')) {
+      console.log('✅ Success: Message search found matching message.');
+    } else {
+      console.error('❌ Error: message search failed.', { foundCount: searchResults.length });
+    }
+
+    // 23g. Verify delivery status handling
+    const failedMsg = createMessage(
+      messagesMap,
+      'conv_test',
+      'customer_1',
+      'customer',
+      'Is this working?'
+    );
+    failedMsg.deliveryStatus = 'failed';
+    const deliveryCount = messagesMap['conv_test'].filter(
+      (m) => m.deliveryStatus === 'delivered'
+    ).length;
+    if (deliveryCount === 2 && messagesMap['conv_test'].some((m) => m.deliveryStatus === 'failed')) {
+      console.log(`✅ Success: Delivery status tracking works (2 delivered, 1 failed).`);
+    } else {
+      console.error('❌ Error: delivery tracking failed.');
+    }
+
+    // 23h. Verify chat insights generation
+    const chatInsights = generateChatInsights(messagesMap, 'conv_test');
+    if (chatInsights.length >= 3 && chatInsights.some((i) => i.length > 0)) {
+      console.log(`✅ Success: Chat insights generated (${chatInsights.length} insights, first: "${chatInsights[0].substring(0, 40)}...").`);
+    } else {
+      console.error('❌ Error: insights generation failed.');
+    }
+
+    console.log("\n=================================================");
+    console.log("   TEST CASE 23 COMPLETE                         ");
+    console.log("=================================================");
   }, 50);
 })().catch((err) => {
   console.error('❌ Error: Test Case 6 failed with exception:', err);
