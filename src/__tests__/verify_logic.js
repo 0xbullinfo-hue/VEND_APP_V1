@@ -2579,6 +2579,240 @@ function createAuthSessionModel(storage) {
     console.log("\n=================================================");
     console.log("   TEST CASE 21 COMPLETE                         ");
     console.log("=================================================");
+
+    // =================================================
+    // TEST CASE 22: Promotions & Limited-Time Offers
+    // =================================================
+    console.log("\n--- TEST CASE 22: Promotions & Limited-Time Offers ---");
+
+    // Simulate promo management functions
+    const createPromo = (promosMap, promo) => {
+      const promoId = `promo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const fullPromo = {
+        ...promo,
+        promoId,
+        currentRedemptions: 0,
+        isActive: true,
+        createdAt: Date.now(),
+      };
+
+      const vendorPromos = promosMap[promo.vendorId] || [];
+      return { ...promosMap, [promo.vendorId]: [fullPromo, ...vendorPromos] };
+    };
+
+    const calculateDiscountAmount = (basePrice, discount) => {
+      if (discount.type === 'percentage') {
+        return Math.round((basePrice * discount.value) / 100);
+      } else if (discount.type === 'fixed') {
+        return discount.value;
+      } else if (discount.type === 'bogo') {
+        return basePrice; // BOGO returns full item price as discount
+      }
+      return 0;
+    };
+
+    const recordPromoUsage = (usageMap, promoUsage) => {
+      const usageId = `usage_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const fullUsage = { ...promoUsage, id: usageId, usedAt: Date.now() };
+      const customerUsages = usageMap[promoUsage.customerId] || [];
+      return { ...usageMap, [promoUsage.customerId]: [fullUsage, ...customerUsages] };
+    };
+
+    const calculatePromoEffectiveness = (promoStats) => {
+      const redemptionScore = Math.min(40, (promoStats.totalRedemptions / 10) * 40);
+      const reachScore = Math.min(30, (promoStats.uniqueCustomersReached / 20) * 30);
+      const revenueScore = Math.min(30, (promoStats.totalDiscountGiven / 5000) * 30);
+      const effectivenessScore = Math.round(redemptionScore + reachScore + revenueScore);
+      return Math.max(0, Math.min(100, effectivenessScore));
+    };
+
+    const calculatePromoROI = (promo, promoStats) => {
+      const totalRevenue = promoStats.uniqueCustomersReached * promo.minPurchaseAmount;
+      const discountCost = promoStats.totalDiscountGiven;
+      const grossMargin = totalRevenue * 0.4; // Assume 40% margin
+      const roi = grossMargin > 0 ? Math.round(((grossMargin - discountCost) / discountCost) * 100) : -100;
+      const paybackPeriod = discountCost > 0 ? Math.round(discountCost / (promoStats.uniqueCustomersReached + 1)) : 0;
+      const breakeven = roi >= 0;
+      return { roi, paybackPeriod, breakeven };
+    };
+
+    const segmentCustomersForPromo = (usageHistory) => {
+      const whales = usageHistory.filter((u) => u.totalSpent > 5000).length;
+      const loyals = usageHistory.filter((u) => u.purchaseCount >= 3).length;
+      const dormant = usageHistory.filter((u) => u.daysSinceLastPurchase > 30).length;
+      const oneTimeOnly = usageHistory.filter((u) => u.purchaseCount === 1).length;
+
+      return { whales, loyals, dormant, oneTimeOnly, total: usageHistory.length };
+    };
+
+    const generatePromoInsights = (promo, effectiveness, stats) => {
+      const insights = [];
+
+      if (effectiveness > 70) {
+        insights.push(`High performer: This promo is very effective (${effectiveness}% score).`);
+      }
+
+      if (stats.uniqueCustomersReached > 50) {
+        insights.push(`Wide reach: Attracting ${stats.uniqueCustomersReached} unique customers.`);
+      }
+
+      if (stats.totalRedemptions > stats.maxRedemptions * 0.8) {
+        insights.push(`Near capacity: ${stats.totalRedemptions} / ${stats.maxRedemptions} redemptions used.`);
+      }
+
+      if (promo.discountType === 'percentage' && promo.discountValue > 30) {
+        insights.push(`Consider reducing discount: ${promo.discountValue}% may reduce profitability.`);
+      }
+
+      if (stats.conversionRate && stats.conversionRate > 0.3) {
+        insights.push(`Strong conversion: ${Math.round(stats.conversionRate * 100)}% of viewers use this promo.`);
+      }
+
+      if (insights.length === 0) {
+        insights.push('Promo performing at average levels. Monitor performance closely.');
+      }
+
+      return insights;
+    };
+
+    // 22a. Verify promo creation
+    let promosMap = {};
+    const newPromo = {
+      vendorId: 'v_test',
+      title: '30% Off First Purchase',
+      discountType: 'percentage',
+      discountValue: 30,
+      minPurchaseAmount: 500,
+      applicableProducts: ['product_1', 'product_2'],
+      startDate: now,
+      endDate: now + 30 * 24 * 60 * 60 * 1000,
+      maxRedemptions: 100,
+      maxPerCustomer: 2,
+      targetAudience: 'new',
+    };
+
+    promosMap = createPromo(promosMap, newPromo);
+    const createdPromo = promosMap['v_test'][0];
+    if (createdPromo.promoId && createdPromo.currentRedemptions === 0 && createdPromo.isActive) {
+      console.log('✅ Success: Promo created with ID, initial redemptions=0, and isActive=true.');
+    } else {
+      console.error('❌ Error: promo creation failed.');
+    }
+
+    // 22b. Verify discount calculation for different types
+    const basePrice = 1000;
+    const percentDiscount = calculateDiscountAmount(basePrice, { type: 'percentage', value: 20 });
+    const fixedDiscount = calculateDiscountAmount(basePrice, { type: 'fixed', value: 200 });
+    const bogoDiscount = calculateDiscountAmount(basePrice, { type: 'bogo', value: 0 });
+
+    if (percentDiscount === 200 && fixedDiscount === 200 && bogoDiscount === 1000) {
+      console.log('✅ Success: Discount calculations correct (20%=$200, fixed=$200, BOGO=$1000).');
+    } else {
+      console.error(`❌ Error: discount calculation failed (${percentDiscount}, ${fixedDiscount}, ${bogoDiscount}).`);
+    }
+
+    // 22c. Verify promo usage tracking
+    let usageMap = {};
+    const promoUsage = {
+      customerId: 'c_test',
+      promoId: createdPromo.promoId,
+      vendorId: 'v_test',
+      discountApplied: 300,
+    };
+
+    usageMap = recordPromoUsage(usageMap, promoUsage);
+    const recordedUsage = usageMap['c_test'][0];
+    if (recordedUsage.id && recordedUsage.usedAt && recordedUsage.discountApplied === 300) {
+      console.log('✅ Success: Promo usage recorded with ID and timestamp.');
+    } else {
+      console.error('❌ Error: promo usage tracking failed.');
+    }
+
+    // 22d. Verify promo effectiveness calculation
+    const promoStats = {
+      totalRedemptions: 45,
+      uniqueCustomersReached: 80,
+      totalDiscountGiven: 9000,
+      conversionRate: 0.56,
+    };
+
+    const effectiveness = calculatePromoEffectiveness(promoStats);
+    // redemptionScore = min(40, 45/10*40) = min(40, 180) = 40
+    // reachScore = min(30, 80/20*30) = min(30, 120) = 30
+    // revenueScore = min(30, 9000/5000*30) = min(30, 54) = 30
+    // total = 40 + 30 + 30 = 100
+    if (effectiveness === 100) {
+      console.log(`✅ Success: Promo effectiveness calculated correctly (${effectiveness}%).`);
+    } else {
+      console.error(`❌ Error: effectiveness should be ~100, got ${effectiveness}.`);
+    }
+
+    // 22e. Verify ROI calculation
+    const roiResult = calculatePromoROI(newPromo, promoStats);
+    // totalRevenue = 80 * 500 = 40000, grossMargin = 40000 * 0.4 = 16000
+    // roi = ((16000 - 9000) / 9000) * 100 = 77%
+    if (roiResult.roi >= 70 && roiResult.roi <= 85 && roiResult.breakeven) {
+      console.log(`✅ Success: ROI calculated (${roiResult.roi}%, payback=${roiResult.paybackPeriod} days).`);
+    } else {
+      console.error('❌ Error: ROI calculation failed.', roiResult);
+    }
+
+    // 22f. Verify customer segmentation
+    const customerUsageHistory = [
+      { totalSpent: 8000, purchaseCount: 12, daysSinceLastPurchase: 2 }, // whale + loyal
+      { totalSpent: 6000, purchaseCount: 3, daysSinceLastPurchase: 5 },  // whale + loyal
+      { totalSpent: 2000, purchaseCount: 1, daysSinceLastPurchase: 60 }, // one-time + dormant
+      { totalSpent: 1000, purchaseCount: 2, daysSinceLastPurchase: 40 }, // dormant
+      { totalSpent: 3000, purchaseCount: 5, daysSinceLastPurchase: 1 },  // loyal
+    ];
+
+    const segmentation = segmentCustomersForPromo(customerUsageHistory);
+    if (segmentation.whales === 2 && segmentation.loyals === 3 && segmentation.oneTimeOnly >= 1) {
+      console.log(`✅ Success: Customer segmentation correct (${segmentation.whales} whales, ${segmentation.loyals} loyals).`);
+    } else {
+      console.error('❌ Error: customer segmentation failed.', segmentation);
+    }
+
+    // 22g. Verify timing recommendations
+    const recommendPromoTiming = (historicalData) => {
+      const avgViewsByDay = new Map();
+      historicalData.forEach((event) => {
+        const day = new Date(event.timestamp).toLocaleDateString('en-US', { weekday: 'long' });
+        avgViewsByDay.set(day, (avgViewsByDay.get(day) || 0) + 1);
+      });
+
+      const bestDay = Array.from(avgViewsByDay.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] || 'Monday';
+      const bestTimeOfDay = historicalData.some((e) => e.timestamp % (24 * 3600) > 12 * 3600) ? 'afternoon' : 'morning';
+      const seasonalTrend = 'stable';
+      const estimatedPeakPeriod = '2-4pm';
+
+      return { bestDayOfWeek: bestDay, bestTimeOfDay, seasonalTrend, estimatedPeakPeriod };
+    };
+
+    const historicalPromoEvents = [
+      { timestamp: now - days(1), views: 25, conversions: 8 },
+      { timestamp: now - days(2), views: 20, conversions: 6 },
+      { timestamp: now - days(3), views: 30, conversions: 10 },
+    ];
+
+    const timingRecs = recommendPromoTiming(historicalPromoEvents);
+    if (timingRecs.bestDayOfWeek && timingRecs.bestTimeOfDay && timingRecs.estimatedPeakPeriod) {
+      console.log(`✅ Success: Timing recommendations generated (best day: ${timingRecs.bestDayOfWeek}, time: ${timingRecs.bestTimeOfDay}).`);
+    } else {
+      console.error('❌ Error: timing recommendations failed.', timingRecs);
+    }
+
+    // 22h. Verify insights generation
+    const insights = generatePromoInsights(newPromo, effectiveness, promoStats);
+    if (insights.length > 0 && insights[0]) {
+      console.log(`✅ Success: Promo insights generated (${insights.length} insights, first: "${insights[0].substring(0, 40)}...").`);
+    } else {
+      console.error('❌ Error: insights generation failed.');
+    }
+
+    console.log("\n=================================================");
+    console.log("   TEST CASE 22 COMPLETE                         ");
+    console.log("=================================================");
   }, 50);
 })().catch((err) => {
   console.error('❌ Error: Test Case 6 failed with exception:', err);
