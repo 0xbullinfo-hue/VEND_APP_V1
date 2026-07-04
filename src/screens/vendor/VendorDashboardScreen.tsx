@@ -4,6 +4,7 @@ import { theme, normalize } from '../../theme/designSystem';
 import { VText, HeaderBar } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
 import { Ionicons } from '../../components/VIcons';
+import { computeRankUpNudge } from '../../lib/rankUpNudge';
 
 const { width } = Dimensions.get('window');
 
@@ -36,6 +37,8 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
   const rankingHint = myVendorPlan.boosted
     ? 'Boost tier keeps your profile above standard listings when customers browse your locality.'
     : 'Upgrade to Premium Boosted to move ahead of standard listings in customer discovery.';
+
+  const rankUpNudge = computeRankUpNudge(vendor, rankedLocalityVendors);
 
   return (
     <View style={styles.container}>
@@ -123,6 +126,60 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
             </TouchableOpacity>
           )}
         </View>
+
+        {/* RANK-UP NUDGE */}
+        {rankUpNudge.type !== 'already_top' && (
+          <View style={[
+            styles.rankNudgeCard,
+            rankUpNudge.urgent && styles.rankNudgeCardUrgent,
+          ]}>
+            <View style={styles.rankNudgeTop}>
+              <View style={[
+                styles.rankNudgeIconWrap,
+                { backgroundColor: rankUpNudge.urgent ? 'rgba(139, 92, 246, 0.12)' : 'rgba(59, 130, 246, 0.10)' },
+              ]}>
+                <Ionicons
+                  name={rankUpNudge.urgent ? 'flash' : 'trending-up'}
+                  size={18}
+                  color={rankUpNudge.urgent ? '#8B5CF6' : theme.colors.primary}
+                />
+              </View>
+              <View style={{ flex: 1, marginLeft: theme.spacing.sm }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  {rankUpNudge.urgent && (
+                    <View style={styles.urgentBadge}>
+                      <VText variant="caption" color="#8B5CF6" style={{ fontSize: 9, fontWeight: '800', letterSpacing: 0.5 }}>CLOSE!</VText>
+                    </View>
+                  )}
+                  <VText variant="h3" style={{ fontSize: normalize(14), fontWeight: '700' }}>{rankUpNudge.message}</VText>
+                </View>
+                <VText variant="caption" color={theme.colors.textMuted} style={{ marginTop: 2, lineHeight: 17 }}>{rankUpNudge.subMessage}</VText>
+              </View>
+            </View>
+            <TouchableOpacity
+              style={[styles.rankNudgeBtn, rankUpNudge.urgent && styles.rankNudgeBtnUrgent]}
+              activeOpacity={0.85}
+              onPress={() => {
+                if (rankUpNudge.type === 'upgrade') onManageSubscription();
+                else onViewGrowth?.();
+              }}
+            >
+              <VText
+                variant="caption"
+                color={rankUpNudge.urgent ? '#8B5CF6' : theme.colors.primary}
+                style={{ fontWeight: '700' }}
+              >
+                {rankUpNudge.actionLabel}
+              </VText>
+              <Ionicons
+                name="arrow-forward"
+                size={14}
+                color={rankUpNudge.urgent ? '#8B5CF6' : theme.colors.primary}
+                style={{ marginLeft: 4 }}
+              />
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* VISIBILITY OPTIMIZER */}
         <View style={styles.sectionHeader}>
@@ -378,6 +435,54 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingVertical: 8,
     paddingHorizontal: 14,
+  },
+  rankNudgeCard: {
+    marginHorizontal: theme.spacing.lg,
+    marginBottom: theme.spacing.lg,
+    backgroundColor: '#F0F9FF',
+    borderRadius: normalize(16),
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.25)',
+    padding: theme.spacing.lg,
+  },
+  rankNudgeCardUrgent: {
+    backgroundColor: '#FAF5FF',
+    borderColor: 'rgba(139, 92, 246, 0.3)',
+  },
+  rankNudgeTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: theme.spacing.md,
+  },
+  rankNudgeIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  urgentBadge: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.5)',
+    backgroundColor: 'rgba(139, 92, 246, 0.08)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  rankNudgeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: theme.colors.primaryLight,
+    borderRadius: 999,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+  },
+  rankNudgeBtnUrgent: {
+    borderColor: 'rgba(139, 92, 246, 0.4)',
+    backgroundColor: 'rgba(139, 92, 246, 0.06)',
   },
   taskContainer: {
     backgroundColor: theme.colors.surface,

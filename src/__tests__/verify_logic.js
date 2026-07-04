@@ -1157,6 +1157,110 @@ function createAuthSessionModel(storage) {
     console.log("\n=================================================");
     console.log("   TEST CASE 14 COMPLETE                         ");
     console.log("=================================================");
+
+    // =================================================
+    // TEST CASE 15: Rank-Up Nudge Engine
+    // =================================================
+    console.log("\n--- TEST CASE 15: Rank-Up Nudge Engine ---");
+
+    const computeRankUpNudge = (vendor, localityVendors) => {
+      const ranked = [...localityVendors].sort((a, b) => {
+        const aBoost = a.subscription_tier > 1 ? 1 : 0;
+        const bBoost = b.subscription_tier > 1 ? 1 : 0;
+        if (bBoost !== aBoost) return bBoost - aBoost;
+        const aOpen = a.is_open ? 1 : 0;
+        const bOpen = b.is_open ? 1 : 0;
+        if (bOpen !== aOpen) return bOpen - aOpen;
+        if (b.rating !== a.rating) return b.rating - a.rating;
+        return a.business_name.localeCompare(b.business_name);
+      });
+
+      const currentRank = ranked.findIndex((v) => v.id === vendor.id);
+      if (currentRank <= 0) return { type: 'already_top', urgent: false };
+
+      const nextAbove = ranked[currentRank - 1];
+
+      if (vendor.subscription_tier === 1 && nextAbove.subscription_tier > 1) {
+        const boostedCount = ranked.filter((v) => v.subscription_tier > 1).length;
+        return { type: 'upgrade', urgent: true, value: boostedCount };
+      }
+
+      if (!vendor.is_open && nextAbove.is_open && vendor.subscription_tier === nextAbove.subscription_tier) {
+        return { type: 'open_status', urgent: true, value: 0 };
+      }
+
+      if (vendor.subscription_tier === nextAbove.subscription_tier && vendor.is_open === nextAbove.is_open) {
+        const ratingGap = parseFloat((nextAbove.rating - vendor.rating).toFixed(1));
+        if (ratingGap > 0 && ratingGap <= 0.8) {
+          return { type: 'rating_gap', urgent: ratingGap <= 0.3, value: ratingGap };
+        }
+      }
+
+      return { type: 'rating_gap', urgent: false, value: 0 };
+    };
+
+    const locality = [
+      { id: 'v_top', business_name: 'Alpha Foods', subscription_tier: 2, is_open: true, rating: 4.9 },
+      { id: 'v_mid', business_name: 'Beta Store', subscription_tier: 2, is_open: true, rating: 4.5 },
+      { id: 'v_me',  business_name: 'My Biz',     subscription_tier: 1, is_open: true, rating: 4.2 },
+      { id: 'v_low', business_name: 'Zeta Shop',  subscription_tier: 1, is_open: true, rating: 3.8 },
+    ];
+
+    // 15a. Upgrade nudge: free vendor below boosted
+    const nudgeUpgrade = computeRankUpNudge(locality[2], locality);
+    if (nudgeUpgrade.type === 'upgrade' && nudgeUpgrade.urgent && nudgeUpgrade.value === 2) {
+      console.log('✅ Success: Upgrade nudge fires when free vendor is below boosted competitors.');
+    } else {
+      console.error('❌ Error: Upgrade nudge logic failed.', nudgeUpgrade);
+    }
+
+    // 15b. Already-top nudge: #1 vendor
+    const nudgeTop = computeRankUpNudge(locality[0], locality);
+    if (nudgeTop.type === 'already_top') {
+      console.log('✅ Success: Already-top nudge fires for #1 vendor.');
+    } else {
+      console.error('❌ Error: Already-top nudge failed.', nudgeTop);
+    }
+
+    // 15c. Open-status nudge: closed vendor below open same-tier vendor
+    const closedLocality = [
+      { id: 'v_open', business_name: 'Open Biz', subscription_tier: 1, is_open: true, rating: 4.0 },
+      { id: 'v_closed', business_name: 'Closed Biz', subscription_tier: 1, is_open: false, rating: 4.5 },
+    ];
+    const nudgeOpen = computeRankUpNudge(closedLocality[1], closedLocality);
+    if (nudgeOpen.type === 'open_status' && nudgeOpen.urgent) {
+      console.log('✅ Success: Open-status nudge fires for closed vendor behind open same-tier vendor.');
+    } else {
+      console.error('❌ Error: Open-status nudge logic failed.', nudgeOpen);
+    }
+
+    // 15d. Rating gap nudge: urgent when gap ≤ 0.3
+    const ratingLocality = [
+      { id: 'v_ahead', business_name: 'Ahead Biz', subscription_tier: 1, is_open: true, rating: 4.5 },
+      { id: 'v_close', business_name: 'Close Biz', subscription_tier: 1, is_open: true, rating: 4.3 },
+    ];
+    const nudgeRating = computeRankUpNudge(ratingLocality[1], ratingLocality);
+    if (nudgeRating.type === 'rating_gap' && nudgeRating.urgent && nudgeRating.value === 0.2) {
+      console.log('✅ Success: Urgent rating-gap nudge fires within 0.3 star threshold.');
+    } else {
+      console.error('❌ Error: Rating-gap nudge logic failed.', nudgeRating);
+    }
+
+    // 15e. Rating gap nudge: NOT urgent when gap > 0.3 but ≤ 0.8
+    const widegapLocality = [
+      { id: 'v_far', business_name: 'Far Biz', subscription_tier: 1, is_open: true, rating: 4.9 },
+      { id: 'v_near', business_name: 'Near Biz', subscription_tier: 1, is_open: true, rating: 4.4 },
+    ];
+    const nudgeWide = computeRankUpNudge(widegapLocality[1], widegapLocality);
+    if (nudgeWide.type === 'rating_gap' && !nudgeWide.urgent && nudgeWide.value === 0.5) {
+      console.log('✅ Success: Non-urgent rating-gap nudge for 0.5 star gap.');
+    } else {
+      console.error('❌ Error: Non-urgent rating-gap threshold failed.', nudgeWide);
+    }
+
+    console.log("\n=================================================");
+    console.log("   TEST CASE 15 COMPLETE                         ");
+    console.log("=================================================");
   }, 50);
 })().catch((err) => {
   console.error('❌ Error: Test Case 6 failed with exception:', err);
