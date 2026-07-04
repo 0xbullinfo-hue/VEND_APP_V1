@@ -4,6 +4,7 @@ import { useAnalyticsStore, useAuthStore, useLocationStore, useTripStore, useUIS
 import { useProximityNotificationStore } from '../store/useProximityNotificationStore';
 import { getPlanForTier } from '../lib/subscriptionPlans';
 import { initializeNetworkMonitoring, subscribeToNetworkChanges } from '../lib/networkConnectivity';
+import { initializeErrorReporting, setErrorUser, clearErrorUser } from '../lib/errorReporting';
 
 // Export types so components importing from AppContext don't break
 export type { UserProfile, DirectionRequest, EmergencyContact } from '../types';
@@ -45,7 +46,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       role: user?.role ?? null,
       onboardingLocalityId: user?.localityId ?? null,
     });
-  }, [isHydrated, user?.id, user?.role, user?.localityId]);
+
+    // Set or clear user context in error reporting
+    if (user?.id) {
+      setErrorUser(user.id, undefined, user.phone);
+    } else {
+      clearErrorUser();
+    }
+  }, [isHydrated, user?.id, user?.role, user?.localityId, user?.phone]);
 
   useEffect(() => {
     if (!isHydrated || !user?.localityId || localityId === user.localityId) {
@@ -115,6 +123,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     devLog('networkMonitoring:initialize');
     void initializeNetworkMonitoring();
+  }, []);
+
+  // Initialize error reporting on app startup
+  useEffect(() => {
+    devLog('errorReporting:initialize');
+    // Pass your Sentry DSN here if available (from env vars)
+    // const sentryDSN = process.env.EXPO_PUBLIC_SENTRY_DSN;
+    initializeErrorReporting(undefined); // TODO: Add Sentry DSN from env
   }, []);
 
   // Subscribe to network changes

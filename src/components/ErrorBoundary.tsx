@@ -9,6 +9,7 @@ import {
 import { theme, normalize } from '../theme/designSystem';
 import { VText, VButton } from './SharedComponents';
 import { Ionicons } from './VIcons';
+import { captureException, ErrorSeverity } from '../lib/errorReporting';
 
 interface Props {
   children: ReactNode;
@@ -49,8 +50,16 @@ export class ErrorBoundary extends React.Component<Props, State> {
     console.error('[ErrorBoundary] Caught error:', error);
     console.error('[ErrorBoundary] Error info:', errorInfo);
 
-    // In production, you would send this to error reporting service
-    // Example: Sentry.captureException(error);
+    // Report to error tracking service
+    captureException(error, {
+      component: 'ErrorBoundary',
+      feature: 'error-boundary',
+      action: 'uncaught-exception',
+      metadata: {
+        componentStack: errorInfo.componentStack,
+        errorBoundaryTriggered: true,
+      },
+    });
 
     this.setState((prevState) => ({
       errorCount: prevState.errorCount + 1,
