@@ -833,6 +833,104 @@ function createAuthSessionModel(storage) {
   console.log("\n=================================================");
   console.log("   TEST CASE 11 COMPLETE                         ");
   console.log("=================================================");
+
+  // =================================================
+  // TEST CASE 12: Network-Aware Flush (Smart Retry)
+  // =================================================
+  console.log("\n--- TEST CASE 12: Network-Aware Flush (Smart Retry) ---");
+
+  const simulateNetworkAwareFlush = (networkState, queue, flushBehavior) => {
+    const result = {
+      synced: false,
+      pendingCount: queue.length,
+      networkAvailable: networkState.isConnected,
+      attempted: false,
+    };
+
+    // If no network, skip attempt
+    if (!networkState.isConnected) {
+      return result;
+    }
+
+    // Network available; attempt flush
+    result.attempted = true;
+    if (flushBehavior.isSupabaseConfigured && queue.length > 0) {
+      const failed = queue.filter(evt => !flushBehavior.successIds.includes(evt.id));
+      result.synced = failed.length === 0;
+      result.pendingCount = failed.length;
+    }
+
+    return result;
+  };
+
+  const testQueue = [
+    { id: 'evt_n1', vendorId: 'v1', type: 'profile_view', timestamp: nowTs - days(1) },
+    { id: 'evt_n2', vendorId: 'v1', type: 'directions_request', timestamp: nowTs - days(2) },
+  ];
+
+  // 12a. Verify offline prevents flush attempt
+  const offlineResult = simulateNetworkAwareFlush(
+    { isConnected: false, type: 'none' },
+    testQueue,
+    { isSupabaseConfigured: true, successIds: [] }
+  );
+
+  if (!offlineResult.networkAvailable && !offlineResult.attempted && offlineResult.pendingCount === 2) {
+    console.log('✅ Success: Offline network skips flush attempt and preserves queue.');
+  } else {
+    console.error('❌ Error: Offline should prevent flush and keep queue intact.');
+  }
+
+  // 12b. Verify online enables flush attempt
+  const onlineFailResult = simulateNetworkAwareFlush(
+    { isConnected: true, type: 'wifi' },
+    testQueue,
+    { isSupabaseConfigured: true, successIds: ['evt_n1'] }
+  );
+
+  if (onlineFailResult.networkAvailable && onlineFailResult.attempted && onlineFailResult.pendingCount === 1 && !onlineFailResult.synced) {
+    console.log('✅ Success: Online network attempts flush with partial failure.');
+  } else {
+    console.error('❌ Error: Online should attempt flush.');
+  }
+
+  // 12c. Verify successful online flush
+  const onlineSuccessResult = simulateNetworkAwareFlush(
+    { isConnected: true, type: 'wifi' },
+    testQueue,
+    { isSupabaseConfigured: true, successIds: ['evt_n1', 'evt_n2'] }
+  );
+
+  if (onlineSuccessResult.networkAvailable && onlineSuccessResult.attempted && onlineSuccessResult.synced && onlineSuccessResult.pendingCount === 0) {
+    console.log('✅ Success: Online network successfully clears queue on full sync.');
+  } else {
+    console.error('❌ Error: Online successful flush should clear queue.');
+  }
+
+  // 12d. Verify network transition behavior (from offline to online)
+  const transitionQueue = [...testQueue];
+  const offlineTransition = simulateNetworkAwareFlush(
+    { isConnected: false, type: 'none' },
+    transitionQueue,
+    { isSupabaseConfigured: true, successIds: [] }
+  );
+  
+  const onlineTransition = simulateNetworkAwareFlush(
+    { isConnected: true, type: 'cellular' },
+    transitionQueue, // Queue unchanged from offline period
+    { isSupabaseConfigured: true, successIds: ['evt_n1', 'evt_n2'] }
+  );
+
+  if (offlineTransition.pendingCount === 2 && !offlineTransition.attempted && 
+      onlineTransition.pendingCount === 0 && onlineTransition.attempted && onlineTransition.synced) {
+    console.log('✅ Success: Queue survives offline period, flushes on network recovery.');
+  } else {
+    console.error('❌ Error: Network transition handling failed.');
+  }
+
+  console.log("\n=================================================");
+  console.log("   TEST CASE 12 COMPLETE                         ");
+  console.log("=================================================");
 })().catch((err) => {
   console.error('❌ Error: Test Case 6 failed with exception:', err);
   process.exitCode = 1;

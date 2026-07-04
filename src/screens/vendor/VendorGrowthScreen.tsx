@@ -12,7 +12,7 @@ interface VendorGrowthScreenProps {
 }
 
 export const VendorGrowthScreen: React.FC<VendorGrowthScreenProps> = ({ onBack }) => {
-  const { analyticsEvents, myVendorProfile, vendors, analyticsSyncSource, analyticsPendingCount, lastRemoteSyncAt } = useApp();
+  const { analyticsEvents, myVendorProfile, vendors, analyticsSyncSource, analyticsPendingCount, lastRemoteSyncAt, networkAvailable } = useApp();
 
   const vendor = myVendorProfile || vendors[0];
   const now = Date.now();
@@ -54,6 +54,24 @@ export const VendorGrowthScreen: React.FC<VendorGrowthScreenProps> = ({ onBack }
     return 'over 1d ago';
   };
 
+  // Determine sync pill color: green for synced online, amber for local, red for offline
+  const isSynced = analyticsSyncSource === 'remote' && analyticsPendingCount === 0;
+  let pillBorderColor = 'rgba(245, 158, 11, 0.35)'; // amber (default - local cache)
+  let pillBgColor = '#FFFBEB';
+  let dotColor = '#F59E0B';
+
+  if (!networkAvailable) {
+    // Offline: red/danger
+    pillBorderColor = 'rgba(239, 68, 68, 0.35)';
+    pillBgColor = '#FEE2E2';
+    dotColor = '#EF4444';
+  } else if (isSynced) {
+    // Online and synced: green
+    pillBorderColor = 'rgba(16, 185, 129, 0.35)';
+    pillBgColor = '#ECFDF5';
+    dotColor = '#10B981';
+  }
+
   return (
     <View style={styles.container}>
       <HeaderBar 
@@ -76,12 +94,8 @@ export const VendorGrowthScreen: React.FC<VendorGrowthScreenProps> = ({ onBack }
             style={[
               styles.syncPill,
               {
-                borderColor: analyticsSyncSource === 'remote' && analyticsPendingCount === 0
-                  ? 'rgba(16, 185, 129, 0.35)'
-                  : 'rgba(245, 158, 11, 0.35)',
-                backgroundColor: analyticsSyncSource === 'remote' && analyticsPendingCount === 0
-                  ? '#ECFDF5'
-                  : '#FFFBEB',
+                borderColor: pillBorderColor,
+                backgroundColor: pillBgColor,
               },
             ]}
           >
@@ -89,14 +103,14 @@ export const VendorGrowthScreen: React.FC<VendorGrowthScreenProps> = ({ onBack }
               style={[
                 styles.syncDot,
                 {
-                  backgroundColor: analyticsSyncSource === 'remote' && analyticsPendingCount === 0
-                    ? '#10B981'
-                    : '#F59E0B',
+                  backgroundColor: dotColor,
                 },
               ]}
             />
             <VText variant="caption" color={theme.colors.textMain} style={{ fontWeight: '700', fontSize: 11 }}>
-              {analyticsSyncSource === 'remote' && analyticsPendingCount === 0
+              {!networkAvailable
+                ? 'No Network'
+                : isSynced
                 ? `Synced (${formatLastSyncTime()})`
                 : `Local Cache${analyticsPendingCount > 0 ? ` (${analyticsPendingCount} pending)` : ''}`}
             </VText>

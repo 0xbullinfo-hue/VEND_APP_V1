@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { isSupabaseConfigured, supabase } from './supabase';
+import { getNetworkState } from './networkConnectivity';
 
 export type AnalyticsEventType = 'profile_view' | 'directions_request' | 'chat_start';
 
@@ -41,6 +42,11 @@ export interface AnalyticsSyncMetadata {
 export interface AnalyticsPersistResult {
   synced: boolean;
   pendingCount: number;
+}
+
+export interface AnalyticsNetworkAwareFlushResult extends AnalyticsPersistResult {
+  networkAvailable: boolean;
+  attempted: boolean;
 }
 
 const readLocalEvents = async (): Promise<AnalyticsEventRecord[]> => {
@@ -169,6 +175,33 @@ export const flushPendingAnalyticsEvents = async (): Promise<AnalyticsPersistRes
     });
   }
   return { synced: failed.length === 0, pendingCount: failed.length };
+};
+
+/**
+ * Network-aware flush: only attempts remote sync if network is connected.
+ * Returns additional `networkAvailable` and `attempted` flags for UI feedback.
+ */
+export const flushPendingAnalyticsEventsIfOnline = async (): Promise<AnalyticsNetworkAwareFlushResult> => {
+  const networkState = getNetworkState();
+  const pending = await readPendingEvents();
+
+  // If no network, skip flush but preserve queue
+  if (!networkState.isConnected) {
+    return {
+      synced: false,
+      pendingCount: pending.length,
+      networkAvailable: false,
+      attempted: false,
+    };
+  }
+
+  // Network available; attempt flush
+  const result = await flushPendingAnalyticsEvents();
+  return {
+    ...result,
+    networkAvailable: true,
+    attempted: true,
+  };
 };
 
 export const loadAnalyticsEvents = async (actorUserId?: string | null): Promise<AnalyticsLoadResult> => {

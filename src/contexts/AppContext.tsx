@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import { useAnalyticsStore, useAuthStore, useLocationStore, useTripStore, useUIStore, useVendorStore } from '../store';
 import { getPlanForTier } from '../lib/subscriptionPlans';
+import { initializeNetworkMonitoring, subscribeToNetworkChanges } from '../lib/networkConnectivity';
 
 // Export types so components importing from AppContext don't break
 export type { UserProfile, DirectionRequest, EmergencyContact } from '../types';
@@ -107,6 +108,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       clearInterval(intervalId);
     };
   }, [isHydrated, flushPendingEvents]);
+
+  // Initialize network monitoring on app startup
+  useEffect(() => {
+    devLog('networkMonitoring:initialize');
+    void initializeNetworkMonitoring();
+  }, []);
+
+  // Subscribe to network changes
+  useEffect(() => {
+    const unsubscribe = subscribeToNetworkChanges((networkState) => {
+      devLog('networkMonitoring:changed', { isConnected: networkState.isConnected, type: networkState.type });
+      useAnalyticsStore.getState().setNetworkAvailable(networkState.isConnected);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   return <>{children}</>;
 };
