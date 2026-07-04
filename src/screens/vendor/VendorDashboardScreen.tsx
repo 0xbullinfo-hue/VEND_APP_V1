@@ -5,6 +5,8 @@ import { VText, HeaderBar } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
 import { Ionicons } from '../../components/VIcons';
 import { computeRankUpNudge } from '../../lib/rankUpNudge';
+import { useProximityNotificationStore } from '../../store/useProximityNotificationStore';
+import { filterNotifications } from '../../lib/notificationCenterUtils';
 
 const { width } = Dimensions.get('window');
 
@@ -26,6 +28,13 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
   onViewProfile
 }) => {
   const { vendors, myVendorProfile, myVendorPlan } = useApp();
+  const { notifications } = useProximityNotificationStore();
+  
+  // Get nearby customer notifications (vendor perspective)
+  const nearbyCustomers = filterNotifications(notifications, {
+    type: 'vendor_customer_nearby',
+    unreadOnly: false,
+  });
   
   // Use the logged-in vendor's own linked business profile.
   const vendor = myVendorProfile || vendors[0];
@@ -178,6 +187,54 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
                 style={{ marginLeft: 4 }}
               />
             </TouchableOpacity>
+          </View>
+        )}
+
+        {/* NEARBY CUSTOMERS (Proximity Notifications) */}
+        {nearbyCustomers.length > 0 && (
+          <View style={[styles.nearbyCustomersCard, theme.shadows.soft]}>
+            <View style={styles.nearbyHeader}>
+              <View style={styles.nearbyIconWrap}>
+                <Ionicons name="location-sharp" size={18} color={theme.colors.accent} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <VText variant="h3" style={{ fontSize: normalize(15), fontWeight: '700' }}>
+                  Customers Nearby
+                </VText>
+                <VText variant="caption" color={theme.colors.textMuted}>
+                  {nearbyCustomers.length} previous customer{nearbyCustomers.length > 1 ? 's' : ''} in your area
+                </VText>
+              </View>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.customersList}>
+              {nearbyCustomers.slice(0, 3).map((customer) => (
+                <TouchableOpacity
+                  key={customer.id}
+                  onPress={() => onStartChat(customer.triggerEntityId)}
+                  style={[styles.customerChip, theme.shadows.soft]}
+                >
+                  <Ionicons name="person-circle" size={32} color={theme.colors.primary} />
+                  <VText variant="caption" style={{ fontSize: 10, marginTop: 4, textAlign: 'center' }}>
+                    {customer.triggerEntityName.split('\n')[0]}
+                  </VText>
+                  {customer.distance && (
+                    <VText variant="caption" color={theme.colors.textMuted} style={{ fontSize: 9, marginTop: 2 }}>
+                      {customer.distance.toFixed(1)}km
+                    </VText>
+                  )}
+                </TouchableOpacity>
+              ))}
+              {nearbyCustomers.length > 3 && (
+                <View style={[styles.customerChip, styles.moreChip]}>
+                  <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: '700' }}>
+                    +{nearbyCustomers.length - 3}
+                  </VText>
+                  <VText variant="caption" color={theme.colors.textMuted} style={{ fontSize: 9 }}>
+                    more
+                  </VText>
+                </View>
+              )}
+            </ScrollView>
           </View>
         )}
 
@@ -578,6 +635,45 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     borderWidth: 2,
     borderColor: theme.colors.surface,
+  },
+  nearbyCustomersCard: {
+    marginHorizontal: theme.spacing.lg,
+    marginBottom: theme.spacing.lg,
+    backgroundColor: '#FFF',
+    borderRadius: normalize(12),
+    padding: theme.spacing.md,
+    borderWidth: 1,
+    borderColor: theme.colors.accent,
+  },
+  nearbyHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: theme.spacing.md,
+  },
+  nearbyIconWrap: {
+    width: normalize(40),
+    height: normalize(40),
+    borderRadius: normalize(20),
+    backgroundColor: `${theme.colors.accent}20`,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: theme.spacing.md,
+  },
+  customersList: {
+    paddingRight: theme.spacing.md,
+  },
+  customerChip: {
+    width: normalize(70),
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.md,
+    marginRight: theme.spacing.sm,
+    backgroundColor: theme.colors.primaryLight,
+    borderRadius: normalize(12),
+  },
+  moreChip: {
+    justifyContent: 'center',
+    paddingHorizontal: theme.spacing.md,
   },
 });
 

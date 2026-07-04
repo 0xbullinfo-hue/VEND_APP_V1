@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import { useAnalyticsStore, useAuthStore, useLocationStore, useTripStore, useUIStore, useVendorStore } from '../store';
+import { useProximityNotificationStore } from '../store/useProximityNotificationStore';
 import { getPlanForTier } from '../lib/subscriptionPlans';
 import { initializeNetworkMonitoring, subscribeToNetworkChanges } from '../lib/networkConnectivity';
 
@@ -28,6 +29,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const connectVendorRealtime = useVendorStore((state) => state.connectVendorRealtime);
   const hydrateAnalyticsEvents = useAnalyticsStore((state) => state.hydrateAnalyticsEvents);
   const flushPendingEvents = useAnalyticsStore((state) => state.flushPendingEvents);
+  const checkAllProximityTriggers = useProximityNotificationStore((state) => state.checkAllProximityTriggers);
 
   useEffect(() => {
     devLog('hydrateAuthSession:start');
@@ -126,6 +128,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       unsubscribe();
     };
   }, []);
+
+  // Periodic proximity checks (every 30 seconds when app is active)
+  useEffect(() => {
+    if (!isHydrated) {
+      return;
+    }
+
+    const vendors = useVendorStore.getState().vendors;
+    // TODO: Get customers and their locations from app state once available
+    // For now, this serves as the integration point
+    const customers: any[] = [];
+    const customerLocations = new Map();
+
+    // Proximity check on app foreground
+    const subscription = AppState.addEventListener('change', (state: AppStateStatus) => {
+      if (state === 'active') {
+        devLog('appState:foreground -> checkProximityTriggers');
+        // Trigger proximity checks
+        if (vendors.length > 0 && customers.length > 0) {
+          checkAllProximityTriggers(vendors, customers, customerLocations, []);
+        }
+      }
+    });
+
+    // Periodic proximity checks every 30 seconds (less aggressive than analytics)
+    const intervalId = setInterval(() => {
+      devLog('periodicProximityCheck:30s');
+      if (vendors.length > 0 && customers.length > 0) {
+        checkAllProximityTriggers(vendors, customers, customerLocations, []);
+      }
+    }, 30 * 1000);
+
+    return () => {
+      subscription.remove();
+      clearInterval(intervalId);
+    };
+  }, [isHydrated, checkAllProximityTriggers]);
 
   return <>{children}</>;
 };

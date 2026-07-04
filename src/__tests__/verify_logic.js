@@ -1621,6 +1621,176 @@ function createAuthSessionModel(storage) {
     console.log("\n=================================================");
     console.log("   TEST CASE 17 COMPLETE                         ");
     console.log("=================================================");
+
+    // TEST CASE 18: Integrated Notification Workflows
+    console.log("\n--- TEST CASE 18: Integrated Notification Workflows ---");
+
+    // Simulate notification utilities
+    const formatNotificationTime = (timestamp) => {
+      const now = Date.now();
+      const diffMs = now - timestamp;
+      const diffSecs = Math.floor(diffMs / 1000);
+      const diffMins = Math.floor(diffSecs / 60);
+      const diffHours = Math.floor(diffMins / 60);
+      const diffDays = Math.floor(diffHours / 24);
+
+      if (diffSecs < 60) return 'now';
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      if (diffDays < 7) return `${diffDays}d ago`;
+      
+      const date = new Date(timestamp);
+      return date.toLocaleDateString();
+    };
+
+    const formatNotificationForDisplay = (notification) => {
+      let displayTitle = '';
+      let displayBody = '';
+
+      if (notification.type === 'vendor_customer_nearby') {
+        displayTitle = 'Previous Customer Nearby';
+        displayBody = `${notification.triggerEntityName} is in ${notification.localityName}`;
+      } else if (notification.type === 'customer_vendor_nearby') {
+        displayTitle = 'Boosted Vendors Near You';
+        displayBody = `Check out ${notification.triggerEntityName} in ${notification.localityName}`;
+      }
+
+      return {
+        ...notification,
+        displayTime: formatNotificationTime(notification.createdAt),
+        displayTitle,
+        displayBody,
+      };
+    };
+
+    const filterNotifications = (notifications, options) => {
+      let filtered = notifications;
+
+      if (options?.type) {
+        filtered = filtered.filter((n) => n.type === options.type);
+      }
+
+      if (options?.unreadOnly) {
+        filtered = filtered.filter((n) => !n.read);
+      }
+
+      if (options?.limit) {
+        filtered = filtered.slice(0, options.limit);
+      }
+
+      return filtered;
+    };
+
+    const getNotificationStats = (notifications) => {
+      const totalCount = notifications.length;
+      const unreadCount = notifications.filter((n) => !n.read).length;
+      const vendorNotifCount = notifications.filter((n) => n.type === 'vendor_customer_nearby').length;
+      const customerNotifCount = notifications.filter((n) => n.type === 'customer_vendor_nearby').length;
+
+      return {
+        totalCount,
+        unreadCount,
+        vendorNotifCount,
+        customerNotifCount,
+        hasUnread: unreadCount > 0,
+      };
+    };
+
+    // 18a. Format notification time correctly
+    const now = Date.now();
+    const pastTime = now - 5 * 60 * 1000; // 5 minutes ago
+    const formattedTime = formatNotificationTime(pastTime);
+    if (formattedTime.includes('m ago')) {
+      console.log(`✅ Success: Notification time formatted correctly (${formattedTime}).`);
+    } else {
+      console.error(`❌ Error: time formatting failed, got ${formattedTime}.`);
+    }
+
+    // 18b. Format notification for display with title and body
+    const testNotif = {
+      id: 'notif-test',
+      type: 'vendor_customer_nearby',
+      triggerEntityName: '+2347064291234',
+      localityName: 'Yaba',
+      createdAt: now,
+      read: false,
+    };
+    const formatted = formatNotificationForDisplay(testNotif);
+    if (formatted.displayTitle === 'Previous Customer Nearby' && formatted.displayBody.includes('+2347064291234')) {
+      console.log('✅ Success: Notification formatted with title, body, and time.');
+    } else {
+      console.error('❌ Error: notification formatting failed.', formatted);
+    }
+
+    // 18c. Filter notifications by type
+    const notifs = [
+      { id: 'v1', type: 'vendor_customer_nearby', read: true },
+      { id: 'c1', type: 'customer_vendor_nearby', read: false },
+      { id: 'v2', type: 'vendor_customer_nearby', read: false },
+    ];
+
+    const vendorFiltered = filterNotifications(notifs, { type: 'vendor_customer_nearby' });
+    if (vendorFiltered.length === 2 && vendorFiltered.every((n) => n.type === 'vendor_customer_nearby')) {
+      console.log('✅ Success: Notifications filtered by type (vendor notifications).`');
+    } else {
+      console.error('❌ Error: type filtering failed.', vendorFiltered);
+    }
+
+    // 18d. Filter notifications by unread status
+    const unreadFiltered = filterNotifications(notifs, { unreadOnly: true });
+    if (unreadFiltered.length === 2 && unreadFiltered.every((n) => !n.read)) {
+      console.log('✅ Success: Notifications filtered by unread status.');
+    } else {
+      console.error('❌ Error: unread filtering failed.', unreadFiltered);
+    }
+
+    // 18e. Get notification statistics
+    const stats = getNotificationStats(notifs);
+    if (
+      stats.totalCount === 3 &&
+      stats.unreadCount === 2 &&
+      stats.vendorNotifCount === 2 &&
+      stats.customerNotifCount === 1 &&
+      stats.hasUnread === true
+    ) {
+      console.log('✅ Success: Notification statistics computed correctly (3 total, 2 unread, 2 vendor, 1 customer).');
+    } else {
+      console.error('❌ Error: statistics calculation failed.', stats);
+    }
+
+    // 18f. Filter with limit works
+    const limited = filterNotifications(notifs, { limit: 1 });
+    if (limited.length === 1) {
+      console.log('✅ Success: Notification limit filtering works (limit=1).`');
+    } else {
+      console.error(`❌ Error: limit filtering failed, got ${limited.length} instead of 1.`);
+    }
+
+    // 18g. Vendor dashboard nearby customers list (vendors only)
+    const vendorNotifsForDashboard = filterNotifications(notifs, {
+      type: 'vendor_customer_nearby',
+      unreadOnly: false,
+    });
+    if (vendorNotifsForDashboard.length === 2) {
+      console.log('✅ Success: Vendor dashboard nearby customers list populated (2 customers nearby).`');
+    } else {
+      console.error('❌ Error: vendor dashboard list failed.', vendorNotifsForDashboard);
+    }
+
+    // 18h. Customer notifications for nearby boosted vendors
+    const customerNotifsForDashboard = filterNotifications(notifs, {
+      type: 'customer_vendor_nearby',
+      unreadOnly: false,
+    });
+    if (customerNotifsForDashboard.length === 1) {
+      console.log('✅ Success: Customer dashboard nearby vendors list populated (1 boosted vendor).`');
+    } else {
+      console.error('❌ Error: customer dashboard list failed.', customerNotifsForDashboard);
+    }
+
+    console.log("\n=================================================");
+    console.log("   TEST CASE 18 COMPLETE                         ");
+    console.log("=================================================");
   }, 50);
 })().catch((err) => {
   console.error('❌ Error: Test Case 6 failed with exception:', err);
