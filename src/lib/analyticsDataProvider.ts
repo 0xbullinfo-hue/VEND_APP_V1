@@ -24,6 +24,18 @@ interface AnalyticsEventRow {
 }
 
 const ANALYTICS_STORAGE_KEY = 'vend.analytics.events.v1';
+const ANALYTICS_PENDING_STORAGE_KEY = 'vend.analytics.pending.v1';
+
+export interface AnalyticsLoadResult {
+  events: AnalyticsEventRecord[];
+  source: 'local' | 'remote';
+  pendingCount: number;
+}
+
+export interface AnalyticsPersistResult {
+  synced: boolean;
+  pendingCount: number;
+}
 
 const readLocalEvents = async (): Promise<AnalyticsEventRecord[]> => {
   try {
@@ -49,11 +61,84 @@ const writeLocalEvents = async (events: AnalyticsEventRecord[]): Promise<void> =
   }
 };
 
-export const loadAnalyticsEvents = async (actorUserId?: string | null): Promise<AnalyticsEventRecord[]> => {
+const readPendingEvents = async (): Promise<AnalyticsEventRecord[]> => {
+  try {
+    const raw = await AsyncStorage.getItem(ANALYTICS_PENDING_STORAGE_KEY);
+    if (!raw) {
+      return [];
+    }
+    const parsed = JSON.parse(raw) as AnalyticsEventRecord[];
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+    return parsed;
+  } catch {
+    return [];
+  }
+};
+
+const writePendingEvents = async (events: AnalyticsEventRecord[]): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(ANALYTICS_PENDING_STORAGE_KEY, JSON.stringify(events));
+  } catch {
+    // Ignore queue write failures to avoid blocking UI.
+  }
+};
+
+const toAnalyticsInsertRow = (event: AnalyticsEventRecord) => ({
+  id: event.id,
+  event_type: event.type,
+  vendor_id: event.vendorId,
+  event_timestamp: new Date(event.timestamp).toISOString(),
+  source: event.source,
+  actor_user_id: event.actorUserId ?? null,
+  locality_id: event.localityId ?? null,
+});
+
+export const getPendingAnalyticsCount = async (): Promise<number> => {
+  const pending = await readPendingEvents();
+  return pending.length;
+};
+
+export const flushPendingAnalyticsEvents = async (): Promise<AnalyticsPersistResult> => {
+  const pending = await readPendingEvents();
+  if (pending.length === 0) {
+    return { synced: true, pendingCount: 0 };
+  }
+
+  if (!isSupabaseConfigured()) {
+    return { synced: false, pendingCount: pending.length };
+  }
+
+  const failed: AnalyticsEventRecord[] = [];
+
+  for (const event of pending) {
+    try {
+      const { error } = await supabase.from('analytics_events').upsert(toAnalyticsInsertRow(event), {
+        onConflict: 'id',
+      });
+      if (error) {
+        failed.push(event);
+      }
+    } catch {
+      failed.push(event);
+    }
+  }
+
+  await writePendingEvents(failed);
+  return { synced: failed.length === 0, pendingCount: failed.length };
+};
+
+export const loadAnalyticsEvents = async (actorUserId?: string | null): Promise<AnalyticsLoadResult> => {
   const localEvents = await readLocalEvents();
+  const flushResult = await flushPendingAnalyticsEvents();
 
   if (!isSupabaseConfigured() || !actorUserId) {
-    return localEvents;
+    return {
+      events: localEvents,
+      source: 'local',
+      pendingCount: flushResult.pendingCount,
+    };
   }
 
   try {
@@ -65,7 +150,11 @@ export const loadAnalyticsEvents = async (actorUserId?: string | null): Promise<
       .limit(5000);
 
     if (error || !data) {
-      return localEvents;
+      return {
+        events: localEvents,
+        source: 'local',
+        pendingCount: flushResult.pendingCount,
+      };
     }
 
     const remoteEvents = (data as AnalyticsEventRow[]).map((row) => ({
@@ -79,38 +168,57 @@ export const loadAnalyticsEvents = async (actorUserId?: string | null): Promise<
     }));
 
     await writeLocalEvents(remoteEvents);
-    return remoteEvents;
+    return {
+      events: remoteEvents,
+      source: 'remote',
+      pendingCount: flushResult.pendingCount,
+    };
   } catch {
-    return localEvents;
+    return {
+      events: localEvents,
+      source: 'local',
+      pendingCount: flushResult.pendingCount,
+    };
   }
 };
 
-export const persistAnalyticsEvent = async (event: AnalyticsEventRecord): Promise<void> => {
+export const persistAnalyticsEvent = async (event: AnalyticsEventRecord): Promise<AnalyticsPersistResult> => {
   const localEvents = await readLocalEvents();
   await writeLocalEvents([...localEvents, event]);
 
   if (!isSupabaseConfigured()) {
-    return;
+    const pending = await readPendingEvents();
+    const nextPending = [...pending, event];
+    await writePendingEvents(nextPending);
+    return { synced: false, pendingCount: nextPending.length };
   }
 
   try {
-    await supabase.from('analytics_events').insert({
-      id: event.id,
-      event_type: event.type,
-      vendor_id: event.vendorId,
-      event_timestamp: new Date(event.timestamp).toISOString(),
-      source: event.source,
-      actor_user_id: event.actorUserId ?? null,
-      locality_id: event.localityId ?? null,
+    const { error } = await supabase.from('analytics_events').upsert(toAnalyticsInsertRow(event), {
+      onConflict: 'id',
     });
+
+    if (error) {
+      const pending = await readPendingEvents();
+      const nextPending = [...pending, event];
+      await writePendingEvents(nextPending);
+      return { synced: false, pendingCount: nextPending.length };
+    }
+
+    const pending = await readPendingEvents();
+    return { synced: pending.length === 0, pendingCount: pending.length };
   } catch {
-    // Local copy already persisted; remote sync can retry in future sessions.
+    const pending = await readPendingEvents();
+    const nextPending = [...pending, event];
+    await writePendingEvents(nextPending);
+    return { synced: false, pendingCount: nextPending.length };
   }
 };
 
 export const clearAnalyticsEvents = async (): Promise<void> => {
   try {
     await AsyncStorage.removeItem(ANALYTICS_STORAGE_KEY);
+    await AsyncStorage.removeItem(ANALYTICS_PENDING_STORAGE_KEY);
   } catch {
     // No-op
   }

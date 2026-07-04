@@ -15,6 +15,8 @@ export interface AnalyticsEvent {
 
 interface AnalyticsState {
   analyticsEvents: AnalyticsEvent[];
+  analyticsSyncSource: 'local' | 'remote';
+  analyticsPendingCount: number;
   hydrateAnalyticsEvents: (actorUserId?: string | null) => Promise<void>;
   trackProfileView: (vendorId: string, context?: { actorUserId?: string; localityId?: number }) => void;
   trackDirectionsRequest: (vendorId: string, context?: { actorUserId?: string; localityId?: number }) => void;
@@ -38,32 +40,44 @@ const buildEvent = (
 
 export const useAnalyticsStore = create<AnalyticsState>((set) => ({
   analyticsEvents: [],
+  analyticsSyncSource: 'local',
+  analyticsPendingCount: 0,
 
   hydrateAnalyticsEvents: async (actorUserId) => {
-    const events = await loadAnalyticsEvents(actorUserId);
-    set({ analyticsEvents: events });
+    const result = await loadAnalyticsEvents(actorUserId);
+    set({
+      analyticsEvents: result.events,
+      analyticsSyncSource: result.source,
+      analyticsPendingCount: result.pendingCount,
+    });
   },
 
   trackProfileView: (vendorId, context) => {
     const event = buildEvent('profile_view', vendorId, context);
     set((state) => ({ analyticsEvents: [...state.analyticsEvents, event] }));
-    void persistAnalyticsEvent(event);
+    void persistAnalyticsEvent(event).then((result) => {
+      set({ analyticsPendingCount: result.pendingCount });
+    });
   },
 
   trackDirectionsRequest: (vendorId, context) => {
     const event = buildEvent('directions_request', vendorId, context);
     set((state) => ({ analyticsEvents: [...state.analyticsEvents, event] }));
-    void persistAnalyticsEvent(event);
+    void persistAnalyticsEvent(event).then((result) => {
+      set({ analyticsPendingCount: result.pendingCount });
+    });
   },
 
   trackChatStart: (vendorId, context) => {
     const event = buildEvent('chat_start', vendorId, context);
     set((state) => ({ analyticsEvents: [...state.analyticsEvents, event] }));
-    void persistAnalyticsEvent(event);
+    void persistAnalyticsEvent(event).then((result) => {
+      set({ analyticsPendingCount: result.pendingCount });
+    });
   },
 
   resetAnalytics: () => {
-    set({ analyticsEvents: [] });
+    set({ analyticsEvents: [], analyticsSyncSource: 'local', analyticsPendingCount: 0 });
     void clearAnalyticsEvents();
   },
 }));

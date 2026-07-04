@@ -12,7 +12,7 @@ interface VendorGrowthScreenProps {
 }
 
 export const VendorGrowthScreen: React.FC<VendorGrowthScreenProps> = ({ onBack }) => {
-  const { analyticsEvents, myVendorProfile, vendors } = useApp();
+  const { analyticsEvents, myVendorProfile, vendors, analyticsSyncSource, analyticsPendingCount } = useApp();
 
   const vendor = myVendorProfile || vendors[0];
   const now = Date.now();
@@ -60,6 +60,35 @@ export const VendorGrowthScreen: React.FC<VendorGrowthScreenProps> = ({ onBack }
         
         <View style={styles.headerRow}>
           <VText variant="h2" style={{ fontSize: normalize(22) }}>Growth Hub</VText>
+          <View
+            style={[
+              styles.syncPill,
+              {
+                borderColor: analyticsSyncSource === 'remote' && analyticsPendingCount === 0
+                  ? 'rgba(16, 185, 129, 0.35)'
+                  : 'rgba(245, 158, 11, 0.35)',
+                backgroundColor: analyticsSyncSource === 'remote' && analyticsPendingCount === 0
+                  ? '#ECFDF5'
+                  : '#FFFBEB',
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.syncDot,
+                {
+                  backgroundColor: analyticsSyncSource === 'remote' && analyticsPendingCount === 0
+                    ? '#10B981'
+                    : '#F59E0B',
+                },
+              ]}
+            />
+            <VText variant="caption" color={theme.colors.textMain} style={{ fontWeight: '700' }}>
+              {analyticsSyncSource === 'remote' && analyticsPendingCount === 0
+                ? 'Synced'
+                : `Local Cache${analyticsPendingCount > 0 ? ` (${analyticsPendingCount} pending)` : ''}`}
+            </VText>
+          </View>
         </View>
 
         <View style={styles.sectionHeader}>
@@ -246,6 +275,23 @@ const styles = StyleSheet.create({
   headerRow: {
     paddingHorizontal: theme.spacing.lg,
     paddingBottom: theme.spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  syncPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+  },
+  syncDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    marginRight: 6,
   },
   heroCard: {
     backgroundColor: theme.colors.primary,

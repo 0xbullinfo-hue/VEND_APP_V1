@@ -640,6 +640,15 @@ function createAuthSessionModel(storage) {
     return remoteEvents;
   }
 
+  function appendPendingQueue(queue, event) {
+    return [...queue, event];
+  }
+
+  function flushQueue({ isSupabaseConfigured, queue, failIds }) {
+    if (!isSupabaseConfigured) return queue;
+    return queue.filter((evt) => failIds.includes(evt.id));
+  }
+
   const localSeed = [{ id: 'evt_local_1', vendorId: 'v1', type: 'profile_view' }];
   const appended = persistEventLocal(localSeed, { id: 'evt_local_2', vendorId: 'v1', type: 'chat_start' });
   if (appended.length === 2 && appended[1].id === 'evt_local_2') {
@@ -682,6 +691,47 @@ function createAuthSessionModel(storage) {
     console.log('✅ Success: Remote telemetry source is preferred when available and healthy.');
   } else {
     console.error('❌ Error: Remote telemetry preference failed.');
+  }
+
+  const queuedOnce = appendPendingQueue([], { id: 'evt_q_1' });
+  const queuedTwice = appendPendingQueue(queuedOnce, { id: 'evt_q_2' });
+  if (queuedTwice.length === 2) {
+    console.log('✅ Success: Failed sync events are queued for retry.');
+  } else {
+    console.error('❌ Error: Retry queue append failed.');
+  }
+
+  const afterFlushPartial = flushQueue({
+    isSupabaseConfigured: true,
+    queue: queuedTwice,
+    failIds: ['evt_q_2'],
+  });
+  if (afterFlushPartial.length === 1 && afterFlushPartial[0].id === 'evt_q_2') {
+    console.log('✅ Success: Queue flush keeps only events that still fail sync.');
+  } else {
+    console.error('❌ Error: Queue flush behavior mismatch (partial failure).');
+  }
+
+  const afterFlushOffline = flushQueue({
+    isSupabaseConfigured: false,
+    queue: queuedTwice,
+    failIds: [],
+  });
+  if (afterFlushOffline.length === 2) {
+    console.log('✅ Success: Offline queue flush preserves pending events.');
+  } else {
+    console.error('❌ Error: Offline queue should remain untouched.');
+  }
+
+  const afterFlushSuccess = flushQueue({
+    isSupabaseConfigured: true,
+    queue: queuedTwice,
+    failIds: [],
+  });
+  if (afterFlushSuccess.length === 0) {
+    console.log('✅ Success: Successful retry flush clears pending queue.');
+  } else {
+    console.error('❌ Error: Queue should be empty after successful flush.');
   }
 
   console.log("\n=================================================");
