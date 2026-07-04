@@ -1054,6 +1054,109 @@ function createAuthSessionModel(storage) {
     console.log("\n=================================================");
     console.log("   TEST CASE 13 COMPLETE                         ");
     console.log("=================================================");
+
+    // =================================================
+    // TEST CASE 14: Event Drill-Down & Engagement Quality Scoring
+    // =================================================
+    console.log("\n--- TEST CASE 14: Event Drill-Down & Engagement Quality Scoring ---");
+
+    const EVENT_WEIGHTS = { chat_start: 3, directions_request: 2, profile_view: 1 };
+
+    const computeEngagementQuality = (events) => {
+      if (events.length === 0) return { score: 0, quality: 0, label: 'Low' };
+      const weighted = events.reduce((sum, e) => sum + (EVENT_WEIGHTS[e.type] ?? 1), 0);
+      const maxPossible = events.length * 3;
+      const quality = Math.min(100, Math.round((weighted / maxPossible) * 100));
+      const label = quality >= 70 ? 'High' : quality >= 40 ? 'Medium' : 'Low';
+      return { score: weighted, quality, label };
+    };
+
+    const mixedEvents = [
+      { id: 'e1', vendorId: 'v1', type: 'chat_start', timestamp: nowTs - days(1), localityId: 1 },
+      { id: 'e2', vendorId: 'v1', type: 'chat_start', timestamp: nowTs - days(1), localityId: 2 },
+      { id: 'e3', vendorId: 'v1', type: 'directions_request', timestamp: nowTs - days(2), localityId: 1 },
+      { id: 'e4', vendorId: 'v1', type: 'profile_view', timestamp: nowTs - days(3) },
+      { id: 'e5', vendorId: 'v1', type: 'profile_view', timestamp: nowTs - days(4) },
+      { id: 'e6', vendorId: 'v1', type: 'profile_view', timestamp: nowTs - days(5) },
+    ];
+
+    // 14a. Verify engagement score computation
+    const { score, quality, label } = computeEngagementQuality(mixedEvents);
+    // chat_start*2=6, directions*1=2, profile_view*3=3 → weighted=11, max=18 → 61%
+    if (score === 11 && quality === 61 && label === 'Medium') {
+      console.log(`✅ Success: Engagement quality score correct (weighted=${score}, quality=${quality}%, label=${label}).`);
+    } else {
+      console.error(`❌ Error: Engagement quality mismatch (got weighted=${score}, quality=${quality}%, label=${label}).`);
+    }
+
+    // 14b. Verify High label threshold
+    const highEvents = [
+      { id: 'h1', type: 'chat_start' },
+      { id: 'h2', type: 'chat_start' },
+      { id: 'h3', type: 'chat_start' },
+    ];
+    const { label: highLabel } = computeEngagementQuality(highEvents);
+    if (highLabel === 'High') {
+      console.log('✅ Success: All-chat events correctly rated High engagement.');
+    } else {
+      console.error('❌ Error: High engagement label threshold failed.');
+    }
+
+    // 14c. Verify Low label threshold
+    const lowEvents = [
+      { id: 'l1', type: 'profile_view' },
+      { id: 'l2', type: 'profile_view' },
+      { id: 'l3', type: 'profile_view' },
+    ];
+    const { label: lowLabel } = computeEngagementQuality(lowEvents);
+    if (lowLabel === 'Low') {
+      console.log('✅ Success: All-view events correctly rated Low engagement.');
+    } else {
+      console.error('❌ Error: Low engagement label threshold failed.');
+    }
+
+    // 14d. Verify drill-down events are sorted newest-first
+    const sorted = [...mixedEvents].sort((a, b) => b.timestamp - a.timestamp);
+    const sortedCorrect = sorted[0].id === 'e1' && sorted[sorted.length - 1].id === 'e6';
+    if (sortedCorrect) {
+      console.log('✅ Success: Drill-down events sorted newest-first.');
+    } else {
+      console.error('❌ Error: Event sort order incorrect.');
+    }
+
+    // 14e. Verify display slice: first 5 when collapsed, all when expanded
+    const collapsed = sorted.slice(0, 5);
+    const expanded = sorted.slice(0, 20);
+    if (collapsed.length === 5 && expanded.length === mixedEvents.length) {
+      console.log('✅ Success: Collapsed shows 5 events, expanded shows all events.');
+    } else {
+      console.error('❌ Error: Drill-down event slice logic incorrect.');
+    }
+
+    // 14f. Verify event time formatting
+    const formatEventTime = (ts) => {
+      const diffMs = nowTs - ts;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMins / 60);
+      const diffDays = Math.floor(diffHours / 24);
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      return `${diffDays}d ago`;
+    };
+
+    const t1 = formatEventTime(nowTs - 30 * 60000);        // 30 min ago
+    const t2 = formatEventTime(nowTs - 5 * 60 * 60000);    // 5 hours ago
+    const t3 = formatEventTime(nowTs - 3 * 24 * 60 * 60000); // 3 days ago
+
+    if (t1.includes('m ago') && t2.includes('h ago') && t3.includes('d ago')) {
+      console.log('✅ Success: Event timestamps format correctly (m/h/d ago).');
+    } else {
+      console.error(`❌ Error: Event time formatting failed (${t1}, ${t2}, ${t3}).`);
+    }
+
+    console.log("\n=================================================");
+    console.log("   TEST CASE 14 COMPLETE                         ");
+    console.log("=================================================");
   }, 50);
 })().catch((err) => {
   console.error('❌ Error: Test Case 6 failed with exception:', err);

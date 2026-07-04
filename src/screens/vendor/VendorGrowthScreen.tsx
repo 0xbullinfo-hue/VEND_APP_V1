@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, HeaderBar } from '../../components/SharedComponents';
@@ -52,6 +52,42 @@ export const VendorGrowthScreen: React.FC<VendorGrowthScreenProps> = ({ onBack }
   const rankNow = Math.max(1, localityVendors.findIndex((item) => item.id === vendor.id) + 1);
   const estimatedRank7dAgo = Math.min(localityVendors.length || 1, rankNow + (growthDeltaPct > 0 ? 1 : 0));
   const rankMovement = Math.max(0, estimatedRank7dAgo - rankNow);
+
+  // Engagement quality scoring (weights: chat=3, directions=2, profile_view=1)
+  const EVENT_WEIGHTS: Record<string, number> = {
+    chat_start: 3,
+    directions_request: 2,
+    profile_view: 1,
+  };
+  const engagementScore = currentWindow.reduce((sum, e) => sum + (EVENT_WEIGHTS[e.type] ?? 1), 0);
+  const maxPossibleScore = currentWindow.length * 3;
+  const engagementQuality = maxPossibleScore === 0 ? 0 : Math.min(100, Math.round((engagementScore / maxPossibleScore) * 100));
+  const scoreLabel = engagementQuality >= 70 ? 'High' : engagementQuality >= 40 ? 'Medium' : 'Low';
+  const scoreColor = engagementQuality >= 70 ? '#10B981' : engagementQuality >= 40 ? '#F59E0B' : '#EF4444';
+
+  // Recent events sorted newest-first, capped at 20 for display
+  const recentEvents = [...currentWindow]
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .slice(0, 20);
+
+  const [expandDrillDown, setExpandDrillDown] = useState(false);
+  const visibleEvents = expandDrillDown ? recentEvents : recentEvents.slice(0, 5);
+
+  const formatEventTime = (ts: number): string => {
+    const diffMs = now - ts;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${diffDays}d ago`;
+  };
+
+  const EVENT_META: Record<string, { label: string; icon: string; color: string }> = {
+    profile_view: { label: 'Profile View', icon: 'eye-outline', color: theme.colors.primary },
+    directions_request: { label: 'Direction Request', icon: 'navigate-outline', color: '#8B5CF6' },
+    chat_start: { label: 'Chat Started', icon: 'chatbubble-outline', color: '#10B981' },
+  };
 
   const formatLastSyncTime = (): string => {
     if (!lastRemoteSyncAt) return 'Never';
@@ -168,6 +204,77 @@ export const VendorGrowthScreen: React.FC<VendorGrowthScreenProps> = ({ onBack }
           <VText variant="caption" color={theme.colors.textMuted} style={{ marginTop: theme.spacing.sm }}>
             Rank moved +{rankMovement} this week based on recent customer interactions across profile views, directions, and chats.
           </VText>
+
+          {/* Engagement Quality Score */}
+          <View style={styles.qualityScoreRow}>
+            <View style={styles.qualityScoreLeft}>
+              <VText variant="caption" color={theme.colors.textMuted} style={{ fontSize: 11 }}>ENGAGEMENT QUALITY</VText>
+              <VText variant="h3" style={{ marginTop: 2, color: scoreColor }}>{scoreLabel}</VText>
+            </View>
+            <View style={styles.qualityBar}>
+              <View style={[styles.qualityFill, { width: `${engagementQuality}%` as any, backgroundColor: scoreColor }]} />
+            </View>
+            <VText variant="caption" color={scoreColor} style={{ fontWeight: '700', marginLeft: 8, fontSize: 13 }}>{engagementQuality}%</VText>
+          </View>
+        </View>
+
+        {/* RECENT ENGAGEMENT DRILL-DOWN */}
+        <View style={styles.sectionHeader}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <VText variant="h3" color={theme.colors.textMuted} style={{ fontSize: normalize(12), letterSpacing: 1 }}>RECENT ENGAGEMENTS</VText>
+            <VText variant="caption" color={theme.colors.textMuted} style={{ fontSize: 11 }}>{recentEvents.length} this week</VText>
+          </View>
+        </View>
+
+        <View style={styles.drillDownCard}>
+          {recentEvents.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Ionicons name="analytics-outline" size={32} color={theme.colors.textMuted} />
+              <VText variant="caption" color={theme.colors.textMuted} style={{ marginTop: 8, textAlign: 'center' }}>
+                No engagement events yet this week. Share your profile to start getting discovered.
+              </VText>
+            </View>
+          ) : (
+            <>
+              {visibleEvents.map((event, idx) => {
+                const meta = EVENT_META[event.type] ?? { label: event.type, icon: 'ellipse-outline', color: theme.colors.textMuted };
+                return (
+                  <View key={event.id} style={[
+                    styles.eventRow,
+                    idx < visibleEvents.length - 1 && styles.eventRowBorder,
+                  ]}>
+                    <View style={[styles.eventIconWrap, { backgroundColor: `${meta.color}18` }]}>
+                      <Ionicons name={meta.icon as any} size={18} color={meta.color} />
+                    </View>
+                    <View style={styles.eventDetails}>
+                      <VText variant="body" style={{ fontWeight: '600', fontSize: normalize(13) }}>{meta.label}</VText>
+                      {event.localityId ? (
+                        <VText variant="caption" color={theme.colors.textMuted} style={{ marginTop: 1 }}>
+                          Locality #{event.localityId}
+                        </VText>
+                      ) : null}
+                    </View>
+                    <VText variant="caption" color={theme.colors.textMuted} style={{ fontSize: 11 }}>
+                      {formatEventTime(event.timestamp)}
+                    </VText>
+                  </View>
+                );
+              })}
+              {recentEvents.length > 5 && (
+                <TouchableOpacity style={styles.expandBtn} onPress={() => setExpandDrillDown(prev => !prev)}>
+                  <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: '700' }}>
+                    {expandDrillDown ? 'Show less' : `View all ${recentEvents.length} events`}
+                  </VText>
+                  <Ionicons
+                    name={expandDrillDown ? 'chevron-up-outline' : 'chevron-down-outline'}
+                    size={14}
+                    color={theme.colors.primary}
+                    style={{ marginLeft: 4 }}
+                  />
+                </TouchableOpacity>
+              )}
+            </>
+          )}
         </View>
 
         {/* HERO CARD - POINTS */}
@@ -401,6 +508,72 @@ const styles = StyleSheet.create({
     borderRadius: normalize(12),
     paddingVertical: theme.spacing.sm,
     paddingHorizontal: theme.spacing.sm,
+  },
+  qualityScoreRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: theme.spacing.md,
+    paddingTop: theme.spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+  },
+  qualityScoreLeft: {
+    width: 90,
+    marginRight: theme.spacing.sm,
+  },
+  qualityBar: {
+    flex: 1,
+    height: 6,
+    backgroundColor: theme.colors.border,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  qualityFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  drillDownCard: {
+    backgroundColor: theme.colors.surface,
+    marginHorizontal: theme.spacing.lg,
+    borderRadius: normalize(16),
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    overflow: 'hidden',
+    marginBottom: theme.spacing.xl,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: theme.spacing.xl,
+    paddingHorizontal: theme.spacing.lg,
+  },
+  eventRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
+    gap: theme.spacing.sm,
+  },
+  eventRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  eventIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  eventDetails: {
+    flex: 1,
+  },
+  expandBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: theme.spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
   },
   optimizerCard: {
     backgroundColor: theme.colors.surface,
