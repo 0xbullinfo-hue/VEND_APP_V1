@@ -3013,6 +3013,216 @@ function createAuthSessionModel(storage) {
     console.log("\n=================================================");
     console.log("   TEST CASE 23 COMPLETE                         ");
     console.log("=================================================");
+
+    // ============ TEST CASE 24: Advanced Analytics & Reporting ============
+    console.log("\n--- TEST CASE 24: Advanced Analytics & Reporting ---");
+
+    // Helper functions for analytics operations
+    const calculateBusinessMetrics = (data) => {
+      const metrics = [];
+
+      const revenueTrend = data.revenue >= data.previousRevenue ? 'up' : 'down';
+      const revenueChange = data.previousRevenue > 0 ? ((data.revenue - data.previousRevenue) / data.previousRevenue) * 100 : 0;
+      metrics.push({
+        name: 'Total Revenue',
+        value: data.revenue,
+        previousValue: data.previousRevenue,
+        unit: 'NGN',
+        trend: revenueTrend,
+        changePercent: Math.round(revenueChange * 10) / 10,
+      });
+
+      const ordersTrend = data.ordersCount >= data.previousOrdersCount ? 'up' : 'down';
+      const ordersChange = data.previousOrdersCount > 0 ? ((data.ordersCount - data.previousOrdersCount) / data.previousOrdersCount) * 100 : 0;
+      metrics.push({
+        name: 'Order Volume',
+        value: data.ordersCount,
+        previousValue: data.previousOrdersCount,
+        unit: 'orders',
+        trend: ordersTrend,
+        changePercent: Math.round(ordersChange * 10) / 10,
+      });
+
+      return metrics;
+    };
+
+    const generateReport = (reportId, title, metrics) => ({
+      reportId,
+      title,
+      generatedAt: Date.now(),
+      period: { start: Date.now() - 7 * 24 * 60 * 60 * 1000, end: Date.now() },
+      metrics,
+      summary: `Report showing ${metrics.length} metrics for ${title}`,
+    });
+
+    const calculateKPIProgress = (kpiId, name, current, target) => {
+      const progress = Math.min((current / target) * 100, 100);
+      let status = 'on-track';
+      if (progress < 50) status = 'critical';
+      else if (progress < 80) status = 'at-risk';
+
+      return {
+        kpiId,
+        name,
+        currentValue: current,
+        targetValue: target,
+        status,
+        progress: Math.round(progress),
+        lastUpdated: Date.now(),
+      };
+    };
+
+    const formatReportAsCSV = (report) => {
+      const lines = [
+        `Report: ${report.title}`,
+        `Generated: ${new Date(report.generatedAt).toISOString()}`,
+        'Metric,Value,Previous,Trend',
+      ];
+      report.metrics.forEach((m) => {
+        lines.push(`"${m.name}","${m.value}${m.unit}","${m.previousValue}","${m.trend}"`);
+      });
+      return lines.join('\n');
+    };
+
+    const analyzeTrendData = (periods) => {
+      if (periods.length < 2) {
+        return { trend: 'stable', momentum: 0, forecast: periods[0]?.value || 0, volatility: 0 };
+      }
+      const firstHalf = periods.slice(0, Math.floor(periods.length / 2));
+      const secondHalf = periods.slice(Math.floor(periods.length / 2));
+      const firstAvg = firstHalf.reduce((s, p) => s + p.value, 0) / firstHalf.length;
+      const secondAvg = secondHalf.reduce((s, p) => s + p.value, 0) / secondHalf.length;
+
+      let trend = 'stable';
+      if (secondAvg > firstAvg * 1.1) trend = 'increasing';
+      else if (secondAvg < firstAvg * 0.9) trend = 'decreasing';
+
+      return { trend, momentum: Math.round(((secondAvg - firstAvg) / firstAvg) * 100), forecast: Math.round(secondAvg * 1.1), volatility: 10 };
+    };
+
+    const generateBusinessInsights = (metrics, kpis) => {
+      const insights = [];
+      const revenueMetric = metrics.find((m) => m.name === 'Total Revenue');
+      if (revenueMetric && revenueMetric.changePercent > 20) {
+        insights.push('Strong revenue growth. Consider scaling operations.');
+      }
+      if (kpis.filter((k) => k.status === 'critical').length > 0) {
+        insights.push('Critical KPIs need attention.');
+      }
+      insights.push('Monitor metrics regularly for best results.');
+      return insights;
+    };
+
+    const calculatePerformanceScore = (metrics) => {
+      let score = 50;
+      metrics.forEach((m) => {
+        if (m.changePercent && m.changePercent > 0) {
+          score += Math.min(m.changePercent * 0.5, 15);
+        }
+      });
+      return Math.min(Math.round(score), 100);
+    };
+
+    // 24a. Verify report generation
+    const data = {
+      revenue: 50000,
+      previousRevenue: 40000,
+      ordersCount: 150,
+      previousOrdersCount: 120,
+      customerCount: 85,
+      retentionRate: 0.65,
+      conversionRate: 0.12,
+    };
+    const metrics = calculateBusinessMetrics(data);
+    const report = generateReport('report_1', 'Weekly Analytics', metrics);
+    if (report.reportId && report.metrics.length > 0 && report.summary) {
+      console.log('✅ Success: Report generated with ID, metrics, and summary.');
+    } else {
+      console.error('❌ Error: report generation failed.');
+    }
+
+    // 24b. Verify data aggregation and metrics calculation
+    if (
+      metrics.length === 2 &&
+      metrics[0].name === 'Total Revenue' &&
+      metrics[0].changePercent === 25 &&
+      metrics[1].name === 'Order Volume' &&
+      metrics[1].changePercent === 25
+    ) {
+      console.log(`✅ Success: Data aggregation correct (2 metrics, revenue +${metrics[0].changePercent}%, orders +${metrics[1].changePercent}%).`);
+    } else {
+      console.error('❌ Error: data aggregation failed.', metrics);
+    }
+
+    // 24c. Verify KPI tracking and status calculation
+    const kpi1 = calculateKPIProgress('kpi_1', 'Revenue Target', 45000, 50000);
+    const kpi2 = calculateKPIProgress('kpi_2', 'Order Target', 120, 150);
+    const kpi3 = calculateKPIProgress('kpi_3', 'Customer Target', 30, 100);
+    if (
+      kpi1.progress === 90 &&
+      kpi1.status === 'on-track' &&
+      kpi2.progress === 80 &&
+      kpi2.status === 'on-track' &&
+      kpi3.progress === 30 &&
+      kpi3.status === 'critical'
+    ) {
+      console.log(`✅ Success: KPI tracking correct (90% on-track, 80% on-track, 30% critical).`);
+    } else {
+      console.error('❌ Error: KPI calculation failed.', { kpi1, kpi2, kpi3 });
+    }
+
+    // 24d. Verify export functionality (CSV format)
+    const csv = formatReportAsCSV(report);
+    if (csv.includes('Report:') && csv.includes('Total Revenue') && csv.includes('Order Volume')) {
+      console.log('✅ Success: CSV export formatted with header, title, and metrics.');
+    } else {
+      console.error('❌ Error: CSV export formatting failed.');
+    }
+
+    // 24e. Verify trend analysis
+    const periods = [
+      { label: 'Week 1', value: 10000, timestamp: now - 21 * 24 * 60 * 60 * 1000 },
+      { label: 'Week 2', value: 12000, timestamp: now - 14 * 24 * 60 * 60 * 1000 },
+      { label: 'Week 3', value: 15000, timestamp: now - 7 * 24 * 60 * 60 * 1000 },
+      { label: 'Week 4', value: 18000, timestamp: now },
+    ];
+    const trendAnalysis = analyzeTrendData(periods);
+    if (trendAnalysis.trend === 'increasing' && trendAnalysis.momentum > 0 && trendAnalysis.forecast > 0) {
+      console.log(`✅ Success: Trend analysis correct (${trendAnalysis.trend}, momentum=${trendAnalysis.momentum}%, forecast=${trendAnalysis.forecast}).`);
+    } else {
+      console.error('❌ Error: trend analysis failed.', trendAnalysis);
+    }
+
+    // 24f. Verify performance score calculation
+    const performanceScore = calculatePerformanceScore(metrics);
+    if (performanceScore >= 50 && performanceScore <= 100) {
+      console.log(`✅ Success: Performance score calculated (${performanceScore}/100).`);
+    } else {
+      console.error('❌ Error: performance score calculation failed.');
+    }
+
+    // 24g. Verify business insights generation
+    const kpis = [kpi1, kpi2, kpi3];
+    const analyticsInsights = generateBusinessInsights(metrics, kpis);
+    if (analyticsInsights.length >= 3 && analyticsInsights.some((i) => i.includes('revenue') || i.includes('KPI'))) {
+      console.log(`✅ Success: Business insights generated (${analyticsInsights.length} insights, first: "${analyticsInsights[0].substring(0, 40)}...").`);
+    } else {
+      console.error('❌ Error: business insights generation failed.');
+    }
+
+    // 24h. Verify KPI criticality detection and dashboard summary
+    const criticalKPIs = kpis.filter((k) => k.status === 'critical');
+    const onTrackKPIs = kpis.filter((k) => k.status === 'on-track');
+    const dashboardHealth = { totalKPIs: kpis.length, critical: criticalKPIs.length, onTrack: onTrackKPIs.length };
+    if (dashboardHealth.critical === 1 && dashboardHealth.totalKPIs === 3 && analyticsInsights.length > 0) {
+      console.log(`✅ Success: Dashboard summary correct (${dashboardHealth.totalKPIs} KPIs, ${dashboardHealth.critical} critical, ${dashboardHealth.onTrack} on-track).`);
+    } else {
+      console.error('❌ Error: dashboard summary calculation failed.');
+    }
+
+    console.log("\n=================================================");
+    console.log("   TEST CASE 24 COMPLETE                         ");
+    console.log("=================================================");
   }, 50);
 })().catch((err) => {
   console.error('❌ Error: Test Case 6 failed with exception:', err);
