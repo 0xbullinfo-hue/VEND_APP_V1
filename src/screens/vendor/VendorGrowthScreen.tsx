@@ -4,6 +4,7 @@ import { theme, normalize } from '../../theme/designSystem';
 import { VText, HeaderBar } from '../../components/SharedComponents';
 import { Ionicons } from '../../components/VIcons';
 import { useApp } from '../../contexts/AppContext';
+import { calculateGrowthMetrics, analyzeCustomerBehavior, generateGrowthRecommendations } from '../../lib/vendorGrowthAnalytics';
 
 const { width } = Dimensions.get('window');
 
@@ -64,6 +65,19 @@ export const VendorGrowthScreen: React.FC<VendorGrowthScreenProps> = ({ onBack }
   const engagementQuality = maxPossibleScore === 0 ? 0 : Math.min(100, Math.round((engagementScore / maxPossibleScore) * 100));
   const scoreLabel = engagementQuality >= 70 ? 'High' : engagementQuality >= 40 ? 'Medium' : 'Low';
   const scoreColor = engagementQuality >= 70 ? '#10B981' : engagementQuality >= 40 ? '#F59E0B' : '#EF4444';
+
+  // Calculate advanced growth metrics using new utility
+  const growthMetrics = calculateGrowthMetrics(vendorEvents);
+  const customerInsights = analyzeCustomerBehavior(vendorEvents);
+  const recommendations = generateGrowthRecommendations(
+    growthMetrics,
+    customerInsights,
+    vendor?.subscription_tier === 2,
+    vendor?.subscription_tier === 2 ? 'boosted' : 'free'
+  );
+
+  // Top recommendation to display
+  const topRecommendation = recommendations[0];
 
   // Recent events sorted newest-first, capped at 20 for display
   const recentEvents = [...currentWindow]
@@ -276,6 +290,189 @@ export const VendorGrowthScreen: React.FC<VendorGrowthScreenProps> = ({ onBack }
             </>
           )}
         </View>
+
+        {/* GROWTH INSIGHTS & RECOMMENDATIONS */}
+        {topRecommendation && (
+          <>
+            <View style={styles.sectionHeader}>
+              <VText variant="h3" color={theme.colors.textMuted} style={{ fontSize: normalize(12), letterSpacing: 1 }}>GROWTH OPPORTUNITY</VText>
+            </View>
+
+            <View style={[
+              styles.recommendationCard,
+              { borderLeftColor: topRecommendation.priority === 'urgent' ? '#EF4444' : topRecommendation.priority === 'high' ? '#F59E0B' : theme.colors.primary }
+            ]}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                <View style={{ flex: 1 }}>
+                  <VText variant="h3" style={{ fontSize: normalize(14), fontWeight: 'bold' }}>{topRecommendation.title}</VText>
+                  <VText variant="caption" color={theme.colors.textMuted} style={{ marginTop: 4 }}>{topRecommendation.description}</VText>
+                </View>
+                <View style={[
+                  styles.priorityBadge,
+                  {
+                    backgroundColor: topRecommendation.priority === 'urgent' ? '#FEE2E2' : topRecommendation.priority === 'high' ? '#FEF3C7' : '#EFF6FF'
+                  }
+                ]}>
+                  <VText
+                    variant="caption"
+                    style={{
+                      fontWeight: '700',
+                      fontSize: 10,
+                      color: topRecommendation.priority === 'urgent' ? '#DC2626' : topRecommendation.priority === 'high' ? '#D97706' : theme.colors.primary
+                    }}
+                  >
+                    {topRecommendation.priority.toUpperCase()}
+                  </VText>
+                </View>
+              </View>
+              <TouchableOpacity style={styles.actionBtn}>
+                <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: 'bold' }}>{topRecommendation.actionLabel}</VText>
+                <Ionicons name="chevron-forward-outline" size={14} color={theme.colors.primary} style={{ marginLeft: 6 }} />
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
+
+        {/* CUSTOMER BEHAVIOR INSIGHTS */}
+        <View style={styles.sectionHeader}>
+          <VText variant="h3" color={theme.colors.textMuted} style={{ fontSize: normalize(12), letterSpacing: 1 }}>CUSTOMER BEHAVIOR INSIGHTS</VText>
+        </View>
+
+        <View style={styles.insightsCard}>
+          <View style={styles.insightRow}>
+            <View style={styles.insightItem}>
+              <VText variant="caption" color={theme.colors.textMuted}>ACTIVE CUSTOMERS</VText>
+              <VText variant="h2" style={{ marginTop: 4 }}>{customerInsights.activeCustomersThisWeek}</VText>
+              <VText variant="caption" color={theme.colors.textMuted} style={{ marginTop: 2, fontSize: 11 }}>
+                {customerInsights.repeatCustomerCount} returning
+              </VText>
+            </View>
+
+            <View style={styles.insightItem}>
+              <VText variant="caption" color={theme.colors.textMuted}>AVG INTERACTIONS</VText>
+              <VText variant="h2" style={{ marginTop: 4 }}>{customerInsights.averageInteractionsPerCustomer.toFixed(1)}</VText>
+              <VText variant="caption" color={theme.colors.textMuted} style={{ marginTop: 2, fontSize: 11 }}>per customer</VText>
+            </View>
+
+            <View style={styles.insightItem}>
+              <VText variant="caption" color={theme.colors.textMuted}>CONVERSION RATE</VText>
+              <VText variant="h2" style={{ marginTop: 4 }}>{growthMetrics.conversionRate}%</VText>
+              <VText variant="caption" color={theme.colors.textMuted} style={{ marginTop: 2, fontSize: 11 }}>chat conversion</VText>
+            </View>
+          </View>
+
+          {/* Peak Hours & Days */}
+          <View style={[styles.peakTimingsRow, { marginTop: theme.spacing.md, paddingTop: theme.spacing.md, borderTopWidth: 1, borderTopColor: theme.colors.border }]}>
+            <View style={{ flex: 1 }}>
+              <VText variant="caption" color={theme.colors.textMuted} style={{ fontSize: 11 }}>PEAK HOURS</VText>
+              <View style={{ flexDirection: 'row', marginTop: 6, flexWrap: 'wrap', gap: 6 }}>
+                {customerInsights.peakHours.slice(0, 3).map((hour) => (
+                  <View key={`hour-${hour}`} style={styles.timingBadge}>
+                    <VText variant="caption" style={{ fontWeight: '700', fontSize: 11 }}>{hour}:00</VText>
+                  </View>
+                ))}
+              </View>
+            </View>
+
+            <View style={{ flex: 1 }}>
+              <VText variant="caption" color={theme.colors.textMuted} style={{ fontSize: 11 }}>PEAK DAYS</VText>
+              <View style={{ flexDirection: 'row', marginTop: 6, flexWrap: 'wrap', gap: 6 }}>
+                {customerInsights.peakDays.slice(0, 3).map((day) => (
+                  <View key={`day-${day}`} style={styles.timingBadge}>
+                    <VText variant="caption" style={{ fontWeight: '700', fontSize: 11 }}>{day}</VText>
+                  </View>
+                ))}
+              </View>
+            </View>
+          </View>
+
+          {/* Customer Segments */}
+          <View style={[styles.segmentsRow, { marginTop: theme.spacing.md, paddingTop: theme.spacing.md, borderTopWidth: 1, borderTopColor: theme.colors.border }]}>
+            <VText variant="caption" color={theme.colors.textMuted} style={{ fontSize: 11, marginBottom: 8 }}>CUSTOMER SEGMENTS</VText>
+            <View style={{ flexDirection: 'row', gap: theme.spacing.sm }}>
+              <View style={styles.segmentBadge}>
+                <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: '700' }}>{customerInsights.customerSegments.highEngagement}</VText>
+                <VText variant="caption" color={theme.colors.textMuted} style={{ fontSize: 10 }}>High</VText>
+              </View>
+              <View style={styles.segmentBadge}>
+                <VText variant="caption" color="#F59E0B" style={{ fontWeight: '700' }}>{customerInsights.customerSegments.mediumEngagement}</VText>
+                <VText variant="caption" color={theme.colors.textMuted} style={{ fontSize: 10 }}>Medium</VText>
+              </View>
+              <View style={styles.segmentBadge}>
+                <VText variant="caption" color="#9CA3AF" style={{ fontWeight: '700' }}>{customerInsights.customerSegments.lowEngagement}</VText>
+                <VText variant="caption" color={theme.colors.textMuted} style={{ fontSize: 10 }}>Low</VText>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* RETENTION & GROWTH METRICS */}
+        <View style={styles.sectionHeader}>
+          <VText variant="h3" color={theme.colors.textMuted} style={{ fontSize: normalize(12), letterSpacing: 1 }}>RETENTION & GROWTH</VText>
+        </View>
+
+        <View style={styles.metricsGrid}>
+          <View style={styles.metricBox}>
+            <VText variant="caption" color={theme.colors.textMuted} style={{ fontSize: 10 }}>WOW GROWTH</VText>
+            <VText variant="h2" style={{ marginTop: 6, color: growthMetrics.weekOverWeekGrowth >= 0 ? '#10B981' : '#EF4444' }}>
+              {growthMetrics.weekOverWeekGrowth >= 0 ? '+' : ''}{growthMetrics.weekOverWeekGrowth}%
+            </VText>
+            <VText variant="caption" color={theme.colors.textMuted} style={{ fontSize: 10, marginTop: 4 }}>week-over-week</VText>
+          </View>
+
+          <View style={styles.metricBox}>
+            <VText variant="caption" color={theme.colors.textMuted} style={{ fontSize: 10 }}>RETENTION RATE</VText>
+            <VText variant="h2" style={{ marginTop: 6, color: growthMetrics.customerRetention >= 30 ? '#10B981' : '#F59E0B' }}>
+              {growthMetrics.customerRetention}%
+            </VText>
+            <VText variant="caption" color={theme.colors.textMuted} style={{ fontSize: 10, marginTop: 4 }}>repeat customers</VText>
+          </View>
+
+          <View style={styles.metricBox}>
+            <VText variant="caption" color={theme.colors.textMuted} style={{ fontSize: 10 }}>ENGAGEMENT TREND</VText>
+            <VText variant="h2" style={{ marginTop: 6, textTransform: 'capitalize', fontSize: normalize(16) }}>
+              {growthMetrics.engagementTrend === 'increasing' ? '📈' : growthMetrics.engagementTrend === 'declining' ? '📉' : '→'} {growthMetrics.engagementTrend}
+            </VText>
+            <VText variant="caption" color={theme.colors.textMuted} style={{ fontSize: 10, marginTop: 4 }}>7-day trend</VText>
+          </View>
+        </View>
+
+        {/* ALL RECOMMENDATIONS */}
+        {recommendations.length > 1 && (
+          <>
+            <View style={styles.sectionHeader}>
+              <VText variant="h3" color={theme.colors.textMuted} style={{ fontSize: normalize(12), letterSpacing: 1 }}>MORE OPPORTUNITIES ({recommendations.length})</VText>
+            </View>
+
+            <View style={styles.recommendationsList}>
+              {recommendations.slice(1, 4).map((rec, idx) => (
+                <View key={idx} style={[
+                  styles.recCard,
+                  idx < Math.min(recommendations.length - 1, 3) && { marginBottom: theme.spacing.sm }
+                ]}>
+                  <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: theme.spacing.sm }}>
+                    <View style={[
+                      styles.recIcon,
+                      {
+                        backgroundColor: rec.priority === 'urgent' ? '#FEE2E2' : rec.priority === 'high' ? '#FEF3C7' : '#EFF6FF'
+                      }
+                    ]}>
+                      <Ionicons
+                        name="bulb-outline"
+                        size={14}
+                        color={rec.priority === 'urgent' ? '#DC2626' : rec.priority === 'high' ? '#D97706' : theme.colors.primary}
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <VText variant="body" style={{ fontSize: normalize(12), fontWeight: '600' }}>{rec.title}</VText>
+                      <VText variant="caption" color={theme.colors.textMuted} style={{ marginTop: 2, fontSize: 11 }}>{rec.description}</VText>
+                    </View>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </>
+        )}
 
         {/* HERO CARD - POINTS */}
         <View style={[styles.heroCard, theme.shadows.soft]}>
@@ -702,4 +899,104 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 16,
   },
+  recommendationCard: {
+    backgroundColor: theme.colors.surface,
+    marginHorizontal: theme.spacing.lg,
+    borderRadius: normalize(12),
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderLeftWidth: 4,
+    padding: theme.spacing.lg,
+    marginBottom: theme.spacing.xl,
+  },
+  priorityBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginLeft: theme.spacing.sm,
+  },
+  actionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: theme.spacing.md,
+    paddingVertical: 8,
+  },
+  insightsCard: {
+    backgroundColor: theme.colors.surface,
+    marginHorizontal: theme.spacing.lg,
+    borderRadius: normalize(12),
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    padding: theme.spacing.lg,
+    marginBottom: theme.spacing.xl,
+  },
+  insightRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: theme.spacing.sm,
+  },
+  insightItem: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: normalize(8),
+  },
+  peakTimingsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  timingBadge: {
+    backgroundColor: theme.colors.primaryLight,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  segmentsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  segmentBadge: {
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: theme.colors.background,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  metricsGrid: {
+    flexDirection: 'row',
+    paddingHorizontal: theme.spacing.lg,
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.xl,
+  },
+  metricBox: {
+    flex: 1,
+    backgroundColor: theme.colors.surface,
+    padding: theme.spacing.md,
+    borderRadius: normalize(12),
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  recommendationsList: {
+    marginHorizontal: theme.spacing.lg,
+    marginBottom: theme.spacing.xl,
+  },
+  recCard: {
+    backgroundColor: theme.colors.surface,
+    padding: theme.spacing.lg,
+    borderRadius: normalize(12),
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  recIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
+

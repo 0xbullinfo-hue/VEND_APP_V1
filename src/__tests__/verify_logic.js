@@ -1791,6 +1791,243 @@ function createAuthSessionModel(storage) {
     console.log("\n=================================================");
     console.log("   TEST CASE 18 COMPLETE                         ");
     console.log("=================================================");
+
+    // =================================================
+    // TEST CASE 19: Growth Analytics Engine (Metrics & Recommendations)
+    // =================================================
+    console.log("\n--- TEST CASE 19: Vendor Growth Analytics Engine ---");
+
+    // Simulate growth analytics functions
+    const computeGrowthMetrics = (events) => {
+      const nowTs = Date.now();
+      const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
+      const twoWeekMs = 2 * oneWeekMs;
+
+      const currentStart = nowTs - oneWeekMs;
+      const currentEvents = events.filter((e) => e.timestamp >= currentStart);
+
+      const previousStart = nowTs - twoWeekMs;
+      const previousEvents = events.filter((e) => e.timestamp >= previousStart && e.timestamp < currentStart);
+
+      const currentProfileViews = currentEvents.filter((e) => e.type === 'profile_view').length;
+      const currentChats = currentEvents.filter((e) => e.type === 'chat_start').length;
+      const currentDirections = currentEvents.filter((e) => e.type === 'directions_request').length;
+      const currentTotal = currentEvents.length;
+      const previousTotal = previousEvents.length;
+
+      const weekOverWeekGrowth =
+        previousTotal === 0 ? (currentTotal > 0 ? 100 : 0) : Math.round(((currentTotal - previousTotal) / previousTotal) * 100);
+
+      const conversionRate =
+        currentProfileViews > 0 ? Math.round((currentChats / currentProfileViews) * 100) : 0;
+
+      // Customer retention: repeat interactions
+      const uniqueCustomers = new Set(
+        currentEvents.filter((e) => e.actorUserId).map((e) => e.actorUserId)
+      ).size;
+      const repeatCustomers = Array.from(
+        new Set(currentEvents.filter((e) => e.actorUserId).map((e) => e.actorUserId))
+      ).filter((userId) => currentEvents.filter((e) => e.actorUserId === userId).length > 1).length;
+
+      const customerRetention = uniqueCustomers > 0 ? Math.round((repeatCustomers / uniqueCustomers) * 100) : 0;
+
+      // Engagement trend
+      const midpoint = currentStart + oneWeekMs / 2;
+      const firstHalf = currentEvents.filter((e) => e.timestamp < midpoint).length;
+      const secondHalf = currentEvents.filter((e) => e.timestamp >= midpoint).length;
+      const engagementTrend =
+        secondHalf > firstHalf * 1.2 ? 'increasing' : firstHalf > secondHalf * 1.2 ? 'declining' : 'stable';
+
+      return {
+        totalInteractions: currentTotal,
+        profileViews: currentProfileViews,
+        chatStarts: currentChats,
+        directionsRequests: currentDirections,
+        weekOverWeekGrowth,
+        conversionRate,
+        customerRetention,
+        engagementTrend,
+      };
+    };
+
+    const generateGrowthRecommendations = (metrics, tierName = 'free') => {
+      const recommendations = [];
+
+      // Low conversion
+      if (metrics.conversionRate < 15 && metrics.profileViews > 5) {
+        recommendations.push({
+          priority: 'high',
+          title: 'Improve Profile',
+          description: 'Low conversion rate - update your profile to encourage chats.',
+        });
+      }
+
+      // Declining trend
+      if (metrics.engagementTrend === 'declining') {
+        recommendations.push({
+          priority: 'high',
+          title: 'Engagement Declining',
+          description: 'Try engaging recent customers and updating your status.',
+        });
+      }
+
+      // Boost upgrade
+      if (tierName === 'free' && metrics.totalInteractions > 15) {
+        recommendations.push({
+          priority: 'high',
+          title: 'Ready for Boost',
+          description: 'You have good traction. Upgrade to Premium to reach more customers.',
+        });
+      }
+
+      // Positive momentum
+      if (metrics.weekOverWeekGrowth >= 50) {
+        recommendations.push({
+          priority: 'low',
+          title: 'Great Growth!',
+          description: `Amazing ${metrics.weekOverWeekGrowth}% week-over-week growth!`,
+        });
+      }
+
+      return recommendations;
+    };
+
+    // 19a. Calculate growth metrics for 7-day window
+    const growthEvents = [
+      { vendorId: 'v1', type: 'profile_view', timestamp: now - days(1), actorUserId: 'u1' },
+      { vendorId: 'v1', type: 'profile_view', timestamp: now - days(1), actorUserId: 'u2' },
+      { vendorId: 'v1', type: 'chat_start', timestamp: now - days(2), actorUserId: 'u1' },
+      { vendorId: 'v1', type: 'directions_request', timestamp: now - days(3), actorUserId: 'u3' },
+      { vendorId: 'v1', type: 'profile_view', timestamp: now - days(10), actorUserId: 'u4' }, // Before 7-day window
+    ];
+
+    const growthMetrics = computeGrowthMetrics(growthEvents);
+    if (
+      growthMetrics.totalInteractions === 4 &&
+      growthMetrics.profileViews === 2 &&
+      growthMetrics.chatStarts === 1 &&
+      growthMetrics.directionsRequests === 1
+    ) {
+      console.log('✅ Success: Growth metrics calculated correctly (4 interactions, 2 views, 1 chat, 1 direction).`');
+    } else {
+      console.error('❌ Error: Growth metrics calculation failed.', growthMetrics);
+    }
+
+    // 19b. Conversion rate calculation
+    const expectedConversionRate = 50; // 1 chat / 2 views = 50%
+    if (growthMetrics.conversionRate === expectedConversionRate) {
+      console.log(`✅ Success: Conversion rate correctly calculated (${growthMetrics.conversionRate}%).`);
+    } else {
+      console.error(
+        `❌ Error: conversion rate should be ${expectedConversionRate}%, got ${growthMetrics.conversionRate}%.`
+      );
+    }
+
+    // 19c. Customer retention calculation
+    const expectedRetention = 50; // 1 repeat (u1) out of 2 unique (u1, u2, u3) = 33%... wait let me recalculate
+    // Unique customers: u1 (2 interactions), u2 (1), u3 (1) = 3 unique
+    // Repeat customers: u1 (has 2) = 1
+    // Retention = 1/3 = 33%
+    if (growthMetrics.customerRetention === 33) {
+      console.log(`✅ Success: Customer retention calculated correctly (${growthMetrics.customerRetention}% repeat).`);
+    } else {
+      console.error(
+        `❌ Error: customer retention should be ~33%, got ${growthMetrics.customerRetention}%.`
+      );
+    }
+
+    // 19d. Week-over-week growth calculation
+    const growthEventsWithPrevious = [
+      ...growthEvents,
+      // Previous week (7-14 days ago)
+      { vendorId: 'v1', type: 'profile_view', timestamp: now - days(8), actorUserId: 'u5' },
+      { vendorId: 'v1', type: 'profile_view', timestamp: now - days(9), actorUserId: 'u6' },
+    ];
+
+    const growthMetricsWithPrev = computeGrowthMetrics(growthEventsWithPrevious);
+    // Current: 4 events, Previous: 2 events
+    // Growth = (4-2)/2 * 100 = 100%
+    if (growthMetricsWithPrev.weekOverWeekGrowth === 100) {
+      console.log(`✅ Success: Week-over-week growth calculated correctly (${growthMetricsWithPrev.weekOverWeekGrowth}%).`);
+    } else {
+      console.error(
+        `❌ Error: WoW growth should be 100%, got ${growthMetricsWithPrev.weekOverWeekGrowth}%.`
+      );
+    }
+
+    // 19e. Engagement trend detection (increasing)
+    const trendIncreasingEvents = [
+      { vendorId: 'v1', type: 'profile_view', timestamp: now - days(6), actorUserId: 'u1' }, // Old - 1st half
+      { vendorId: 'v1', type: 'profile_view', timestamp: now - days(5), actorUserId: 'u2' }, // Old - 1st half
+      { vendorId: 'v1', type: 'chat_start', timestamp: now - days(2), actorUserId: 'u3' },   // Recent - 2nd half
+      { vendorId: 'v1', type: 'chat_start', timestamp: now - days(1), actorUserId: 'u4' },   // Recent - 2nd half
+      { vendorId: 'v1', type: 'directions_request', timestamp: now - days(1), actorUserId: 'u5' }, // Recent - 2nd half
+    ];
+
+    const trendMetrics = computeGrowthMetrics(trendIncreasingEvents);
+    if (trendMetrics.engagementTrend === 'increasing') {
+      console.log('✅ Success: Engagement trend detected as increasing (more recent interactions).`');
+    } else {
+      console.error(`❌ Error: trend should be increasing, got ${trendMetrics.engagementTrend}.`);
+    }
+
+    // 19f. Generate recommendations for low conversion
+    const lowConversionMetrics = {
+      totalInteractions: 20,
+      profileViews: 18,
+      chatStarts: 2,
+      conversionRate: 11,
+      engagementTrend: 'stable',
+      customerRetention: 25,
+    };
+
+    const recs = generateGrowthRecommendations(lowConversionMetrics, 'free');
+    const hasProfileRec = recs.some((r) => r.title.includes('Profile'));
+    if (hasProfileRec) {
+      console.log('✅ Success: Low conversion recommendation generated.`');
+    } else {
+      console.error('❌ Error: should recommend profile improvement for low conversion.');
+    }
+
+    // 19g. Generate recommendations for declining trend
+    const decliningMetrics = {
+      totalInteractions: 5,
+      profileViews: 4,
+      chatStarts: 1,
+      conversionRate: 25,
+      engagementTrend: 'declining',
+      customerRetention: 50,
+    };
+
+    const decliningRecs = generateGrowthRecommendations(decliningMetrics, 'free');
+    const hasDecliningRec = decliningRecs.some((r) => r.title.includes('Declining'));
+    if (hasDecliningRec) {
+      console.log('✅ Success: Declining engagement recommendation generated.`');
+    } else {
+      console.error('❌ Error: should recommend action for declining engagement.');
+    }
+
+    // 19h. Generate recommendations for boost upgrade (free tier with good traction)
+    const upgradeMetrics = {
+      totalInteractions: 30,
+      profileViews: 20,
+      chatStarts: 5,
+      conversionRate: 25,
+      engagementTrend: 'increasing',
+      customerRetention: 40,
+    };
+
+    const upgradeRecs = generateGrowthRecommendations(upgradeMetrics, 'free');
+    const hasUpgradeRec = upgradeRecs.some((r) => r.title.includes('Boost'));
+    if (hasUpgradeRec) {
+      console.log('✅ Success: Upgrade to Premium recommendation generated for free tier with good traction.`');
+    } else {
+      console.error('❌ Error: should recommend upgrade for free tier with 30 interactions.');
+    }
+
+    console.log("\n=================================================");
+    console.log("   TEST CASE 19 COMPLETE                         ");
+    console.log("=================================================");
   }, 50);
 })().catch((err) => {
   console.error('❌ Error: Test Case 6 failed with exception:', err);
