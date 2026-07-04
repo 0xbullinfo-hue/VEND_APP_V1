@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, HeaderBar } from '../../components/SharedComponents';
@@ -12,9 +12,20 @@ interface VendorGrowthScreenProps {
 }
 
 export const VendorGrowthScreen: React.FC<VendorGrowthScreenProps> = ({ onBack }) => {
-  const { analyticsEvents, myVendorProfile, vendors, analyticsSyncSource, analyticsPendingCount, lastRemoteSyncAt, networkAvailable } = useApp();
+  const { analyticsEvents, myVendorProfile, vendors, analyticsSyncSource, analyticsPendingCount, lastRemoteSyncAt, networkAvailable, subscribeToRealtimeUpdates, unsubscribeFromRealtimeUpdates, realtimeConnected } = useApp();
 
   const vendor = myVendorProfile || vendors[0];
+
+  // Subscribe to realtime updates when screen mounts
+  useEffect(() => {
+    if (vendor?.id) {
+      subscribeToRealtimeUpdates(vendor.id);
+    }
+    return () => {
+      unsubscribeFromRealtimeUpdates();
+    };
+  }, [vendor?.id, subscribeToRealtimeUpdates, unsubscribeFromRealtimeUpdates]);
+
   const now = Date.now();
   const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
   const fourteenDaysAgo = now - 14 * 24 * 60 * 60 * 1000;
@@ -110,6 +121,8 @@ export const VendorGrowthScreen: React.FC<VendorGrowthScreenProps> = ({ onBack }
             <VText variant="caption" color={theme.colors.textMain} style={{ fontWeight: '700', fontSize: 11 }}>
               {!networkAvailable
                 ? 'No Network'
+                : realtimeConnected
+                ? `Live ✓ ${formatLastSyncTime()}`
                 : isSynced
                 ? `Synced (${formatLastSyncTime()})`
                 : `Local Cache${analyticsPendingCount > 0 ? ` (${analyticsPendingCount} pending)` : ''}`}

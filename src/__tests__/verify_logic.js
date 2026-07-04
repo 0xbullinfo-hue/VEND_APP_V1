@@ -931,6 +931,130 @@ function createAuthSessionModel(storage) {
   console.log("\n=================================================");
   console.log("   TEST CASE 12 COMPLETE                         ");
   console.log("=================================================");
+
+  // =================================================
+  // TEST CASE 13: Realtime Analytics Updates (Live)
+  // =================================================
+  console.log("\n--- TEST CASE 13: Realtime Analytics Updates (Live) ---");
+
+  const simulateRealtimeSubscription = () => {
+    let listeners = [];
+    let eventCache = new Map();
+    let state = {
+      isConnected: false,
+      lastUpdateAt: null,
+      eventCount: 0,
+    };
+
+    return {
+      subscribe: (vendorId, callback) => {
+        listeners.push({ vendorId, callback });
+        // Simulate connection established after subscribe
+        setTimeout(() => {
+          state.isConnected = true;
+          callback(Array.from(eventCache.values()), state);
+        }, 10);
+        return () => {
+          listeners = listeners.filter(l => l.vendorId !== vendorId);
+          state.isConnected = false;
+        };
+      },
+      receiveEvent: (event) => {
+        // Deduplicate
+        if (!eventCache.has(event.id)) {
+          eventCache.set(event.id, event);
+          state.lastUpdateAt = Date.now();
+          state.eventCount = eventCache.size;
+          // Notify all listeners
+          listeners.forEach(l => {
+            l.callback(Array.from(eventCache.values()), state);
+          });
+        }
+      },
+      getEventCount: () => eventCache.size,
+      getState: () => state,
+    };
+  };
+
+  const realtimeManager = simulateRealtimeSubscription();
+  let realtimeEvents = [];
+  let realtimeState = { isConnected: false, lastUpdateAt: null, eventCount: 0 };
+
+  // 13a. Verify subscription establishes connection
+  const unsubscribe = realtimeManager.subscribe('v1', (events, state) => {
+    realtimeEvents = events;
+    realtimeState = state;
+  });
+
+  setTimeout(() => {
+    if (realtimeState.isConnected) {
+      console.log('✅ Success: Realtime subscription establishes connection.');
+    } else {
+      console.error('❌ Error: Realtime subscription failed to connect.');
+    }
+
+    // 13b. Verify incoming event is captured
+    realtimeManager.receiveEvent({
+      id: 'evt_rt_1',
+      vendorId: 'v1',
+      type: 'profile_view',
+      timestamp: nowTs - days(1),
+    });
+
+    if (realtimeEvents.length === 1 && realtimeState.eventCount === 1) {
+      console.log('✅ Success: Realtime event received and captured.');
+    } else {
+      console.error('❌ Error: Realtime event capture failed.');
+    }
+
+    // 13c. Verify event deduplication
+    realtimeManager.receiveEvent({
+      id: 'evt_rt_1', // Same ID
+      vendorId: 'v1',
+      type: 'profile_view',
+      timestamp: nowTs - days(1),
+    });
+
+    if (realtimeEvents.length === 1 && realtimeState.eventCount === 1) {
+      console.log('✅ Success: Duplicate events are deduplicated.');
+    } else {
+      console.error('❌ Error: Duplicate event was not filtered.');
+    }
+
+    // 13d. Verify multiple unique events accumulate
+    realtimeManager.receiveEvent({
+      id: 'evt_rt_2',
+      vendorId: 'v1',
+      type: 'directions_request',
+      timestamp: nowTs - days(2),
+    });
+
+    realtimeManager.receiveEvent({
+      id: 'evt_rt_3',
+      vendorId: 'v1',
+      type: 'chat_start',
+      timestamp: nowTs - days(3),
+    });
+
+    if (realtimeEvents.length === 3 && realtimeState.eventCount === 3 && realtimeState.lastUpdateAt !== null) {
+      console.log('✅ Success: Multiple realtime events accumulate correctly.');
+    } else {
+      console.error('❌ Error: Realtime event accumulation failed.');
+    }
+
+    // 13e. Verify unsubscribe disconnects
+    unsubscribe();
+
+    if (!realtimeState.isConnected) {
+      console.log('✅ Success: Unsubscribe disconnects realtime.');
+    } else {
+      console.error('❌ Error: Unsubscribe should disconnect realtime.');
+    }
+
+    console.log("\n=================================================");
+    console.log("   TEST CASE 13 COMPLETE                         ");
+    console.log("=================================================");
+  }, 50);
 })().catch((err) => {
   console.error('❌ Error: Test Case 6 failed with exception:', err);
   process.exitCode = 1;

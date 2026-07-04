@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { clearAnalyticsEvents, loadAnalyticsEvents, persistAnalyticsEvent, flushPendingAnalyticsEvents, flushPendingAnalyticsEventsIfOnline, getSyncMetadata } from '../lib/analyticsDataProvider';
+import { subscribeToAnalyticsUpdates } from '../lib/analyticsRealtimeProvider';
 
 export type AnalyticsEventType = 'profile_view' | 'directions_request' | 'chat_start';
 
@@ -19,11 +20,16 @@ interface AnalyticsState {
   analyticsPendingCount: number;
   lastRemoteSyncAt: number | null;
   networkAvailable: boolean;
+  realtimeConnected: boolean;
+  realtimeLastUpdateAt: number | null;
+  realtimeUnsubscribe: (() => void) | null;
   hydrateAnalyticsEvents: (actorUserId?: string | null) => Promise<void>;
   trackProfileView: (vendorId: string, context?: { actorUserId?: string; localityId?: number }) => void;
   trackDirectionsRequest: (vendorId: string, context?: { actorUserId?: string; localityId?: number }) => void;
   trackChatStart: (vendorId: string, context?: { actorUserId?: string; localityId?: number }) => void;
   flushPendingEvents: () => Promise<void>;
+  subscribeToRealtimeUpdates: (vendorId: string) => void;
+  unsubscribeFromRealtimeUpdates: () => void;
   setNetworkAvailable: (available: boolean) => void;
   resetAnalytics: () => void;
 }
@@ -48,6 +54,9 @@ export const useAnalyticsStore = create<AnalyticsState>((set) => ({
   analyticsPendingCount: 0,
   lastRemoteSyncAt: null,
   networkAvailable: false,
+  realtimeConnected: false,
+  realtimeLastUpdateAt: null,
+  realtimeUnsubscribe: null,
 
   hydrateAnalyticsEvents: async (actorUserId) => {
     const result = await loadAnalyticsEvents(actorUserId);
@@ -95,17 +104,55 @@ export const useAnalyticsStore = create<AnalyticsState>((set) => ({
     });
   },
 
+  subscribeToRealtimeUpdates: (vendorId) => {
+    // First unsubscribe from any existing subscription
+    const state = useAnalyticsStore.getState();
+    if (state.realtimeUnsubscribe) {
+      state.realtimeUnsubscribe();
+    }
+
+    // Subscribe to new vendor's realtime updates
+    const unsubscribe = subscribeToAnalyticsUpdates(vendorId, (events, realtimeState) => {
+      set({
+        analyticsEvents: events,
+        realtimeConnected: realtimeState.isConnected,
+        realtimeLastUpdateAt: realtimeState.lastUpdateAt,
+      });
+    });
+
+    set({ realtimeUnsubscribe: unsubscribe });
+  },
+
+  unsubscribeFromRealtimeUpdates: () => {
+    const state = useAnalyticsStore.getState();
+    if (state.realtimeUnsubscribe) {
+      state.realtimeUnsubscribe();
+      set({ 
+        realtimeUnsubscribe: null,
+        realtimeConnected: false,
+        realtimeLastUpdateAt: null,
+      });
+    }
+  },
+
   setNetworkAvailable: (available) => {
     set({ networkAvailable: available });
   },
 
   resetAnalytics: () => {
+    const state = useAnalyticsStore.getState();
+    if (state.realtimeUnsubscribe) {
+      state.realtimeUnsubscribe();
+    }
     set({ 
       analyticsEvents: [], 
       analyticsSyncSource: 'local', 
       analyticsPendingCount: 0, 
       lastRemoteSyncAt: null,
       networkAvailable: false,
+      realtimeConnected: false,
+      realtimeLastUpdateAt: null,
+      realtimeUnsubscribe: null,
     });
     void clearAnalyticsEvents();
   },
