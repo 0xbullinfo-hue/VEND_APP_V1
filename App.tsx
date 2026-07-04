@@ -8,27 +8,30 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { AppProvider } from './src/contexts/AppContext';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { NotificationToast } from './src/components/SharedComponents';
+import { ErrorBoundary } from './src/components/ErrorBoundary';
 import { theme } from './src/theme/designSystem';
 
 export default function App() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <BottomSheetModalProvider>
-          <AppProvider>
-            <View style={styles.container}>
-              <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <ErrorBoundary>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <BottomSheetModalProvider>
+            <AppProvider>
+              <View style={styles.container}>
+                <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-              {/* React Navigation root — handles all routing */}
-              <RootNavigator />
+                {/* React Navigation root — handles all routing */}
+                <RootNavigator />
 
-              {/* Global overlay: points earned / SOS notifications */}
-              <NotificationToast />
-            </View>
-          </AppProvider>
-        </BottomSheetModalProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+                {/* Global overlay: points earned / SOS notifications */}
+                <NotificationToast />
+              </View>
+            </AppProvider>
+          </BottomSheetModalProvider>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </ErrorBoundary>
   );
 }
 

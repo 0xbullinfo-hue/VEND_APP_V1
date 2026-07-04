@@ -9,6 +9,8 @@
 // ─── Onboarding Stack ────────────────────────────────────────────────────────
 export type OnboardingStackParamList = {
   Welcome: undefined;
+  Privacy: undefined;
+  Terms: undefined;
   Walkthrough: undefined;
   Auth: undefined;
   Referral: undefined;

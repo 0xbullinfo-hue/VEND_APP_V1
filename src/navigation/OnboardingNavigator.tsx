@@ -1,7 +1,7 @@
 /**
  * OnboardingNavigator
  *
- * Linear onboarding flow: Welcome → Walkthrough → Auth → Referral → Locality → Complete.
+ * Linear onboarding flow: Welcome → Privacy → Terms → Walkthrough → Auth → Referral → Locality → Complete.
  * Each screen uses a thin adapter to wire navigation to the existing prop callbacks.
  */
 import React from 'react';
@@ -15,6 +15,8 @@ import { PhoneAuthScreen } from '../screens/onboarding/PhoneAuthScreen';
 import { ReferralCodeScreen } from '../screens/onboarding/ReferralCodeScreen';
 import { LocalitySelectionScreen } from '../screens/onboarding/LocalitySelectionScreen';
 import { OnboardingCompleteScreen } from '../screens/onboarding/OnboardingCompleteScreen';
+import { PrivacyPolicyScreen } from '../screens/legal/PrivacyPolicyScreen';
+import { TermsOfServiceScreen } from '../screens/legal/TermsOfServiceScreen';
 import { useApp } from '../contexts/AppContext';
 
 import type { OnboardingStackParamList } from './types';
@@ -25,7 +27,27 @@ const Stack = createNativeStackNavigator<OnboardingStackParamList>();
 
 const WelcomeAdapter = () => {
   const nav = useNavigation<NativeStackNavigationProp<OnboardingStackParamList>>();
-  return <WelcomeScreen onNext={() => nav.navigate('Walkthrough')} />;
+  return <WelcomeScreen onNext={() => nav.navigate('Privacy')} />;
+};
+
+const PrivacyAdapter = () => {
+  const nav = useNavigation<NativeStackNavigationProp<OnboardingStackParamList>>();
+  return (
+    <PrivacyPolicyScreen
+      onAccept={() => nav.navigate('Terms')}
+      onDecline={() => nav.goBack()}
+    />
+  );
+};
+
+const TermsAdapter = () => {
+  const nav = useNavigation<NativeStackNavigationProp<OnboardingStackParamList>>();
+  return (
+    <TermsOfServiceScreen
+      onAccept={() => nav.navigate('Walkthrough')}
+      onDecline={() => nav.goBack()}
+    />
+  );
 };
 
 const WalkthroughAdapter = () => {
@@ -76,6 +98,8 @@ export const OnboardingNavigator = () => {
       }}
     >
       <Stack.Screen name="Welcome"            component={WelcomeAdapter} />
+      <Stack.Screen name="Privacy"            component={PrivacyAdapter} />
+      <Stack.Screen name="Terms"              component={TermsAdapter} />
       <Stack.Screen name="Walkthrough"        component={WalkthroughAdapter} />
       <Stack.Screen name="Auth"               component={AuthAdapter} />
       <Stack.Screen name="Referral"           component={ReferralAdapter} />

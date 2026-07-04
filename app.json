@@ -1,7 +1,97 @@
 {
-  "name": "VEND",
-  "displayName": "VEND",
-  "android": {
-    "package": "com.anonymous.vend"
+  "expo": {
+    "name": "VEND",
+    "slug": "vend-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "description": "VEND - Discover hyper-local vendors and services across Nigeria. Connect with nearby businesses for instant access to products and services.",
+    "author": "VEND Team",
+    "primaryColor": "#FF6B00",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTabletMode": true,
+      "bundleIdentifier": "com.vend.app",
+      "buildNumber": "1",
+      "deploymentTarget": "13.0",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "VEND needs your location to find nearby vendors and services in your area.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "VEND needs your location to find nearby vendors and services in your area.",
+        "NSCameraUsageDescription": "Upload photos of products, services, or your business location.",
+        "NSPhotoLibraryUsageDescription": "Select photos from your library to upload to your profile or listings.",
+        "NSPhotoLibraryAddUsageDescription": "Save photos from VEND to your library.",
+        "NSUserTrackingUsageDescription": "VEND uses tracking to provide personalized vendor recommendations and improve your experience.",
+        "NSLocalNetworkUsageDescription": "VEND may use local network to enhance location services.",
+        "NSBonjourServices": [
+          "_http._tcp",
+          "_https._tcp"
+        ],
+        "UIBackgroundModes": [
+          "location",
+          "processing"
+        ],
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoadsInWebContent": false,
+          "NSAllowsArbitraryLoads": false
+        }
+      },
+      "googleServicesFile": "./GoogleService-Info.plist"
+    },
+    "android": {
+      "package": "com.vend.app",
+      "versionCode": 1,
+      "deploymentTarget": "21",
+      "targetSdkVersion": 34,
+      "compileSdkVersion": 34,
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.VIBRATE",
+        "android.permission.ACCESS_NETWORK_STATE"
+      ],
+      "usesCleartextTraffic": false,
+      "googleServicesFile": "./google-services.json",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundImage": "./assets/adaptive-icon-background.png",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "privacy": "public",
+    "runtimeVersion": "1.0.0",
+    "updates": {
+      "fallbackToCacheTimeout": 0,
+      "enabled": false
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow VEND to use your location to find nearby vendors."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow VEND to access your camera to take photos."
+        }
+      ]
+    ]
   }
 }
