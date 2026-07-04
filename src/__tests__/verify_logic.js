@@ -2296,6 +2296,289 @@ function createAuthSessionModel(storage) {
     console.log("\n=================================================");
     console.log("   TEST CASE 20 COMPLETE                         ");
     console.log("=================================================");
+
+    // =================================================
+    // TEST CASE 21: Ratings & Reviews Integration
+    // =================================================
+    console.log("\n--- TEST CASE 21: Ratings & Reviews Integration ---");
+
+    // Simulate ratings and reviews functions
+    const submitReview = (reviewsMap, review) => {
+      const reviewId = `review_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const fullReview = {
+        ...review,
+        id: reviewId,
+        timestamp: Date.now(),
+        helpful: 0,
+        unhelpful: 0,
+      };
+
+      const vendorReviews = reviewsMap[review.vendorId] || [];
+      return { ...reviewsMap, [review.vendorId]: [fullReview, ...vendorReviews] };
+    };
+
+    const calculateRatingSummary = (ratings, reviews, vendorId) => {
+      const vendorRatings = ratings[vendorId] || [];
+      const vendorReviews = reviews[vendorId] || [];
+
+      if (vendorRatings.length === 0) {
+        return {
+          vendorId,
+          averageRating: 0,
+          totalRatings: 0,
+          totalReviews: 0,
+          ratingDistribution: {
+            fiveStar: 0,
+            fourStar: 0,
+            threeStar: 0,
+            twoStar: 0,
+            oneStar: 0,
+          },
+          verifiedPurchaseCount: 0,
+        };
+      }
+
+      const totalScore = vendorRatings.reduce((sum, r) => sum + r.score, 0);
+      const averageRating = Math.round((totalScore / vendorRatings.length) * 10) / 10;
+
+      const distribution = {
+        fiveStar: vendorRatings.filter((r) => r.score === 5).length,
+        fourStar: vendorRatings.filter((r) => r.score === 4).length,
+        threeStar: vendorRatings.filter((r) => r.score === 3).length,
+        twoStar: vendorRatings.filter((r) => r.score === 2).length,
+        oneStar: vendorRatings.filter((r) => r.score === 1).length,
+      };
+
+      const verifiedPurchaseCount = vendorRatings.filter((r) => r.isVerifiedPurchase).length;
+
+      return {
+        vendorId,
+        averageRating,
+        totalRatings: vendorRatings.length,
+        totalReviews: vendorReviews.length,
+        ratingDistribution: distribution,
+        verifiedPurchaseCount,
+      };
+    };
+
+    const calculateReviewQualityScore = (review) => {
+      const totalHelpfulness = review.helpful + review.unhelpful;
+      const relevance = totalHelpfulness === 0 ? 50 : Math.round((review.helpful / totalHelpfulness) * 100);
+
+      const detailWords = ['specifically', 'detailed', 'exactly', 'definitely', 'really', 'actually'];
+      const hasDetails = detailWords.some((word) => review.body.toLowerCase().includes(word));
+      const bodyLength = review.body.length;
+      const specificity = Math.min(100, (bodyLength / 200) * 50 + (hasDetails ? 30 : 0));
+
+      const verifiedBonus = review.isVerifiedPurchase ? 30 : 0;
+      const titleLength = review.title.length;
+      const titleBonus = titleLength > 10 ? 20 : 0;
+      const authenticity = Math.min(100, verifiedBonus + titleBonus + 20);
+
+      const helpfulness = Math.round((relevance + specificity + authenticity) / 3);
+
+      return {
+        relevance: Math.max(0, Math.min(100, relevance)),
+        specificity: Math.max(0, Math.min(100, specificity)),
+        authenticity: Math.max(0, Math.min(100, authenticity)),
+        helpfulness: Math.max(0, Math.min(100, helpfulness)),
+      };
+    };
+
+    const analyzeRatingTrend = (ratings, vendorId, period = '30d') => {
+      const vendorRatings = ratings[vendorId] || [];
+      const now = Date.now();
+      const periodMs = period === '7d' ? 7 * 24 * 60 * 60 * 1000 : period === '90d' ? 90 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000;
+      const halfPeriod = periodMs / 2;
+
+      const currentPeriod = vendorRatings.filter((r) => r.timestamp > now - periodMs);
+      const firstHalf = currentPeriod.filter((r) => r.timestamp > now - periodMs && r.timestamp <= now - halfPeriod);
+      const secondHalf = currentPeriod.filter((r) => r.timestamp > now - halfPeriod);
+
+      const avgFirst = firstHalf.length === 0 ? 0 : firstHalf.reduce((sum, r) => sum + r.score, 0) / firstHalf.length;
+      const avgSecond = secondHalf.length === 0 ? 0 : secondHalf.reduce((sum, r) => sum + r.score, 0) / secondHalf.length;
+
+      const averageRating = Math.round((avgSecond * 10) / 10);
+      const totalReviews = currentPeriod.length;
+
+      let ratingTrend = 'stable';
+      let trendPercentage = 0;
+
+      if (avgFirst > 0) {
+        const change = ((avgSecond - avgFirst) / avgFirst) * 100;
+        trendPercentage = Math.round(Math.abs(change));
+        if (change > 5) {
+          ratingTrend = 'improving';
+        } else if (change < -5) {
+          ratingTrend = 'declining';
+        }
+      }
+
+      return {
+        period,
+        averageRating,
+        totalReviews,
+        ratingTrend,
+        trendPercentage,
+      };
+    };
+
+    const extractReviewSentiment = (review) => {
+      const positiveWords = ['excellent', 'great', 'amazing', 'fantastic', 'perfect', 'love', 'best', 'awesome'];
+      const negativeWords = ['terrible', 'bad', 'horrible', 'awful', 'hate', 'worst', 'disappointed'];
+
+      const bodyLower = (review.body + ' ' + review.title).toLowerCase();
+      const positiveMatches = positiveWords.filter((word) => bodyLower.includes(word));
+      const negativeMatches = negativeWords.filter((word) => bodyLower.includes(word));
+
+      let sentiment = 'neutral';
+      if (positiveMatches.length > negativeMatches.length) {
+        sentiment = 'positive';
+      } else if (negativeMatches.length > positiveMatches.length) {
+        sentiment = 'negative';
+      } else if (positiveMatches.length === 0 && negativeMatches.length === 0) {
+        if (review.rating >= 4) sentiment = 'positive';
+        else if (review.rating <= 2) sentiment = 'negative';
+      }
+
+      const keywords = [...new Set([...positiveMatches, ...negativeMatches])];
+      return { sentiment, keywords };
+    };
+
+    const calculateReputationScore = (summary) => {
+      if (summary.totalRatings === 0) return 0;
+
+      const ratingScore = summary.averageRating * 20; // 0-100 (dominant factor)
+      const volumeScore = Math.min(15, summary.totalReviews * 0.5); // Max 15 (minimal volume impact)
+      const verifiedBonus = Math.min(8, summary.verifiedPurchaseCount * 0.5); // Max 8 (minimal verified impact)
+      const consistencyBonus =
+        summary.ratingDistribution.fiveStar + summary.ratingDistribution.fourStar > summary.totalRatings * 0.7 ? 10 : 0;
+
+      return Math.max(0, Math.min(100, Math.round(ratingScore + volumeScore + verifiedBonus + consistencyBonus)));
+    };
+
+    // 21a. Verify review submission
+    let reviewsMap = {};
+    const newReview = {
+      vendorId: 'v_test',
+      customerId: 'c_test',
+      customerName: 'Test Customer',
+      title: 'Great experience',
+      body: 'This vendor provided excellent service with great attention to detail.',
+      rating: 5,
+      isVerifiedPurchase: true,
+    };
+
+    reviewsMap = submitReview(reviewsMap, newReview);
+    if (reviewsMap['v_test'] && reviewsMap['v_test'][0].rating === 5 && reviewsMap['v_test'][0].id) {
+      console.log('✅ Success: Review submitted and stored with ID.');
+    } else {
+      console.error('❌ Error: review submission failed.');
+    }
+
+    // 21b. Verify rating distribution calculation
+    let ratingsMap = {
+      v_test: [
+        { vendorId: 'v_test', score: 5, isVerifiedPurchase: true, timestamp: now },
+        { vendorId: 'v_test', score: 5, isVerifiedPurchase: true, timestamp: now - days(1) },
+        { vendorId: 'v_test', score: 4, isVerifiedPurchase: false, timestamp: now - days(2) },
+        { vendorId: 'v_test', score: 3, isVerifiedPurchase: false, timestamp: now - days(3) },
+        { vendorId: 'v_test', score: 2, isVerifiedPurchase: false, timestamp: now - days(4) },
+      ],
+    };
+
+    const summary = calculateRatingSummary(ratingsMap, reviewsMap, 'v_test');
+    if (
+      summary.averageRating === 3.8 &&
+      summary.totalRatings === 5 &&
+      summary.ratingDistribution.fiveStar === 2 &&
+      summary.verifiedPurchaseCount === 2
+    ) {
+      console.log(`✅ Success: Rating summary calculated (avg=${summary.averageRating}, total=${summary.totalRatings}).`);
+    } else {
+      console.error('❌ Error: rating summary calculation failed.', summary);
+    }
+
+    // 21c. Verify review quality score
+    const review = reviewsMap['v_test'][0];
+    const qualityScore = calculateReviewQualityScore(review);
+    if (qualityScore.helpfulness > 0 && qualityScore.authenticity >= 30 && qualityScore.specificity > 0) {
+      console.log(`✅ Success: Review quality score calculated (helpfulness=${qualityScore.helpfulness}).`);
+    } else {
+      console.error('❌ Error: review quality score calculation failed.', qualityScore);
+    }
+
+    // 21d. Verify sentiment extraction
+    const sentiment = extractReviewSentiment(review);
+    if (sentiment.sentiment === 'positive' && sentiment.keywords.includes('excellent')) {
+      console.log(`✅ Success: Review sentiment extracted (${sentiment.sentiment}, keywords: ${sentiment.keywords.join(', ')}).`);
+    } else {
+      console.error('❌ Error: sentiment extraction failed.', sentiment);
+    }
+
+    // 21e. Verify rating trend detection
+    const trend = analyzeRatingTrend(ratingsMap, 'v_test', '30d');
+    if (trend.period === '30d' && trend.totalReviews > 0 && trend.ratingTrend) {
+      console.log(`✅ Success: Rating trend detected (trend=${trend.ratingTrend}, avg=${trend.averageRating}).`);
+    } else {
+      console.error('❌ Error: rating trend analysis failed.', trend);
+    }
+
+    // 21f. Verify reputation score calculation
+    const reputationScore = calculateReputationScore(summary);
+    if (reputationScore > 0 && reputationScore <= 100) {
+      console.log(`✅ Success: Reputation score calculated (${reputationScore}/100).`);
+    } else {
+      console.error('❌ Error: reputation score calculation out of range.', reputationScore);
+    }
+
+    // 21g. Verify high-rated vendor gets high score
+    const perfectSummary = {
+      ...summary,
+      averageRating: 4.8,
+      totalRatings: 20,
+      totalReviews: 20,
+      verifiedPurchaseCount: 15,
+      ratingDistribution: {
+        fiveStar: 16,
+        fourStar: 4,
+        threeStar: 0,
+        twoStar: 0,
+        oneStar: 0,
+      },
+    };
+    const perfectScore = calculateReputationScore(perfectSummary);
+    if (perfectScore > 85) {
+      console.log(`✅ Success: Excellent vendor gets high reputation score (${perfectScore}/100).`);
+    } else {
+      console.error('❌ Error: excellent vendor reputation score too low.', perfectScore);
+    }
+
+    // 21h. Verify low-rated vendor gets low score
+    const poorSummary = {
+      ...summary,
+      averageRating: 1.5,
+      totalRatings: 10,
+      totalReviews: 10,
+      verifiedPurchaseCount: 8,
+      ratingDistribution: {
+        fiveStar: 0,
+        fourStar: 1,
+        threeStar: 1,
+        twoStar: 2,
+        oneStar: 6,
+      },
+    };
+    const poorScore = calculateReputationScore(poorSummary);
+    if (poorScore < 45) {
+      console.log(`✅ Success: Poor vendor gets low reputation score (${poorScore}/100).`);
+    } else {
+      console.error('❌ Error: poor vendor reputation score too high.', poorScore);
+    }
+
+    console.log("\n=================================================");
+    console.log("   TEST CASE 21 COMPLETE                         ");
+    console.log("=================================================");
   }, 50);
 })().catch((err) => {
   console.error('❌ Error: Test Case 6 failed with exception:', err);
