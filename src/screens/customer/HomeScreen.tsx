@@ -19,6 +19,7 @@ import { Ionicons } from '../../components/VIcons';
 import { uberMapStyle } from '../../theme/mapStyles';
 import { CATEGORY_CATALOG, getCategoryMeta } from '../../lib/categoryCatalog';
 import { rankVendorsForCustomer } from '../../lib/vendorRanking';
+import { useCustomerEngagementStore } from '../../store/useCustomerEngagementStore';
 
 const { width } = Dimensions.get('window');
 
@@ -34,6 +35,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onViewRewards
 }) => {
   const { vendors, addPoints, locality, dataSource, isRealtimeConnected, isLoadingVendors, trackProfileView, user } = useApp();
+  const engagementStore = useCustomerEngagementStore();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedVendorId, setSelectedVendorId] = useState<string | null>(null); // Starts with no selection, showing promo bar
   const [searchQuery, setSearchQuery] = useState('');
@@ -102,6 +104,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const handlePinPress = (id: string) => {
     setSelectedVendorId(id);
     addPoints(2); // Earning points for exploring maps!
+    
+    // Track engagement: vendor map view
+    const vendor = vendors.find(v => v.id === id);
+    if (vendor) {
+      engagementStore.recordVendorInteraction(id, 'view', 0);
+      engagementStore.addBrowsingEvent({
+        vendorId: id,
+        vendorName: vendor.business_name,
+        category: vendor.category,
+        durationSeconds: 10, // Quick map view
+        interactionType: 'view',
+      });
+    }
   };
 
   const mapRef = useRef<MapView>(null);
@@ -426,6 +441,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 activeOpacity={0.8}
                 onPress={() => {
                   trackProfileView(v.id, { actorUserId: user?.id, localityId: v.locality_id });
+                  
+                  // Track engagement: vendor view
+                  engagementStore.recordVendorInteraction(v.id, 'view', 0);
+                  engagementStore.addBrowsingEvent({
+                    vendorId: v.id,
+                    vendorName: v.business_name,
+                    category: v.category,
+                    durationSeconds: 15,
+                    interactionType: 'view',
+                  });
+                  
                   onViewVendorProfile(v.id);
                 }}
                 style={[styles.promoCard, theme.shadows.soft]}
@@ -544,6 +570,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   title="View Vendor Profile"
                   onPress={() => {
                     trackProfileView(activeVendor.id, { actorUserId: user?.id, localityId: activeVendor.locality_id });
+                    
+                    // Track engagement: vendor profile view
+                    engagementStore.recordVendorInteraction(activeVendor.id, 'view', 0);
+                    engagementStore.addBrowsingEvent({
+                      vendorId: activeVendor.id,
+                      vendorName: activeVendor.business_name,
+                      category: activeVendor.category,
+                      durationSeconds: 20,
+                      interactionType: 'view',
+                    });
+                    
                     onViewVendorProfile(activeVendor.id);
                   }}
                   style={{ flex: 1, marginRight: 8 }}

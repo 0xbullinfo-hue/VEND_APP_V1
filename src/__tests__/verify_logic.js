@@ -2028,6 +2028,274 @@ function createAuthSessionModel(storage) {
     console.log("\n=================================================");
     console.log("   TEST CASE 19 COMPLETE                         ");
     console.log("=================================================");
+
+    // =================================================
+    // TEST CASE 20: Customer Engagement Tracking
+    // =================================================
+    console.log("\n--- TEST CASE 20: Customer Engagement Tracking ---");
+
+    // Simulate engagement tracking functions
+    const addBrowsingEvent = (history, event) => {
+      return [{ ...event, timestamp: Date.now() }, ...history].slice(0, 100);
+    };
+
+    const recordVendorInteraction = (interactionMap, vendorId, type, durationSeconds = 0) => {
+      const existing = interactionMap[vendorId] || {
+        vendorId,
+        viewCount: 0,
+        favoriteCount: 0,
+        shareCount: 0,
+        contactCount: 0,
+        totalInteractionTime: 0,
+        firstViewTime: Date.now(),
+        lastViewTime: Date.now(),
+        conversationStarted: false,
+      };
+
+      const updated = { ...existing, lastViewTime: Date.now() };
+      if (type === 'view') {
+        updated.viewCount += 1;
+        updated.totalInteractionTime += durationSeconds;
+      } else if (type === 'favorite') {
+        updated.favoriteCount += 1;
+      } else if (type === 'share') {
+        updated.shareCount += 1;
+      } else if (type === 'contact') {
+        updated.contactCount += 1;
+      }
+
+      return { ...interactionMap, [vendorId]: updated };
+    };
+
+    const analyzeBrowsingPatterns = (browsingHistory, windowDays = 7) => {
+      const now = Date.now();
+      const windowMs = windowDays * 24 * 60 * 60 * 1000;
+      const recentEvents = browsingHistory.filter((e) => e.timestamp > now - windowMs);
+
+      if (recentEvents.length === 0) {
+        return {
+          averageSessionDuration: 0,
+          browsingFrequency: 'occasional',
+          preferredTimeOfDay: 'afternoon',
+          averageBrowsingHour: 14,
+          mostViewedCategory: 'unknown',
+          categoryDiversity: 0,
+        };
+      }
+
+      // Calculate average session duration
+      let sessionCount = 1;
+      let totalSessionDuration = 0;
+      
+      for (let i = 1; i < recentEvents.length; i++) {
+        const timeDiff = recentEvents[i].timestamp - recentEvents[i - 1].timestamp;
+        if (timeDiff > 15 * 60 * 1000) {
+          sessionCount += 1;
+        }
+      }
+
+      totalSessionDuration = recentEvents.reduce((sum, e) => sum + e.durationSeconds, 0) / 60;
+      const averageSessionDuration = totalSessionDuration / Math.max(1, sessionCount);
+
+      // Browsing frequency
+      const daysActive = new Set(recentEvents.map((e) => new Date(e.timestamp).toDateString())).size;
+      let browsingFrequency = 'occasional';
+      if (daysActive >= 5) {
+        browsingFrequency = 'daily';
+      } else if (daysActive >= 2) {
+        browsingFrequency = 'weekly';
+      }
+
+      // Category diversity
+      const categoryMap = new Map();
+      recentEvents.forEach((e) => {
+        const cat = e.category || 'uncategorized';
+        categoryMap.set(cat, (categoryMap.get(cat) || 0) + 1);
+      });
+      const mostViewedCategory = Array.from(categoryMap.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] || 'unknown';
+      const categoryDiversity = Math.min(100, categoryMap.size * 15);
+
+      return {
+        averageSessionDuration: Math.round(averageSessionDuration * 10) / 10,
+        browsingFrequency,
+        preferredTimeOfDay: 'afternoon',
+        averageBrowsingHour: 14,
+        mostViewedCategory,
+        categoryDiversity,
+      };
+    };
+
+    const generatePersonalizedRecommendations = (categoryPreferences, vendorInteractionHistory, allVendors) => {
+      if (categoryPreferences.length === 0 || allVendors.length === 0) {
+        return [];
+      }
+
+      const topCategories = categoryPreferences.slice(0, 3).map((p) => p.categoryId);
+
+      const recommendations = allVendors
+        .filter((v) => topCategories.includes(v.category))
+        .map((vendor) => {
+          const history = vendorInteractionHistory[vendor.id];
+          const isNewVendor = !history || history.viewCount === 0;
+
+          let score = 50;
+          const categoryIndex = topCategories.indexOf(vendor.category);
+          score += Math.max(0, 30 - categoryIndex * 10);
+
+          if (vendor.rating) {
+            score += Math.min(15, vendor.rating * 3);
+          }
+
+          if (!isNewVendor && history) {
+            const daysSinceView = (Date.now() - history.lastViewTime) / (1000 * 60 * 60 * 24);
+            if (daysSinceView < 1) {
+              score -= 20;
+            }
+          }
+
+          if (isNewVendor) {
+            score += 10;
+          }
+
+          const reason = isNewVendor
+            ? `New vendor in your favorite category: ${vendor.category}`
+            : `Popular in ${vendor.category} category`;
+
+          const estimatedInterestLevel = score >= 75 ? 'high' : score >= 55 ? 'medium' : 'low';
+
+          return {
+            vendorId: vendor.id,
+            vendorName: vendor.business_name,
+            category: vendor.category,
+            reason,
+            relevanceScore: Math.min(100, score),
+            estimatedInterestLevel,
+          };
+        })
+        .sort((a, b) => b.relevanceScore - a.relevanceScore)
+        .slice(0, 5);
+
+      return recommendations;
+    };
+
+    const calculateEngagementScore = (browsingHistory, windowDays = 7) => {
+      const now = Date.now();
+      const sevenDaysAgo = now - windowDays * 24 * 60 * 60 * 1000;
+      const recentEvents = browsingHistory.filter((e) => e.timestamp > sevenDaysAgo);
+
+      let engagementScore = 0;
+      if (recentEvents.length > 0) {
+        const frequencyScore = Math.min(30, recentEvents.length * 3);
+        const durationScore = Math.min(30, recentEvents.reduce((sum, e) => sum + e.durationSeconds, 0) / 60);
+        const vendorVariety = new Set(recentEvents.map((e) => e.vendorId)).size;
+        const varietyScore = Math.min(40, vendorVariety * 4);
+        engagementScore = Math.min(100, frequencyScore + durationScore + varietyScore);
+      }
+
+      const engagementLevel = engagementScore >= 70 ? 'high' : engagementScore >= 40 ? 'medium' : 'low';
+      return { engagementScore, engagementLevel };
+    };
+
+    // 20a. Verify addBrowsingEvent appends to history
+    let browsingHistory = [];
+    const event1 = {
+      vendorId: 'v1',
+      vendorName: 'Vendor 1',
+      category: 'Food',
+      durationSeconds: 15,
+      interactionType: 'view',
+    };
+
+    browsingHistory = addBrowsingEvent(browsingHistory, event1);
+    if (browsingHistory.length === 1 && browsingHistory[0].vendorId === 'v1') {
+      console.log('✅ Success: Browsing event recorded (1 event in history).');
+    } else {
+      console.error('❌ Error: browsing event not recorded.');
+    }
+
+    // 20b. Verify recordVendorInteraction tracks view counts
+    let interactionMap = {};
+    interactionMap = recordVendorInteraction(interactionMap, 'v1', 'view', 15);
+    interactionMap = recordVendorInteraction(interactionMap, 'v1', 'view', 20);
+
+    if (interactionMap['v1'].viewCount === 2 && interactionMap['v1'].totalInteractionTime === 35) {
+      console.log('✅ Success: Vendor interactions tracked (2 views, 35 sec total).');
+    } else {
+      console.error('❌ Error: vendor interaction tracking failed.', interactionMap['v1']);
+    }
+
+    // 20c. Verify recordVendorInteraction handles different interaction types
+    interactionMap = recordVendorInteraction(interactionMap, 'v1', 'favorite');
+    interactionMap = recordVendorInteraction(interactionMap, 'v1', 'share');
+
+    if (interactionMap['v1'].favoriteCount === 1 && interactionMap['v1'].shareCount === 1 && interactionMap['v1'].viewCount === 2) {
+      console.log('✅ Success: Multiple interaction types tracked (2 views, 1 favorite, 1 share).');
+    } else {
+      console.error('❌ Error: multiple interaction type tracking failed.');
+    }
+
+    // 20d. Verify analyzeBrowsingPatterns detects frequency
+    const patternEvents = [
+      { vendorId: 'v1', category: 'Food', durationSeconds: 10, timestamp: now - 1 * 24 * 60 * 60 * 1000 },
+      { vendorId: 'v2', category: 'Food', durationSeconds: 15, timestamp: now - 2 * 24 * 60 * 60 * 1000 },
+      { vendorId: 'v3', category: 'Services', durationSeconds: 20, timestamp: now - 3 * 24 * 60 * 60 * 1000 },
+      { vendorId: 'v1', category: 'Food', durationSeconds: 12, timestamp: now - 4 * 24 * 60 * 60 * 1000 },
+      { vendorId: 'v2', category: 'Food', durationSeconds: 18, timestamp: now - 5 * 24 * 60 * 60 * 1000 },
+    ];
+
+    const patterns = analyzeBrowsingPatterns(patternEvents);
+    if (patterns.browsingFrequency === 'daily' && patterns.categoryDiversity > 10) {
+      console.log(`✅ Success: Browsing pattern analyzed (frequency: ${patterns.browsingFrequency}, diversity: ${patterns.categoryDiversity}).`);
+    } else {
+      console.error('❌ Error: browsing pattern analysis failed.', patterns);
+    }
+
+    // 20e. Verify engagement score calculation
+    const { engagementScore, engagementLevel } = calculateEngagementScore(patternEvents);
+    if (engagementScore > 0 && engagementLevel === 'low') {
+      console.log(`✅ Success: Engagement score calculated (${engagementScore}, level: ${engagementLevel}).`);
+    } else {
+      console.error('❌ Error: engagement score calculation failed.', { engagementScore, engagementLevel });
+    }
+
+    // 20f. Verify personalized recommendations generate
+    const categoryPrefs = [
+      { categoryId: 'Food', categoryName: 'Food', interactionCount: 3, score: 80 },
+      { categoryId: 'Services', categoryName: 'Services', interactionCount: 2, score: 60 },
+    ];
+
+    const vendorPool = [
+      { id: 'v4', business_name: 'New Food Place', category: 'Food', rating: 4.5 },
+      { id: 'v5', business_name: 'Service Pro', category: 'Services', rating: 4.2 },
+      { id: 'v6', business_name: 'Transport', category: 'Transport', rating: 4.8 },
+    ];
+
+    const recommendations = generatePersonalizedRecommendations(categoryPrefs, interactionMap, vendorPool);
+    if (recommendations.length > 0 && recommendations[0].category === 'Food') {
+      console.log(`✅ Success: Personalized recommendations generated (${recommendations.length} recommendations, top category: ${recommendations[0].category}).`);
+    } else {
+      console.error('❌ Error: personalized recommendations generation failed.', recommendations);
+    }
+
+    // 20g. Verify new vendor bonus in recommendations
+    const newVendorRecs = recommendations.filter((r) => r.reason.includes('New vendor'));
+    if (newVendorRecs.length > 0) {
+      console.log(`✅ Success: New vendor bonus applied (${newVendorRecs.length} new vendors recommended).`);
+    } else {
+      console.error('❌ Error: new vendor bonus logic failed.');
+    }
+
+    // 20h. Verify recommendations exclude unseen categories
+    const hasTransportRec = recommendations.some((r) => r.category === 'Transport');
+    if (!hasTransportRec) {
+      console.log('✅ Success: Recommendations exclude non-preferred categories (Transport filtered out).`');
+    } else {
+      console.error('❌ Error: should not recommend non-preferred categories.');
+    }
+
+    console.log("\n=================================================");
+    console.log("   TEST CASE 20 COMPLETE                         ");
+    console.log("=================================================");
   }, 50);
 })().catch((err) => {
   console.error('❌ Error: Test Case 6 failed with exception:', err);

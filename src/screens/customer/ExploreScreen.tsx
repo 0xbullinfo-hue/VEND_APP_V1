@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 import {
   StyleSheet,
   View,
@@ -15,6 +15,7 @@ import { Ionicons } from '../../components/VIcons';
 import { CATEGORY_CATALOG } from '../../lib/categoryCatalog';
 import { rankVendorsForCustomer } from '../../lib/vendorRanking';
 import { getRankingPolicy } from '../../lib/rankingTransparency';
+import { useCustomerEngagementStore } from '../../store/useCustomerEngagementStore';
 
 interface ExploreScreenProps {
   onBackToHome: () => void;
@@ -28,6 +29,8 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
   onViewRewards
 }) => {
   const { vendors, addPoints, locality, isRealtimeConnected, dataSource, trackProfileView, user } = useApp();
+  const engagementStore = useCustomerEngagementStore();
+  const viewStartTimeRef = useRef<number>(0);
   const [activeCategoryIndex, setActiveCategoryIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
@@ -66,6 +69,16 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
     setActiveCategoryIndex(index);
     setSelectedSubcategory(null);
     addPoints(2); // Earn points for browsing
+    
+    // Track engagement: category browsing
+    const categoryName = CATEGORY_CATALOG[index].name;
+    engagementStore.addBrowsingEvent({
+      vendorId: `category-${index}`,
+      vendorName: categoryName,
+      category: categoryName,
+      durationSeconds: 5, // Estimate
+      interactionType: 'view',
+    });
   };
 
   const handleSubcategoryPress = (subName: string) => {
@@ -93,6 +106,17 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
           activeOpacity={0.85}
           onPress={() => {
             trackProfileView(vendor.id, { actorUserId: user?.id, localityId: vendor.locality_id });
+            
+            // Track engagement: vendor view
+            engagementStore.recordVendorInteraction(vendor.id, 'view', 0);
+            engagementStore.addBrowsingEvent({
+              vendorId: vendor.id,
+              vendorName: vendor.business_name,
+              category: vendor.category,
+              durationSeconds: 15, // Estimate for profile view
+              interactionType: 'view',
+            });
+            
             onViewVendorProfile(vendor.id);
           }}
           style={[
