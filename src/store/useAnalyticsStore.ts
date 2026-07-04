@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { clearAnalyticsEvents, loadAnalyticsEvents, persistAnalyticsEvent } from '../lib/analyticsDataProvider';
+import { clearAnalyticsEvents, loadAnalyticsEvents, persistAnalyticsEvent, flushPendingAnalyticsEvents, getSyncMetadata } from '../lib/analyticsDataProvider';
 
 export type AnalyticsEventType = 'profile_view' | 'directions_request' | 'chat_start';
 
@@ -17,10 +17,12 @@ interface AnalyticsState {
   analyticsEvents: AnalyticsEvent[];
   analyticsSyncSource: 'local' | 'remote';
   analyticsPendingCount: number;
+  lastRemoteSyncAt: number | null;
   hydrateAnalyticsEvents: (actorUserId?: string | null) => Promise<void>;
   trackProfileView: (vendorId: string, context?: { actorUserId?: string; localityId?: number }) => void;
   trackDirectionsRequest: (vendorId: string, context?: { actorUserId?: string; localityId?: number }) => void;
   trackChatStart: (vendorId: string, context?: { actorUserId?: string; localityId?: number }) => void;
+  flushPendingEvents: () => Promise<void>;
   resetAnalytics: () => void;
 }
 
@@ -42,13 +44,16 @@ export const useAnalyticsStore = create<AnalyticsState>((set) => ({
   analyticsEvents: [],
   analyticsSyncSource: 'local',
   analyticsPendingCount: 0,
+  lastRemoteSyncAt: null,
 
   hydrateAnalyticsEvents: async (actorUserId) => {
     const result = await loadAnalyticsEvents(actorUserId);
+    const metadata = await getSyncMetadata();
     set({
       analyticsEvents: result.events,
       analyticsSyncSource: result.source,
       analyticsPendingCount: result.pendingCount,
+      lastRemoteSyncAt: metadata.lastRemoteSyncAt,
     });
   },
 
@@ -76,8 +81,18 @@ export const useAnalyticsStore = create<AnalyticsState>((set) => ({
     });
   },
 
+  flushPendingEvents: async () => {
+    const result = await flushPendingAnalyticsEvents();
+    const metadata = await getSyncMetadata();
+    set({
+      analyticsPendingCount: result.pendingCount,
+      analyticsSyncSource: result.synced ? 'remote' : 'local',
+      lastRemoteSyncAt: metadata.lastRemoteSyncAt,
+    });
+  },
+
   resetAnalytics: () => {
-    set({ analyticsEvents: [], analyticsSyncSource: 'local', analyticsPendingCount: 0 });
+    set({ analyticsEvents: [], analyticsSyncSource: 'local', analyticsPendingCount: 0, lastRemoteSyncAt: null });
     void clearAnalyticsEvents();
   },
 }));

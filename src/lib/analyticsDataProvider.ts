@@ -25,11 +25,17 @@ interface AnalyticsEventRow {
 
 const ANALYTICS_STORAGE_KEY = 'vend.analytics.events.v1';
 const ANALYTICS_PENDING_STORAGE_KEY = 'vend.analytics.pending.v1';
+const ANALYTICS_SYNC_METADATA_KEY = 'vend.analytics.sync.v1';
 
 export interface AnalyticsLoadResult {
   events: AnalyticsEventRecord[];
   source: 'local' | 'remote';
   pendingCount: number;
+}
+
+export interface AnalyticsSyncMetadata {
+  lastRemoteSyncAt: number | null;
+  lastRemoteSyncAttemptAt: number | null;
 }
 
 export interface AnalyticsPersistResult {
@@ -85,6 +91,30 @@ const writePendingEvents = async (events: AnalyticsEventRecord[]): Promise<void>
   }
 };
 
+const readSyncMetadata = async (): Promise<AnalyticsSyncMetadata> => {
+  try {
+    const raw = await AsyncStorage.getItem(ANALYTICS_SYNC_METADATA_KEY);
+    if (!raw) {
+      return { lastRemoteSyncAt: null, lastRemoteSyncAttemptAt: null };
+    }
+    return JSON.parse(raw) as AnalyticsSyncMetadata;
+  } catch {
+    return { lastRemoteSyncAt: null, lastRemoteSyncAttemptAt: null };
+  }
+};
+
+const writeSyncMetadata = async (metadata: AnalyticsSyncMetadata): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(ANALYTICS_SYNC_METADATA_KEY, JSON.stringify(metadata));
+  } catch {
+    // Ignore metadata write failures
+  }
+};
+
+export const getSyncMetadata = async (): Promise<AnalyticsSyncMetadata> => {
+  return readSyncMetadata();
+};
+
 const toAnalyticsInsertRow = (event: AnalyticsEventRecord) => ({
   id: event.id,
   event_type: event.type,
@@ -110,6 +140,12 @@ export const flushPendingAnalyticsEvents = async (): Promise<AnalyticsPersistRes
     return { synced: false, pendingCount: pending.length };
   }
 
+  const metadata = await readSyncMetadata();
+  await writeSyncMetadata({
+    ...metadata,
+    lastRemoteSyncAttemptAt: Date.now(),
+  });
+
   const failed: AnalyticsEventRecord[] = [];
 
   for (const event of pending) {
@@ -126,6 +162,12 @@ export const flushPendingAnalyticsEvents = async (): Promise<AnalyticsPersistRes
   }
 
   await writePendingEvents(failed);
+  if (failed.length === 0) {
+    await writeSyncMetadata({
+      lastRemoteSyncAt: Date.now(),
+      lastRemoteSyncAttemptAt: Date.now(),
+    });
+  }
   return { synced: failed.length === 0, pendingCount: failed.length };
 };
 
@@ -219,6 +261,7 @@ export const clearAnalyticsEvents = async (): Promise<void> => {
   try {
     await AsyncStorage.removeItem(ANALYTICS_STORAGE_KEY);
     await AsyncStorage.removeItem(ANALYTICS_PENDING_STORAGE_KEY);
+    await AsyncStorage.removeItem(ANALYTICS_SYNC_METADATA_KEY);
   } catch {
     // No-op
   }

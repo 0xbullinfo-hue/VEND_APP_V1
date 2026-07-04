@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { AppState, AppStateStatus } from 'react-native';
 import { useAnalyticsStore, useAuthStore, useLocationStore, useTripStore, useUIStore, useVendorStore } from '../store';
 import { getPlanForTier } from '../lib/subscriptionPlans';
 
@@ -25,6 +26,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const refreshVendorsForLocality = useVendorStore((state) => state.refreshVendorsForLocality);
   const connectVendorRealtime = useVendorStore((state) => state.connectVendorRealtime);
   const hydrateAnalyticsEvents = useAnalyticsStore((state) => state.hydrateAnalyticsEvents);
+  const flushPendingEvents = useAnalyticsStore((state) => state.flushPendingEvents);
 
   useEffect(() => {
     devLog('hydrateAuthSession:start');
@@ -79,6 +81,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     void hydrateAnalyticsEvents(user?.id ?? null);
   }, [isHydrated, user?.id, hydrateAnalyticsEvents]);
+
+  // Periodic analytics queue flush (foreground + every 5 minutes)
+  useEffect(() => {
+    if (!isHydrated) {
+      return;
+    }
+
+    // Flush on app foreground
+    const subscription = AppState.addEventListener('change', (state: AppStateStatus) => {
+      if (state === 'active') {
+        devLog('appState:foreground -> flushPendingEvents');
+        void flushPendingEvents();
+      }
+    });
+
+    // Periodic flush every 5 minutes
+    const intervalId = setInterval(() => {
+      devLog('periodicFlush:5min -> flushPendingEvents');
+      void flushPendingEvents();
+    }, 5 * 60 * 1000);
+
+    return () => {
+      subscription.remove();
+      clearInterval(intervalId);
+    };
+  }, [isHydrated, flushPendingEvents]);
 
   return <>{children}</>;
 };

@@ -737,6 +737,102 @@ function createAuthSessionModel(storage) {
   console.log("\n=================================================");
   console.log("   TEST CASE 10 COMPLETE                         ");
   console.log("=================================================");
+
+  // =================================================
+  // TEST CASE 11: Periodic Flush & Last-Sync Tracking
+  // =================================================
+  console.log("\n--- TEST CASE 11: Periodic Flush & Last-Sync Tracking ---");
+
+  const simulatePeriodicFlush = (initialState, flushAttempt) => {
+    let state = JSON.parse(JSON.stringify(initialState));
+
+    // Simulate a flush attempt
+    if (flushAttempt.isSupabaseConfigured && flushAttempt.queue.length > 0) {
+      const failed = flushAttempt.queue.filter(evt => !flushAttempt.successIds.includes(evt.id));
+      state.queue = failed;
+      if (failed.length === 0) {
+        state.lastRemoteSyncAt = flushAttempt.flushTimestamp;
+      }
+      state.lastRemoteSyncAttemptAt = flushAttempt.flushTimestamp;
+    }
+
+    return state;
+  };
+
+  const flushState = {
+    queue: [
+      { id: 'evt_p1', vendorId: 'v1', type: 'profile_view', timestamp: nowTs - days(1) },
+      { id: 'evt_p2', vendorId: 'v1', type: 'directions_request', timestamp: nowTs - days(2) },
+    ],
+    lastRemoteSyncAt: null,
+    lastRemoteSyncAttemptAt: null,
+  };
+
+  // 11a. Verify lastRemoteSyncAt updates on successful flush
+  const afterSuccessFlush = simulatePeriodicFlush(flushState, {
+    isSupabaseConfigured: true,
+    queue: flushState.queue,
+    successIds: ['evt_p1', 'evt_p2'],
+    flushTimestamp: nowTs,
+  });
+
+  if (afterSuccessFlush.lastRemoteSyncAt === nowTs && afterSuccessFlush.queue.length === 0) {
+    console.log('✅ Success: lastRemoteSyncAt updated on successful flush.');
+  } else {
+    console.error('❌ Error: lastRemoteSyncAt not tracking successful syncs.');
+  }
+
+  // 11b. Verify lastRemoteSyncAt does NOT update on partial failure
+  const afterPartialFlush = simulatePeriodicFlush(flushState, {
+    isSupabaseConfigured: true,
+    queue: flushState.queue,
+    successIds: ['evt_p1'],
+    flushTimestamp: nowTs,
+  });
+
+  if (afterPartialFlush.lastRemoteSyncAt === null && afterPartialFlush.queue.length === 1) {
+    console.log('✅ Success: lastRemoteSyncAt NOT updated on partial failure.');
+  } else {
+    console.error('❌ Error: lastRemoteSyncAt should not update on partial flush.');
+  }
+
+  // 11c. Verify lastRemoteSyncAttemptAt always updates
+  if (afterPartialFlush.lastRemoteSyncAttemptAt === nowTs) {
+    console.log('✅ Success: lastRemoteSyncAttemptAt tracks every flush attempt.');
+  } else {
+    console.error('❌ Error: lastRemoteSyncAttemptAt should track all attempts.');
+  }
+
+  // 11d. Verify formatted time strings for UI display
+  const formatSyncTime = (lastSyncAt, now) => {
+    if (!lastSyncAt) return 'Never';
+    const diffMs = now - lastSyncAt;
+    const diffSecs = Math.floor(diffMs / 1000);
+    const diffMins = Math.floor(diffSecs / 60);
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffSecs < 60) return 'just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return 'over 1d ago';
+  };
+
+  const recentSync = formatSyncTime(nowTs - 30 * 1000, nowTs);
+  const olderSync = formatSyncTime(nowTs - 45 * 60 * 1000, nowTs);
+  const veryOldSync = formatSyncTime(nowTs - 25 * 60 * 60 * 1000, nowTs);
+
+  const recentOk = recentSync === 'just now';
+  const olderOk = olderSync.includes('m ago');
+  const veryOldOk = veryOldSync.includes('h ago') || veryOldSync.includes('over 1d');
+
+  if (recentOk && olderOk && veryOldOk) {
+    console.log('✅ Success: Formatted sync times display correctly.');
+  } else {
+    console.error('❌ Error: Sync time formatting failed. Recent:', recentSync, 'Older:', olderSync, 'VeryOld:', veryOldSync);
+  }
+
+  console.log("\n=================================================");
+  console.log("   TEST CASE 11 COMPLETE                         ");
+  console.log("=================================================");
 })().catch((err) => {
   console.error('❌ Error: Test Case 6 failed with exception:', err);
   process.exitCode = 1;

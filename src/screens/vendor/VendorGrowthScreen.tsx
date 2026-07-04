@@ -12,7 +12,7 @@ interface VendorGrowthScreenProps {
 }
 
 export const VendorGrowthScreen: React.FC<VendorGrowthScreenProps> = ({ onBack }) => {
-  const { analyticsEvents, myVendorProfile, vendors, analyticsSyncSource, analyticsPendingCount } = useApp();
+  const { analyticsEvents, myVendorProfile, vendors, analyticsSyncSource, analyticsPendingCount, lastRemoteSyncAt } = useApp();
 
   const vendor = myVendorProfile || vendors[0];
   const now = Date.now();
@@ -41,6 +41,18 @@ export const VendorGrowthScreen: React.FC<VendorGrowthScreenProps> = ({ onBack }
   const rankNow = Math.max(1, localityVendors.findIndex((item) => item.id === vendor.id) + 1);
   const estimatedRank7dAgo = Math.min(localityVendors.length || 1, rankNow + (growthDeltaPct > 0 ? 1 : 0));
   const rankMovement = Math.max(0, estimatedRank7dAgo - rankNow);
+
+  const formatLastSyncTime = (): string => {
+    if (!lastRemoteSyncAt) return 'Never';
+    const diffMs = now - lastRemoteSyncAt;
+    const diffSecs = Math.floor(diffMs / 1000);
+    const diffMins = Math.floor(diffSecs / 60);
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffSecs < 60) return 'just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return 'over 1d ago';
+  };
 
   return (
     <View style={styles.container}>
@@ -83,9 +95,9 @@ export const VendorGrowthScreen: React.FC<VendorGrowthScreenProps> = ({ onBack }
                 },
               ]}
             />
-            <VText variant="caption" color={theme.colors.textMain} style={{ fontWeight: '700' }}>
+            <VText variant="caption" color={theme.colors.textMain} style={{ fontWeight: '700', fontSize: 11 }}>
               {analyticsSyncSource === 'remote' && analyticsPendingCount === 0
-                ? 'Synced'
+                ? `Synced (${formatLastSyncTime()})`
                 : `Local Cache${analyticsPendingCount > 0 ? ` (${analyticsPendingCount} pending)` : ''}`}
             </VText>
           </View>
