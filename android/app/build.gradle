@@ -143,9 +143,11 @@ android {
     compileSdkVersion rootProject.ext.compileSdkVersion
 
     defaultConfig {
-        applicationId "com.vend"
+        applicationId "com.vend.app"
         minSdkVersion rootProject.ext.minSdkVersion
-        targetSdkVersion rootProject.ext.targetSdkVersion
+        // Target API 33 in debug runs to avoid DevSupportManager dynamic receiver SecurityException,
+        // but target API 34 in release runs to satisfy Google Play Store compliance.
+        targetSdkVersion (gradle.startParameter.taskNames.any { it.toLowerCase().contains("release") } ? 34 : 33)
         versionCode 1
         versionName "1.0"
         buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()

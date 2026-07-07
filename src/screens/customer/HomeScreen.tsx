@@ -11,7 +11,7 @@ import {
   Alert,
 } from 'react-native';
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
-import MapView, { Marker, Circle, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker, Circle, PROVIDER_GOOGLE } from '../../components/MapViewCompat';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, HeaderBar, VButton } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';

@@ -92,6 +92,30 @@ export const fetchVendorsByLocality = async (localityId?: number): Promise<Vendo
     return toMockVendors(localityId);
   }
 
+  // 1. Auth check
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      if (__DEV__) {
+        console.warn('[vendorDataProvider] No active session found. Returning mock vendors.');
+      }
+      return toMockVendors(localityId);
+    }
+  } catch (authErr) {
+    if (__DEV__) {
+      console.warn('[vendorDataProvider] Auth session check failed:', authErr);
+    }
+    return toMockVendors(localityId);
+  }
+
+  // Timeout helper
+  const withTimeout = <T>(promise: Promise<T>, ms = 15000): Promise<T> => {
+    return Promise.race([
+      promise,
+      new Promise<T>((_, reject) => setTimeout(() => reject(new Error('Query timeout')), ms))
+    ]);
+  };
+
   try {
     let vendorQuery = supabase.from('vendors_public_view').select(
       'id,business_name,bio,category,is_open,rating,locality_id,is_home_based,subscription_tier,display_address,display_location'
@@ -101,17 +125,21 @@ export const fetchVendorsByLocality = async (localityId?: number): Promise<Vendo
       vendorQuery = vendorQuery.eq('locality_id', localityId);
     }
 
-    // Apply server-side ranking for consistency with client ranking:
-    // boosted first, then online, then rating.
     vendorQuery = vendorQuery
       .order('subscription_tier', { ascending: false })
       .order('is_open', { ascending: false })
       .order('rating', { ascending: false })
       .order('business_name', { ascending: true });
 
-    const { data: vendorRows, error: vendorError } = await vendorQuery;
+    // 2. Query execution with timeout
+    const { data: vendorRows, error: vendorError, status: vendorStatus } = await withTimeout(Promise.resolve(vendorQuery));
 
     if (vendorError) {
+      // 3. Handle auth expired errors (401/403)
+      if (vendorStatus === 401 || vendorStatus === 403) {
+        console.error('[vendorDataProvider] Session expired or unauthorized (401/403).');
+        // Let it fallback to mock or bubble up. For now, fallback to mock.
+      }
       return toMockVendors(localityId);
     }
 
@@ -120,10 +148,12 @@ export const fetchVendorsByLocality = async (localityId?: number): Promise<Vendo
     }
 
     const vendorIds = vendorRows.map((v: VendorPublicRow) => v.id);
-    const { data: serviceRows, error: serviceError } = await supabase
+    const serviceQuery = supabase
       .from('products_services')
       .select('id,vendor_id,title,description')
       .in('vendor_id', vendorIds);
+
+    const { data: serviceRows, error: serviceError } = await withTimeout(Promise.resolve(serviceQuery));
 
     if (serviceError) {
       return mapRowsToVendorProfiles(vendorRows as VendorPublicRow[], []);
@@ -133,7 +163,10 @@ export const fetchVendorsByLocality = async (localityId?: number): Promise<Vendo
       vendorRows as VendorPublicRow[],
       (serviceRows || []) as ProductServiceRow[]
     ));
-  } catch {
+  } catch (err) {
+    if (__DEV__) {
+      console.warn('[vendorDataProvider] Fetch failed or timed out:', err);
+    }
     return toMockVendors(localityId);
   }
 };

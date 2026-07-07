@@ -1,19 +1,22 @@
 {
+  "name": "vend-mobile-app",
   "expo": {
     "name": "VEND",
     "slug": "vend-app",
+    "scheme": "vendapp",
+    "owner": "vend-team",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
     "description": "VEND - Discover hyper-local vendors and services across Nigeria. Connect with nearby businesses for instant access to products and services.",
     "author": "VEND Team",
     "primaryColor": "#FF6B00",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFFFFF"
+    },
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -42,15 +45,17 @@
           "NSAllowsArbitraryLoadsInWebContent": false,
           "NSAllowsArbitraryLoads": false
         }
-      },
-      "googleServicesFile": "./GoogleService-Info.plist"
+      }
     },
     "android": {
       "package": "com.vend.app",
       "versionCode": 1,
-      "deploymentTarget": "21",
       "targetSdkVersion": 34,
       "compileSdkVersion": 34,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
+      },
       "permissions": [
         "android.permission.INTERNET",
         "android.permission.ACCESS_FINE_LOCATION",
@@ -62,13 +67,7 @@
         "android.permission.VIBRATE",
         "android.permission.ACCESS_NETWORK_STATE"
       ],
-      "usesCleartextTraffic": false,
-      "googleServicesFile": "./google-services.json",
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundImage": "./assets/adaptive-icon-background.png",
-        "backgroundColor": "#ffffff"
-      }
+      "usesCleartextTraffic": false
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -79,19 +78,6 @@
       "fallbackToCacheTimeout": 0,
       "enabled": false
     },
-    "plugins": [
-      [
-        "expo-location",
-        {
-          "locationAlwaysAndWhenInUsePermission": "Allow VEND to use your location to find nearby vendors."
-        }
-      ],
-      [
-        "expo-camera",
-        {
-          "cameraPermission": "Allow VEND to access your camera to take photos."
-        }
-      ]
-    ]
+    "plugins": []
   }
 }

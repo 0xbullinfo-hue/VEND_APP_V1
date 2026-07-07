@@ -5,9 +5,9 @@
  * SubscriptionManager, LocationSetup, RegistrationSuccess.
  */
 import React from 'react';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { createStackNavigatorCompat } from './createStackNavigatorCompat';
+import type { StackNavigationProp } from './createStackNavigatorCompat';
 
 import { VendorTabNavigator } from './VendorTabNavigator';
 
@@ -18,12 +18,12 @@ import { RegistrationSuccessScreen } from '../screens/vendor/RegistrationSuccess
 
 import type { VendorStackParamList } from './types';
 
-const Stack = createNativeStackNavigator<VendorStackParamList>();
+const Stack = createStackNavigatorCompat<VendorStackParamList>();
 
 // ─── Overlay adapters ─────────────────────────────────────────────────────────
 
 const SubscriptionManagerAdapter = () => {
-  const nav = useNavigation<NativeStackNavigationProp<VendorStackParamList>>();
+  const nav = useNavigation<StackNavigationProp<VendorStackParamList>>();
   return (
     <SubscriptionManagerScreen
       onBack={() => nav.goBack()}
@@ -32,7 +32,7 @@ const SubscriptionManagerAdapter = () => {
 };
 
 const LocationSetupAdapter = () => {
-  const nav = useNavigation<NativeStackNavigationProp<VendorStackParamList>>();
+  const nav = useNavigation<StackNavigationProp<VendorStackParamList>>();
   return (
     <DetailedLocationSetupScreen
       onBack={() => nav.goBack()}
@@ -42,7 +42,7 @@ const LocationSetupAdapter = () => {
 };
 
 const RegistrationSuccessAdapter = () => {
-  const nav = useNavigation<NativeStackNavigationProp<VendorStackParamList>>();
+  const nav = useNavigation<StackNavigationProp<VendorStackParamList>>();
   return (
     <RegistrationSuccessScreen
       onGoToDashboard={() => nav.navigate('VendorTabs')}

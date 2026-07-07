@@ -17,7 +17,7 @@
 import React from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createStackNavigatorCompat } from './createStackNavigatorCompat';
 
 import { useApp } from '../contexts/AppContext';
 import { OnboardingNavigator } from './OnboardingNavigator';
@@ -27,7 +27,7 @@ import { theme } from '../theme/designSystem';
 
 import type { RootStackParamList } from './types';
 
-const Root = createNativeStackNavigator<RootStackParamList>();
+const Root = createStackNavigatorCompat<RootStackParamList>();
 
 const devLog = (message: string, payload?: unknown) => {
   if (!__DEV__) {

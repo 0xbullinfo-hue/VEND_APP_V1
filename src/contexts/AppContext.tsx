@@ -5,6 +5,7 @@ import { useProximityNotificationStore } from '../store/useProximityNotification
 import { getPlanForTier } from '../lib/subscriptionPlans';
 import { initializeNetworkMonitoring, subscribeToNetworkChanges } from '../lib/networkConnectivity';
 import { initializeErrorReporting, setErrorUser, clearErrorUser } from '../lib/errorReporting';
+import { initializeSSLPinning } from '../lib/sslPinning';
 
 // Export types so components importing from AppContext don't break
 export type { UserProfile, DirectionRequest, EmergencyContact } from '../types';
@@ -36,6 +37,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     devLog('hydrateAuthSession:start');
     void hydrateAuthSession();
   }, [hydrateAuthSession]);
+
+  // Auth session listener for auto-session expiration / signout
+  useEffect(() => {
+    const unsubscribe = useAuthStore.getState().initAuthListener();
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  // Initialize SSL Pinning on app startup
+  useEffect(() => {
+    devLog('sslPinning:initialize');
+    try {
+      initializeSSLPinning();
+    } catch (e) {
+      console.error('[AppContext] Failed to initialize SSL pinning:', e);
+    }
+  }, []);
 
   useEffect(() => {
     if (!isHydrated) {
@@ -128,9 +147,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Initialize error reporting on app startup
   useEffect(() => {
     devLog('errorReporting:initialize');
-    // Pass your Sentry DSN here if available (from env vars)
-    // const sentryDSN = process.env.EXPO_PUBLIC_SENTRY_DSN;
-    initializeErrorReporting(undefined); // TODO: Add Sentry DSN from env
+    const sentryDSN = process.env.EXPO_PUBLIC_SENTRY_DSN;
+    initializeErrorReporting(sentryDSN);
   }, []);
 
   // Subscribe to network changes

@@ -6,7 +6,7 @@
       "cwd": "${workspaceFolder}",
       "type": "reactnative",
       "request": "attach",
-      "port": 19002
+      "port": 8081
     },
     {
       "name": "Expo: Launch on Android",

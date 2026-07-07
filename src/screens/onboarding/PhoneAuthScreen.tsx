@@ -4,13 +4,14 @@ import { theme, normalize } from '../../theme/designSystem';
 import { VText, VButton, VInput } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
 import { Ionicons } from '../../components/VIcons';
+import { isSupabaseConfigured } from '../../lib/supabase';
 
 interface PhoneAuthScreenProps {
   onAuthSuccess: (role: 'customer' | 'vendor') => void;
 }
 
 export const PhoneAuthScreen: React.FC<PhoneAuthScreenProps> = ({ onAuthSuccess }) => {
-  const { login } = useApp();
+  const { sendOtp, verifyOtp } = useApp();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [role, setRole] = useState<'customer' | 'vendor'>('customer');
@@ -21,7 +22,10 @@ export const PhoneAuthScreen: React.FC<PhoneAuthScreenProps> = ({ onAuthSuccess 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const handleSendOtp = () => {
+  const isConfigured = isSupabaseConfigured();
+  const expectedOtpLength = isConfigured ? 6 : 4;
+
+  const handleSendOtp = async () => {
     setErrorMsg('');
     if (!name.trim()) {
       setErrorMsg('Please enter your name');
@@ -33,31 +37,40 @@ export const PhoneAuthScreen: React.FC<PhoneAuthScreenProps> = ({ onAuthSuccess 
     }
     
     setLoading(true);
-    // Mock OTP dispatch duration
-    setTimeout(() => {
+    try {
+      const res = await sendOtp(phone);
       setLoading(false);
-      setIsOtpSent(true);
-    }, 1200);
+      if (res.success) {
+        setIsOtpSent(true);
+      } else {
+        setErrorMsg(res.error || 'Failed to send verification code.');
+      }
+    } catch (err) {
+      setLoading(false);
+      setErrorMsg('An unexpected error occurred. Please try again.');
+    }
   };
 
   const handleVerifyOtp = async () => {
     setErrorMsg('');
-    if (otpCode.length !== 4) {
-      setErrorMsg('Please enter the 4-digit verification code');
+    if (otpCode.length !== expectedOtpLength) {
+      setErrorMsg(`Please enter the ${expectedOtpLength}-digit verification code`);
       return;
     }
     
     setLoading(true);
-    setTimeout(async () => {
-      try {
-        await login(phone, role, name);
-        setLoading(false);
+    try {
+      const res = await verifyOtp(phone, otpCode, role, name);
+      setLoading(false);
+      if (res.success) {
         onAuthSuccess(role);
-      } catch (err) {
-        setLoading(false);
-        setErrorMsg('Authentication failed, please try again.');
+      } else {
+        setErrorMsg(res.error || 'Authentication failed, please try again.');
       }
-    }, 1500);
+    } catch (err) {
+      setLoading(false);
+      setErrorMsg('Authentication failed, please try again.');
+    }
   };
 
   return (
@@ -174,20 +187,22 @@ export const PhoneAuthScreen: React.FC<PhoneAuthScreenProps> = ({ onAuthSuccess 
             <View style={styles.form}>
               
               {/* OTP Code Entry */}
-              <VText variant="h3" style={styles.label}>Enter 4-Digit OTP Code</VText>
+              <VText variant="h3" style={styles.label}>{`Enter ${expectedOtpLength}-Digit OTP Code`}</VText>
               <VInput
-                placeholder="XXXX"
+                placeholder={isConfigured ? "XXXXXX" : "XXXX"}
                 value={otpCode}
                 onChangeText={setOtpCode}
                 keyboardType="numeric"
                 icon="key-outline"
-                maxLength={4}
+                maxLength={expectedOtpLength}
                 style={styles.inputSpacing}
               />
 
-              <VText variant="caption" align="center" style={styles.otpHelper}>
-                Demo Mode: You can enter any 4-digit code (e.g. 1234) to authorize.
-              </VText>
+              {!isConfigured && (
+                <VText variant="caption" align="center" style={styles.otpHelper}>
+                  Demo Mode: You can enter any 4-digit code (e.g. 1234) to authorize.
+                </VText>
+              )}
 
               {errorMsg ? (
                 <VText variant="subtext" color={theme.colors.danger} style={styles.errorText}>
@@ -203,6 +218,7 @@ export const PhoneAuthScreen: React.FC<PhoneAuthScreenProps> = ({ onAuthSuccess 
                 icon="checkmark-shield-outline"
                 style={[styles.actionBtn, theme.shadows.soft]}
               />
+
 
               {/* Reset to Phone screen */}
               <TouchableOpacity 

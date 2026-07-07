@@ -5,9 +5,9 @@
  * Each screen uses a thin adapter to wire navigation to the existing prop callbacks.
  */
 import React from 'react';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { createStackNavigatorCompat } from './createStackNavigatorCompat';
+import type { StackNavigationProp } from './createStackNavigatorCompat';
 
 import { WelcomeScreen } from '../screens/onboarding/WelcomeScreen';
 import { WalkthroughScreen } from '../screens/onboarding/WalkthroughScreen';
@@ -21,17 +21,17 @@ import { useApp } from '../contexts/AppContext';
 
 import type { OnboardingStackParamList } from './types';
 
-const Stack = createNativeStackNavigator<OnboardingStackParamList>();
+const Stack = createStackNavigatorCompat<OnboardingStackParamList>();
 
 // ─── Adapters ─────────────────────────────────────────────────────────────────
 
 const WelcomeAdapter = () => {
-  const nav = useNavigation<NativeStackNavigationProp<OnboardingStackParamList>>();
+  const nav = useNavigation<StackNavigationProp<OnboardingStackParamList>>();
   return <WelcomeScreen onNext={() => nav.navigate('Privacy')} />;
 };
 
 const PrivacyAdapter = () => {
-  const nav = useNavigation<NativeStackNavigationProp<OnboardingStackParamList>>();
+  const nav = useNavigation<StackNavigationProp<OnboardingStackParamList>>();
   return (
     <PrivacyPolicyScreen
       onAccept={() => nav.navigate('Terms')}
@@ -41,7 +41,7 @@ const PrivacyAdapter = () => {
 };
 
 const TermsAdapter = () => {
-  const nav = useNavigation<NativeStackNavigationProp<OnboardingStackParamList>>();
+  const nav = useNavigation<StackNavigationProp<OnboardingStackParamList>>();
   return (
     <TermsOfServiceScreen
       onAccept={() => nav.navigate('Walkthrough')}
@@ -51,12 +51,12 @@ const TermsAdapter = () => {
 };
 
 const WalkthroughAdapter = () => {
-  const nav = useNavigation<NativeStackNavigationProp<OnboardingStackParamList>>();
+  const nav = useNavigation<StackNavigationProp<OnboardingStackParamList>>();
   return <WalkthroughScreen onGetStarted={() => nav.navigate('Auth')} />;
 };
 
 const AuthAdapter = () => {
-  const nav = useNavigation<NativeStackNavigationProp<OnboardingStackParamList>>();
+  const nav = useNavigation<StackNavigationProp<OnboardingStackParamList>>();
   return (
     <PhoneAuthScreen
       onAuthSuccess={(_role) => nav.navigate('Referral')}
@@ -65,12 +65,12 @@ const AuthAdapter = () => {
 };
 
 const ReferralAdapter = () => {
-  const nav = useNavigation<NativeStackNavigationProp<OnboardingStackParamList>>();
+  const nav = useNavigation<StackNavigationProp<OnboardingStackParamList>>();
   return <ReferralCodeScreen onContinue={() => nav.navigate('Locality')} />;
 };
 
 const LocalityAdapter = () => {
-  const nav = useNavigation<NativeStackNavigationProp<OnboardingStackParamList>>();
+  const nav = useNavigation<StackNavigationProp<OnboardingStackParamList>>();
   return <LocalitySelectionScreen onLocalityConfirmed={() => nav.navigate('OnboardingComplete')} />;
 };
 

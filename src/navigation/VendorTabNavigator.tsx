@@ -2,7 +2,7 @@ import React from 'react';
 import { Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { StackNavigationProp } from './createStackNavigatorCompat';
 import { Ionicons } from '../components/VIcons';
 import { theme, normalize } from '../theme/designSystem';
 import { useApp } from '../contexts/AppContext';
@@ -20,7 +20,7 @@ const Tab = createBottomTabNavigator<VendorTabParamList>();
 // ─── Thin adapter wrappers ────────────────────────────────────────────────────
 
 const DashboardAdapter = () => {
-  const nav = useNavigation<NativeStackNavigationProp<VendorStackParamList>>();
+  const nav = useNavigation<StackNavigationProp<VendorStackParamList>>();
   const { logout } = useApp();
   return (
     <VendorDashboardScreen
@@ -37,7 +37,7 @@ const DashboardAdapter = () => {
 };
 
 const ServicesAdapter = () => {
-  const nav = useNavigation<NativeStackNavigationProp<VendorStackParamList>>();
+  const nav = useNavigation<StackNavigationProp<VendorStackParamList>>();
   return (
     <ProductManagementScreen
       onBack={() => nav.navigate('VendorTabs')}
@@ -47,7 +47,7 @@ const ServicesAdapter = () => {
 };
 
 const GrowthAdapter = () => {
-  const nav = useNavigation<NativeStackNavigationProp<VendorStackParamList>>();
+  const nav = useNavigation<StackNavigationProp<VendorStackParamList>>();
   return (
     <VendorGrowthScreen
       onBack={() => nav.navigate('VendorTabs')}
@@ -56,7 +56,7 @@ const GrowthAdapter = () => {
 };
 
 const VendorProfileAdapter = () => {
-  const nav = useNavigation<NativeStackNavigationProp<VendorStackParamList>>();
+  const nav = useNavigation<StackNavigationProp<VendorStackParamList>>();
   return (
     <VendorProfileScreen
       onBack={() => nav.navigate('VendorTabs')}

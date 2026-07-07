@@ -1,0 +1,22 @@
+{
+  "description": "VEND - Discover hyper-local vendors and services across Nigeria. Connect with nearby businesses for instant access to products and services.",
+  "display": "standalone",
+  "lang": "en",
+  "name": "VEND",
+  "short_name": "VEND",
+  "start_url": "/?utm_source=web_app_manifest",
+  "theme_color": "#FF6B00",
+  "orientation": "portrait",
+  "related_applications": [
+    {
+      "platform": "itunes",
+      "id": "com.vend.app"
+    },
+    {
+      "platform": "play",
+      "url": "http://play.google.com/store/apps/details?id=com.vend.app",
+      "id": "com.vend.app"
+    }
+  ],
+  "prefer_related_applications": true
+}

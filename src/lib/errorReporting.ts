@@ -89,6 +89,45 @@ class ErrorReporter {
   }
 
   /**
+   * Scrub PII and sensitive data from messages, metadata, or traces
+   */
+  private scrubPII(obj: any): any {
+    if (obj === null || obj === undefined) return obj;
+    if (typeof obj === 'string') {
+      // 1. Email regex
+      let scrubbed = obj.replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '[EMAIL_REDACTED]');
+      // 2. Phone number pattern (Nigerian formats and standard mobile)
+      scrubbed = scrubbed.replace(/(?:\+?234|0)[789][01]\d{8}/g, '[PHONE_REDACTED]');
+      // 3. Bearer tokens, API keys, passwords, credentials
+      scrubbed = scrubbed.replace(/(?:bearer|sb-[a-zA-Z0-9-]+-key|token|password|key|secret)\s*[:=]\s*["']?[a-zA-Z0-9_\-\.\+]{15,}["']?/gi, '[SENSITIVE_REDACTED]');
+      return scrubbed;
+    }
+    if (Array.isArray(obj)) {
+      return obj.map(item => this.scrubPII(item));
+    }
+    if (typeof obj === 'object') {
+      const scrubbedObj: Record<string, any> = {};
+      for (const [key, value] of Object.entries(obj)) {
+        const lowerKey = key.toLowerCase();
+        if (
+          lowerKey.includes('phone') ||
+          lowerKey.includes('email') ||
+          lowerKey.includes('token') ||
+          lowerKey.includes('password') ||
+          lowerKey.includes('secret') ||
+          lowerKey.includes('key')
+        ) {
+          scrubbedObj[key] = '[REDACTED]';
+        } else {
+          scrubbedObj[key] = this.scrubPII(value);
+        }
+      }
+      return scrubbedObj;
+    }
+    return obj;
+  }
+
+  /**
    * Report an error with context
    */
   reportError(
@@ -96,18 +135,25 @@ class ErrorReporter {
     severity: ErrorSeverity = ErrorSeverity.ERROR,
     context: ErrorContext = {}
   ): ReportedError {
+    const errorObj = error instanceof Error ? error : new Error(this.scrubPII(error));
+    if (errorObj.message) {
+      errorObj.message = this.scrubPII(errorObj.message);
+    }
+
+    const scrubbedContext = this.scrubPII(context) as ErrorContext;
+
     const reportedError: ReportedError = {
       id: this.generateErrorId(),
-      error: error instanceof Error ? error : new Error(error),
+      error: errorObj,
       severity,
       context: {
-        ...context,
-        userId: context.userId || this.userId || undefined,
+        ...scrubbedContext,
+        userId: scrubbedContext.userId || this.userId || undefined,
       },
       timestamp: Date.now(),
       platform: Platform.OS,
       environment: this.environment,
-      stackTrace: error instanceof Error ? error.stack : undefined,
+      stackTrace: errorObj.stack ? this.scrubPII(errorObj.stack) : undefined,
     };
 
     // Store locally for later retrieval

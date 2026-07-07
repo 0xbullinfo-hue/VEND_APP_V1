@@ -256,17 +256,41 @@ FOR EACH ROW EXECUTE FUNCTION public.check_listing_limit_before_insert();
 
 -- Enable Row Level Security (RLS) on Base Tables
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.profiles FORCE ROW LEVEL SECURITY;
+
 ALTER TABLE public.customers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.customers FORCE ROW LEVEL SECURITY;
+
 ALTER TABLE public.vendors ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.vendors FORCE ROW LEVEL SECURITY;
+
 ALTER TABLE public.vendor_locations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.vendor_locations FORCE ROW LEVEL SECURITY;
+
 ALTER TABLE public.products_services ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.products_services FORCE ROW LEVEL SECURITY;
+
 ALTER TABLE public.direction_requests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.direction_requests FORCE ROW LEVEL SECURITY;
+
 ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.reviews FORCE ROW LEVEL SECURITY;
+
 ALTER TABLE public.emergency_contacts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.emergency_contacts FORCE ROW LEVEL SECURITY;
+
 ALTER TABLE public.analytics_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.analytics_events FORCE ROW LEVEL SECURITY;
+
+ALTER TABLE public.localities ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.localities FORCE ROW LEVEL SECURITY;
+
+ALTER TABLE public.help_tickets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.help_tickets FORCE ROW LEVEL SECURITY;
 
 -- Base Policies
 CREATE POLICY "Profiles readable by everyone" ON public.profiles FOR SELECT USING (true);
+CREATE POLICY "Users can insert their own profiles" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
 CREATE POLICY "Users can edit their own profiles" ON public.profiles FOR UPDATE USING (auth.uid() = id);
 
 CREATE POLICY "Customers viewable by logged-in users" ON public.customers FOR SELECT USING (auth.role() = 'authenticated');
@@ -300,3 +324,17 @@ USING (auth.uid() = actor_user_id);
 
 CREATE POLICY "Users can insert their own analytics events" ON public.analytics_events FOR INSERT
 WITH CHECK (auth.uid() = actor_user_id);
+
+-- Localities Policies
+CREATE POLICY "Localities readable by everyone" ON public.localities FOR SELECT USING (true);
+
+-- Help Tickets Policies
+CREATE POLICY "Users can manage their own help tickets" ON public.help_tickets FOR ALL USING (auth.uid() = profile_id);
+
+-- Emergency Contacts Policies
+CREATE POLICY "Users can manage their own emergency contacts" ON public.emergency_contacts FOR ALL USING (auth.uid() = user_id);
+
+-- Reviews Policies
+CREATE POLICY "Reviews readable by everyone" ON public.reviews FOR SELECT USING (true);
+CREATE POLICY "Customers can manage their own reviews" ON public.reviews FOR ALL USING (auth.uid() = customer_id);
+

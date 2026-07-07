@@ -61,7 +61,7 @@ export const WalkthroughScreen: React.FC<WalkthroughScreenProps> = ({ onGetStart
         ) : (
           <View style={{ width: 40 }} />
         )}
-        
+
         <TouchableOpacity onPress={onGetStarted}>
           <VText variant="subtext" color={theme.colors.primary}>Skip</VText>
         </TouchableOpacity>

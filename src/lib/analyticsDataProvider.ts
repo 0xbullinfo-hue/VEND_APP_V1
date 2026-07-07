@@ -146,6 +146,16 @@ export const flushPendingAnalyticsEvents = async (): Promise<AnalyticsPersistRes
     return { synced: false, pendingCount: pending.length };
   }
 
+  // Auth check: Do not attempt remote sync if not logged in (will fail RLS)
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      return { synced: false, pendingCount: pending.length };
+    }
+  } catch {
+    return { synced: false, pendingCount: pending.length };
+  }
+
   const metadata = await readSyncMetadata();
   await writeSyncMetadata({
     ...metadata,
@@ -216,6 +226,24 @@ export const loadAnalyticsEvents = async (actorUserId?: string | null): Promise<
     };
   }
 
+  // Auth check
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session || session.user.id !== actorUserId) {
+      return {
+        events: localEvents,
+        source: 'local',
+        pendingCount: flushResult.pendingCount,
+      };
+    }
+  } catch {
+    return {
+      events: localEvents,
+      source: 'local',
+      pendingCount: flushResult.pendingCount,
+    };
+  }
+
   try {
     const { data, error } = await supabase
       .from('analytics_events')
@@ -262,6 +290,22 @@ export const persistAnalyticsEvent = async (event: AnalyticsEventRecord): Promis
   await writeLocalEvents([...localEvents, event]);
 
   if (!isSupabaseConfigured()) {
+    const pending = await readPendingEvents();
+    const nextPending = [...pending, event];
+    await writePendingEvents(nextPending);
+    return { synced: false, pendingCount: nextPending.length };
+  }
+
+  // Auth check: only write remotely if session exists
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      const pending = await readPendingEvents();
+      const nextPending = [...pending, event];
+      await writePendingEvents(nextPending);
+      return { synced: false, pendingCount: nextPending.length };
+    }
+  } catch {
     const pending = await readPendingEvents();
     const nextPending = [...pending, event];
     await writePendingEvents(nextPending);

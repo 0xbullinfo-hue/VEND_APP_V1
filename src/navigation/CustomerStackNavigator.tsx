@@ -8,9 +8,10 @@
  * support and proper screen transition animations.
  */
 import React from 'react';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import type { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
+import { createStackNavigatorCompat } from './createStackNavigatorCompat';
+import type { StackNavigationProp } from './createStackNavigatorCompat';
+import type { StackScreenProps } from '@react-navigation/stack';
 
 import { UserTabNavigator } from './UserTabNavigator';
 
@@ -26,13 +27,13 @@ import { PointsHistoryScreen } from '../screens/PointsHistoryScreen';
 import type { CustomerStackParamList } from './types';
 import { useApp } from '../contexts/AppContext';
 
-const Stack = createNativeStackNavigator<CustomerStackParamList>();
+const Stack = createStackNavigatorCompat<CustomerStackParamList>();
 
 // ─── Overlay adapters ─────────────────────────────────────────────────────────
 
 const VendorProfileAdapter = () => {
-  const nav = useNavigation<NativeStackNavigationProp<CustomerStackParamList>>();
-  const route = useRoute<NativeStackScreenProps<CustomerStackParamList, 'VendorProfile'>['route']>();
+  const nav = useNavigation<StackNavigationProp<CustomerStackParamList>>();
+  const route = useRoute<StackScreenProps<CustomerStackParamList, 'VendorProfile'>['route']>();
   return (
     <VendorProfileScreen
       vendorId={route.params.vendorId}
@@ -54,8 +55,8 @@ const VendorProfileAdapter = () => {
 };
 
 const DirectionRequestAdapter = () => {
-  const nav = useNavigation<NativeStackNavigationProp<CustomerStackParamList>>();
-  const route = useRoute<NativeStackScreenProps<CustomerStackParamList, 'DirectionRequest'>['route']>();
+  const nav = useNavigation<StackNavigationProp<CustomerStackParamList>>();
+  const route = useRoute<StackScreenProps<CustomerStackParamList, 'DirectionRequest'>['route']>();
   return (
     <DirectionRequestScreen
       vendorId={route.params.vendorId}
@@ -69,7 +70,7 @@ const DirectionRequestAdapter = () => {
 };
 
 const LiveTripAdapter = () => {
-  const nav = useNavigation<NativeStackNavigationProp<CustomerStackParamList>>();
+  const nav = useNavigation<StackNavigationProp<CustomerStackParamList>>();
   const { activeTrip } = useApp();
   return (
     <LiveTripScreen
@@ -84,8 +85,8 @@ const LiveTripAdapter = () => {
 };
 
 const QRScannerAdapter = () => {
-  const nav = useNavigation<NativeStackNavigationProp<CustomerStackParamList>>();
-  const route = useRoute<NativeStackScreenProps<CustomerStackParamList, 'QRScanner'>['route']>();
+  const nav = useNavigation<StackNavigationProp<CustomerStackParamList>>();
+  const route = useRoute<StackScreenProps<CustomerStackParamList, 'QRScanner'>['route']>();
   const { completeTrip } = useApp();
   return (
     <QRScannerScreen
@@ -100,8 +101,8 @@ const QRScannerAdapter = () => {
 };
 
 const LeaveReviewAdapter = () => {
-  const nav = useNavigation<NativeStackNavigationProp<CustomerStackParamList>>();
-  const route = useRoute<NativeStackScreenProps<CustomerStackParamList, 'LeaveReview'>['route']>();
+  const nav = useNavigation<StackNavigationProp<CustomerStackParamList>>();
+  const route = useRoute<StackScreenProps<CustomerStackParamList, 'LeaveReview'>['route']>();
   return (
     <LeaveReviewScreen
       vendorId={route.params.vendorId}
@@ -111,8 +112,8 @@ const LeaveReviewAdapter = () => {
 };
 
 const ChatAdapter = () => {
-  const nav = useNavigation<NativeStackNavigationProp<CustomerStackParamList>>();
-  const route = useRoute<NativeStackScreenProps<CustomerStackParamList, 'Chat'>['route']>();
+  const nav = useNavigation<StackNavigationProp<CustomerStackParamList>>();
+  const route = useRoute<StackScreenProps<CustomerStackParamList, 'Chat'>['route']>();
   return (
     <ChatScreen
       recipientId={route.params.recipientId}
@@ -127,7 +128,7 @@ const ChatAdapter = () => {
 };
 
 const PointsHistoryAdapter = () => {
-  const nav = useNavigation<NativeStackNavigationProp<CustomerStackParamList>>();
+  const nav = useNavigation<StackNavigationProp<CustomerStackParamList>>();
   return (
     <PointsHistoryScreen
       onBack={() => nav.goBack()}

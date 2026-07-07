@@ -1,9 +1,4 @@
-/**
- * SSL Certificate Pinning for Secure API Communication
- *
- * Implements certificate pinning to prevent MITM attacks
- * by validating that API responses come from trusted certificates.
- */
+import { getSupabaseDomain } from './supabase';
 
 /**
  * SSL Pinning Configuration
@@ -274,7 +269,22 @@ export async function fetchWithPinning(
  * Call this during app startup
  */
 export function initializeSSLPinning(config: SSLPinningConfig[] = []): void {
-  const finalConfig = config.length > 0 ? config : SSL_PINNING_CONFIG;
+  const dynamicDomain = getSupabaseDomain();
+  const baseConfig = [...SSL_PINNING_CONFIG];
+  
+  if (dynamicDomain && !baseConfig.some(c => c.domain === dynamicDomain)) {
+    // Dynamically add the configured Supabase endpoint using placeholder hashes
+    // TODO: Update these with the actual SHA-256 fingerprints of your Supabase certificate/public key!
+    baseConfig.push({
+      domain: dynamicDomain,
+      publicKeyHash: 'sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+      certificateHash: 'sha256/BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=',
+      validFrom: new Date('2024-01-01').getTime(),
+      validUntil: new Date('2028-12-31').getTime(),
+    });
+  }
+
+  const finalConfig = config.length > 0 ? config : baseConfig;
   certificatePinning.loadConfig(finalConfig);
 
   if (DEVELOPMENT_DISABLE_PINNING && __DEV__) {
