@@ -317,6 +317,29 @@ export const NotificationToast: React.FC = () => {
   );
 };
 
+// Skeleton loader component for premium loading states
+export const VSkeleton: React.FC<{
+  width?: any;
+  height?: any;
+  borderRadius?: number;
+  style?: any;
+}> = ({ width = '100%', height = 20, borderRadius = 8, style }) => {
+  return (
+    <View
+      style={[
+        {
+          width,
+          height,
+          borderRadius,
+          backgroundColor: '#E5E7EB', // theme.colors.border
+          opacity: 0.6
+        },
+        style
+      ]}
+    />
+  );
+};
+
 const styles = StyleSheet.create({
   btn: {
     height: normalize(48),

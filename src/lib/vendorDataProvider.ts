@@ -129,7 +129,8 @@ export const fetchVendorsByLocality = async (localityId?: number): Promise<Vendo
       .order('subscription_tier', { ascending: false })
       .order('is_open', { ascending: false })
       .order('rating', { ascending: false })
-      .order('business_name', { ascending: true });
+      .order('business_name', { ascending: true })
+      .range(0, 50); // Limit to 50 for initial premium performance. Scale later with pagination.
 
     // 2. Query execution with timeout
     const { data: vendorRows, error: vendorError, status: vendorStatus } = await withTimeout(Promise.resolve(vendorQuery));

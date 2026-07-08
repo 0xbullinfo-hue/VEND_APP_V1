@@ -51,7 +51,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     []
   );
 
-  // Filter vendors based on active category
+  const [visibleRegion, setVisibleRegion] = useState(initialRegion);
+
+  // Filter vendors based on active category and map bounds
   const filteredVendors = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
 
@@ -59,7 +61,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       ? vendors.filter(v => v.category === selectedCategory)
       : vendors;
 
-    const searched = scoped.filter((v) => {
+    return scoped.filter((v) => {
+      // 1. Basic Filters
       const matchesSearch =
         normalizedQuery === '' ||
         v.business_name.toLowerCase().includes(normalizedQuery) ||
@@ -70,11 +73,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       const matchesOpen = !onlyOpen || v.is_open;
       const matchesHome = !onlyHomeBased || v.is_home_based;
 
-      return matchesSearch && matchesBoost && matchesOpen && matchesHome;
-    });
+      if (!(matchesSearch && matchesBoost && matchesOpen && matchesHome)) return false;
 
-    return rankVendorsForCustomer(searched);
-  }, [selectedCategory, vendors, searchQuery, onlyBoosted, onlyOpen, onlyHomeBased]);
+      // 2. Bound Filtering (Large Usage Optimization)
+      // Only render if within visible region +/- a small buffer
+      const buffer = visibleRegion.latitudeDelta;
+      const inLat = v.exact_location.latitude > visibleRegion.latitude - visibleRegion.latitudeDelta - buffer &&
+                    v.exact_location.latitude < visibleRegion.latitude + visibleRegion.latitudeDelta + buffer;
+      const inLng = v.exact_location.longitude > visibleRegion.longitude - visibleRegion.longitudeDelta - buffer &&
+                    v.exact_location.longitude < visibleRegion.longitude + visibleRegion.longitudeDelta + buffer;
+
+      return inLat && inLng;
+    });
+  }, [selectedCategory, vendors, searchQuery, onlyBoosted, onlyOpen, onlyHomeBased, visibleRegion]);
 
   const promoVendors = useMemo(() => rankVendorsForCustomer(vendors), [vendors]);
 
@@ -281,7 +292,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           customMapStyle={uberMapStyle}
           initialRegion={initialRegion}
           onPress={() => setSelectedVendorId(null)}
-          onRegionChangeComplete={(region) => { currentRegion.current = region; }}
+          onRegionChangeComplete={(region) => {
+            currentRegion.current = region;
+            // Update visible region with slight debounce-like threshold to avoid too many re-renders
+            if (Math.abs(region.latitudeDelta - visibleRegion.latitudeDelta) > visibleRegion.latitudeDelta * 0.1 ||
+                Math.abs(region.latitude - visibleRegion.latitude) > visibleRegion.latitudeDelta * 0.1) {
+              setVisibleRegion(region);
+            }
+          }}
           showsUserLocation={true}
           showsMyLocationButton={false}
           showsCompass={false}
@@ -829,20 +847,21 @@ const styles = StyleSheet.create({
     gap: theme.spacing.md,
   },
   promoCard: {
-    width: normalize(150),
-    backgroundColor: theme.colors.surface,
-    borderRadius: normalize(10),
+    width: normalize(160),
+    backgroundColor: theme.colors.background,
+    borderRadius: normalize(16),
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    marginBottom: 4,
+    borderColor: theme.colors.cardBorder,
+    marginBottom: 8,
   },
   promoCardImage: {
     width: '100%',
-    height: normalize(70),
+    height: normalize(80),
+    backgroundColor: theme.colors.surface,
   },
   promoCardContent: {
-    padding: theme.spacing.sm,
+    padding: theme.spacing.md,
   },
   ratingRow: {
     flexDirection: 'row',

@@ -62,5 +62,10 @@
     <activity 
       android:name="com.facebook.react.devsupport.DevSettingsActivity" 
       android:exported="false"/>
+
+    <!-- Google Maps API Key to prevent startup crashes when rendering MapView -->
+    <meta-data 
+      android:name="com.google.android.geo.API_KEY" 
+      android:value="AIzaSyDummyKeyPlaceholderToPreventCrashes_xyz" />
   </application>
 </manifest>

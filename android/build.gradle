@@ -39,6 +39,10 @@ allprojects {
     configurations.all {
         resolutionStrategy {
             force "com.facebook.react:react-native:" + REACT_NATIVE_VERSION
+            force "com.google.android.gms:play-services-location:21.0.1"
+            force "com.google.android.gms:play-services-maps:18.1.0"
+            force "com.google.android.gms:play-services-base:18.1.0"
+            force "com.google.android.gms:play-services-basement:18.1.0"
         }
     }
 
