@@ -52,6 +52,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     []
   );
 
+  const initialRegion = {
+    latitude: locality?.center_location?.latitude || 6.5165,
+    longitude: locality?.center_location?.longitude || 3.3792,
+    latitudeDelta: 0.05,
+    longitudeDelta: 0.05,
+  };
+
   const [visibleRegion, setVisibleRegion] = useState(initialRegion);
 
   // Filter vendors based on active category and map bounds
@@ -158,13 +165,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     };
     currentRegion.current = next;
     mapRef.current?.animateToRegion(next, 300);
-  };
-
-  const initialRegion = {
-    latitude: locality?.center_location?.latitude || 6.5165,
-    longitude: locality?.center_location?.longitude || 3.3792,
-    latitudeDelta: 0.05,
-    longitudeDelta: 0.05,
   };
 
   return (
@@ -292,7 +292,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               </VText>
             </TouchableOpacity>
           </View>
-        </View>
+        </Animated.View>
 
         <MapView
           ref={mapRef}
@@ -513,8 +513,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   </View>
                 </TouchableOpacity>
               </Animated.View>
-              ))
-            )}
+              )))
+            }
           </ScrollView>
         </View>
       )}

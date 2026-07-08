@@ -113,6 +113,9 @@ export const VButton: React.FC<{
     onPress();
   };
 
+  const currentStyles = getStyles();
+  const opacity = disabled || loading ? 0.6 : 1;
+
   return (
     <TouchableOpacity
       activeOpacity={0.8}
