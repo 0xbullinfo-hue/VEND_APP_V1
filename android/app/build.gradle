@@ -142,6 +142,15 @@ android {
 
     compileSdkVersion rootProject.ext.compileSdkVersion
 
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+        // Ensure shared objects are not compressed in the APK, allowing better mapping
+        // on systems with 16KB pages if they are already aligned.
+        pickFirsts += '**/lib*.so'
+    }
+
     defaultConfig {
         applicationId "com.vend.app"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -163,7 +172,8 @@ android {
                         "PROJECT_BUILD_DIR=$buildDir",
                         "REACT_ANDROID_DIR=${reactNativeRoot}/ReactAndroid",
                         "REACT_ANDROID_BUILD_DIR=${reactNativeRoot}/ReactAndroid/build",
-                        "NODE_MODULES_DIR=$rootDir/../node_modules"
+                        "NODE_MODULES_DIR=$rootDir/../node_modules",
+                        "APP_LDFLAGS+=-Wl,-z,max-page-size=16384"
                     cFlags "-Wall", "-Werror", "-fexceptions", "-frtti", "-DWITH_INSPECTOR=1"
                     cppFlags "-std=c++17"
                     // Make sure this target name is the same you specify inside the
