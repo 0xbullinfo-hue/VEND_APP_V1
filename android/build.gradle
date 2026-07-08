@@ -1,6 +1,5 @@
 import org.apache.tools.ant.taskdefs.condition.Os
 
-// Top-level build file where you can add configuration options common to all sub-projects/modules.
 buildscript {
     ext {
         buildToolsVersion = findProperty('android.buildToolsVersion') ?: '31.0.0'
@@ -13,10 +12,8 @@ buildscript {
         frescoVersion = findProperty('expo.frescoVersion') ?: '2.5.0'
 
         if (System.properties['os.arch'] == 'aarch64') {
-            // For M1 Users we need to use the NDK 24 which added support for aarch64
             ndkVersion = '24.0.8215888'
         } else {
-            // Otherwise we default to the side-by-side NDK version from AGP.
             ndkVersion = '21.4.7075529'
         }
     }
@@ -28,8 +25,6 @@ buildscript {
         classpath('com.android.tools.build:gradle:7.1.1')
         classpath('com.facebook.react:react-native-gradle-plugin')
         classpath('de.undercouch:gradle-download-task:5.0.1')
-        // NOTE: Do not place your application dependencies here; they belong
-        // in the individual module build.gradle files
     }
 }
 
@@ -39,39 +34,31 @@ allprojects {
     configurations.all {
         resolutionStrategy {
             force "com.facebook.react:react-native:" + REACT_NATIVE_VERSION
-            // Downgrade to play-services-location 20.0.0 to match play-services-maps 18.0.2 expectations
+            
+            // CRITICAL: Force Google Play Services v20.x to resolve FusedLocationProviderClient "Found interface but class expected" crash.
+            // React Native Maps 0.31.x requires FusedLocationProviderClient to be a CLASS (v20.0.0 and below).
             force "com.google.android.gms:play-services-location:20.0.0"
             force "com.google.android.gms:play-services-maps:18.0.2"
             force "com.google.android.gms:play-services-base:18.0.1"
             force "com.google.android.gms:play-services-basement:18.0.0"
+            force "com.google.android.gms:play-services-tasks:18.0.1"
         }
     }
 
     repositories {
         mavenLocal()
         maven {
-            // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
             url(new File(['node', '--print', "require.resolve('react-native/package.json')"].execute(null, rootDir).text.trim(), '../android'))
         }
         maven {
-            // Android JSC is installed from npm
             url(new File(['node', '--print', "require.resolve('jsc-android/package.json')"].execute(null, rootDir).text.trim(), '../dist'))
         }
-
         google()
         mavenCentral {
-            // We don't want to fetch react-native from Maven Central as there are
-            // older versions over there.
             content {
                 excludeGroup 'com.facebook.react'
             }
         }
         maven { url 'https://www.jitpack.io' }
     }
-}
-
-configurations.all {
-  resolutionStrategy {
-    force 'com.facebook.react:react-native:0.69.6'
-  }
 }

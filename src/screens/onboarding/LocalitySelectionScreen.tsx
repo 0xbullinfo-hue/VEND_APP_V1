@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { StyleSheet, View, SafeAreaView, TouchableOpacity, ScrollView, Platform, PermissionsAndroid, TextInput } from 'react-native';
-import Geolocation from '@react-native-community/geolocation';
+import * as Location from 'expo-location';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, VButton } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
@@ -32,44 +32,28 @@ export const LocalitySelectionScreen: React.FC<LocalitySelectionScreenProps> = (
   const handleRequestPermission = async () => {
     setLoading(true);
 
-    if (Platform.OS === 'android') {
-      try {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-          {
-            title: 'VEND Global Access',
-            message: 'VEND needs your location to connect you with the nearest premium vendors in your region.',
-            buttonNeutral: 'Ask Me Later',
-            buttonNegative: 'Cancel',
-            buttonPositive: 'OK',
-          }
-        );
-        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-          setLoading(false);
-          setPermissionGranted(true);
-          return;
-        }
-      } catch (err) {
-        console.warn(err);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setLoading(false);
+        setPermissionGranted(true);
+        return;
       }
-    } else {
-      Geolocation.requestAuthorization();
-    }
 
-    Geolocation.getCurrentPosition(
-      (position) => {
-        setLoading(false);
-        setPermissionGranted(true);
-        // Default to Lagos Mainland if position logic isn't integrated yet
-        setSelectedId(1);
-      },
-      (error) => {
-        setLoading(false);
-        setPermissionGranted(true);
-        setSelectedId(1);
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
-    );
+      const position = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
+      setLoading(false);
+      setPermissionGranted(true);
+      // Default to Lagos Mainland if position logic isn't integrated yet
+      setSelectedId(1);
+    } catch (err) {
+      console.warn(err);
+      setLoading(false);
+      setPermissionGranted(true);
+      setSelectedId(1);
+    }
   };
 
   const handleConfirm = async () => {
