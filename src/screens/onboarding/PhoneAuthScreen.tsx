@@ -238,7 +238,7 @@ export const PhoneAuthScreen: React.FC<PhoneAuthScreenProps> = ({ onAuthSuccess 
                 title="Verify & Authenticate"
                 onPress={handleVerifyOtp}
                 loading={loading}
-                icon="checkmark-shield-outline"
+                icon="shield-checkmark-outline"
                 style={[styles.actionBtn, theme.shadows.soft]}
               />
 
