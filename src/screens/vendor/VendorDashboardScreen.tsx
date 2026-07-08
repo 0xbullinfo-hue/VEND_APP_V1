@@ -1,7 +1,8 @@
 import React from 'react';
 import { StyleSheet, View, ScrollView, TouchableOpacity, Image, Dimensions, Platform, Alert } from 'react-native';
+import Animated, { FadeInUp, FadeInDown, SlideInRight } from 'react-native-reanimated';
 import { theme, normalize } from '../../theme/designSystem';
-import { VText, HeaderBar } from '../../components/SharedComponents';
+import { VText, HeaderBar, VImage } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
 import { Ionicons } from '../../components/VIcons';
 import { computeRankUpNudge } from '../../lib/rankUpNudge';
@@ -72,18 +73,20 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         
         {/* Profile Card */}
-        <TouchableOpacity activeOpacity={0.9} onPress={onViewProfile} style={styles.profileCard}>
-          <Image source={{ uri: vendor.image }} style={styles.businessLogo} />
-          <View style={styles.businessInfo}>
-            <VText variant="h2" style={{ marginBottom: 4 }}>{vendor.business_name}</VText>
-            <View style={styles.statusRow}>
-              <View style={styles.statusDot} />
-              <VText variant="caption" color={theme.colors.primary}>
-                Store is visible to customers
-              </VText>
+        <Animated.View entering={FadeInDown.duration(600)}>
+          <TouchableOpacity activeOpacity={0.9} onPress={onViewProfile} style={styles.profileCard}>
+            <VImage source={vendor.image} style={styles.businessLogo} />
+            <View style={styles.businessInfo}>
+              <VText variant="h2" style={{ marginBottom: 4 }}>{vendor.business_name}</VText>
+              <View style={styles.statusRow}>
+                <View style={styles.statusDot} />
+                <VText variant="caption" color={theme.colors.primary}>
+                  Store is visible to customers
+                </VText>
+              </View>
             </View>
-          </View>
-        </TouchableOpacity>
+          </TouchableOpacity>
+        </Animated.View>
 
         <View style={[styles.sectionHeader, { marginTop: theme.spacing.xs }]}>
           <VText variant="h2" style={{ fontSize: normalize(18) }}>Boost Impact Analytics</VText>
@@ -280,32 +283,32 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
         </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll} contentContainerStyle={{ paddingHorizontal: theme.spacing.lg, gap: theme.spacing.md }}>
-          <View style={styles.metricCard}>
+          <Animated.View entering={SlideInRight.delay(100)} style={styles.metricCard}>
             <View style={styles.metricIconRow}>
               <Ionicons name="star" size={20} color={theme.colors.warning} />
               <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: 'bold' }}>+45</VText>
             </View>
             <VText variant="h1" style={{ fontSize: normalize(24), marginVertical: 4 }}>1,240</VText>
             <VText variant="caption" color={theme.colors.textMuted}>Visibility Points</VText>
-          </View>
+          </Animated.View>
 
-          <View style={styles.metricCard}>
+          <Animated.View entering={SlideInRight.delay(200)} style={styles.metricCard}>
             <View style={styles.metricIconRow}>
               <Ionicons name="people" size={20} color={theme.colors.primary} />
               <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: 'bold' }}>Active</VText>
             </View>
             <VText variant="h1" style={{ fontSize: normalize(24), marginVertical: 4 }}>382</VText>
             <VText variant="caption" color={theme.colors.textMuted}>User Check-ins</VText>
-          </View>
+          </Animated.View>
 
-          <View style={styles.metricCard}>
+          <Animated.View entering={SlideInRight.delay(300)} style={styles.metricCard}>
             <View style={styles.metricIconRow}>
               <Ionicons name="cube" size={20} color={theme.colors.primary} />
               <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: 'bold' }}>Good</VText>
             </View>
             <VText variant="h1" style={{ fontSize: normalize(24), marginVertical: 4 }}>94%</VText>
             <VText variant="caption" color={theme.colors.textMuted}>Active Services</VText>
-          </View>
+          </Animated.View>
         </ScrollView>
 
         {/* MANAGE BUSINESS */}

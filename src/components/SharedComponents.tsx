@@ -7,9 +7,11 @@ import {
   View, 
   ActivityIndicator, 
   Platform,
+  Image,
   SafeAreaView
 } from 'react-native';
 import { Ionicons } from './VIcons';
+import * as Haptics from 'expo-haptics';
 import { theme, normalize } from '../theme/designSystem';
 import { useApp } from '../contexts/AppContext';
 
@@ -103,13 +105,18 @@ export const VButton: React.FC<{
     }
   };
 
-  const currentStyles = getStyles();
-  const opacity = disabled || loading ? 0.6 : 1;
+  const handlePress = () => {
+    if (disabled || loading) return;
+    if (Platform.OS !== 'web') {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    onPress();
+  };
 
   return (
     <TouchableOpacity
       activeOpacity={0.8}
-      onPress={disabled || loading ? undefined : onPress}
+      onPress={handlePress}
       style={[
         styles.btn,
         {
@@ -199,10 +206,20 @@ export const VInput: React.FC<{
 // Header Point Widget
 export const PointWidget: React.FC<{ onPress?: () => void }> = ({ onPress }) => {
   const { points } = useApp();
+
+  const handlePress = () => {
+    if (onPress) {
+      if (Platform.OS !== 'web') {
+        void Haptics.selectionAsync();
+      }
+      onPress();
+    }
+  };
+
   return (
     <TouchableOpacity 
       activeOpacity={0.8}
-      onPress={onPress}
+      onPress={handlePress}
       style={styles.pointsBadge}
     >
       <Ionicons name="star" size={normalize(14)} color="#F59E0B" style={{ marginRight: 4 }} />
@@ -314,6 +331,28 @@ export const NotificationToast: React.FC = () => {
         />
       </TouchableOpacity>
     </View>
+  );
+};
+
+// Premium Image component with professional placeholder logic
+export const VImage: React.FC<{
+  source: string;
+  style?: any;
+  resizeMode?: 'cover' | 'contain' | 'stretch';
+}> = ({ source, style, resizeMode = 'cover' }) => {
+  const [error, setError] = React.useState(false);
+
+  return (
+    <Image
+      source={{
+        uri: error || !source
+          ? 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=500&q=80' // High-quality food/service placeholder
+          : source
+      }}
+      style={style}
+      resizeMode={resizeMode}
+      onError={() => setError(true)}
+    />
   );
 };
 

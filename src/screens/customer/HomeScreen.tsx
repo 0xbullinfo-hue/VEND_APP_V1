@@ -10,10 +10,11 @@ import {
   TextInput,
   Alert,
 } from 'react-native';
+import Animated, { FadeInUp, FadeInRight, Layout } from 'react-native-reanimated';
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import MapView, { Marker, Circle, PROVIDER_GOOGLE } from '../../components/MapViewCompat';
 import { theme, normalize } from '../../theme/designSystem';
-import { VText, HeaderBar, VButton } from '../../components/SharedComponents';
+import { VText, HeaderBar, VButton, VSkeleton, VImage } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
 import { Ionicons } from '../../components/VIcons';
 import { uberMapStyle } from '../../theme/mapStyles';
@@ -184,13 +185,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               },
             ]}
           />
-          <VText variant="caption" color={theme.colors.textMuted}>
-            {isLoadingVendors
-              ? 'Refreshing nearby vendors...'
-              : dataSource === 'supabase' && isRealtimeConnected
-              ? 'Live locality feed connected'
-              : 'Using local demo dataset'}
-          </VText>
+          {isLoadingVendors ? (
+            <VSkeleton width={140} height={14} borderRadius={4} />
+          ) : (
+            <VText variant="caption" color={theme.colors.textMuted}>
+              {dataSource === 'supabase' && isRealtimeConnected
+                ? 'Live locality feed connected'
+                : 'Using local demo dataset'}
+            </VText>
+          )}
           <TouchableOpacity
             activeOpacity={0.8}
             onPress={() =>
@@ -208,18 +211,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </TouchableOpacity>
         </View>
         <View style={{ alignItems: 'flex-end' }}>
-          <VText variant="caption" color={theme.colors.primary}>
-            {filteredVendors.length} visible
-          </VText>
-          <VText variant="caption" color={theme.colors.textMuted}>
-            Boosted vendors prioritized
-          </VText>
+          {isLoadingVendors ? (
+            <VSkeleton width={60} height={14} borderRadius={4} />
+          ) : (
+            <>
+              <VText variant="caption" color={theme.colors.primary}>
+                {filteredVendors.length} visible
+              </VText>
+              <VText variant="caption" color={theme.colors.textMuted}>
+                Boosted prioritized
+              </VText>
+            </>
+          )}
         </View>
       </View>
 
       {/* Interactive Map Viewport */}
       <View style={styles.mapContainer}>
-        <View style={styles.discoveryRail}>
+        <Animated.View entering={FadeInUp.delay(300).duration(600)} style={styles.discoveryRail}>
           <View style={styles.discoveryTopRow}>
             <View style={styles.localityPill}>
               <Ionicons name="location" size={14} color={theme.colors.primary} />
@@ -453,40 +462,59 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <VText variant="caption" color={theme.colors.primary}>BOOST FIRST • EARN +20 PTS</VText>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.promoScroll}>
-            {promoVendors.map((v) => (
-              <TouchableOpacity 
-                key={v.id} 
-                activeOpacity={0.8}
-                onPress={() => {
-                  trackProfileView(v.id, { actorUserId: user?.id, localityId: v.locality_id });
-                  
-                  // Track engagement: vendor view
-                  engagementStore.recordVendorInteraction(v.id, 'view', 0);
-                  engagementStore.addBrowsingEvent({
-                    vendorId: v.id,
-                    vendorName: v.business_name,
-                    category: v.category,
-                    durationSeconds: 15,
-                    interactionType: 'view',
-                  });
-                  
-                  onViewVendorProfile(v.id);
-                }}
-                style={[styles.promoCard, theme.shadows.soft]}
-              >
-                <Image source={{ uri: v.image }} style={styles.promoCardImage} />
-                <View style={styles.promoCardContent}>
-                  <VText variant="subtext" numberOfLines={1}>{v.business_name}</VText>
-                  <View style={styles.ratingRow}>
-                    <Ionicons name="star" size={10} color={theme.colors.warning} />
-                    <VText variant="caption" style={{ marginLeft: 4 }}>{v.rating}</VText>
-                    <VText variant="caption" color={theme.colors.textMuted} style={{ marginLeft: 6 }}>
-                      {v.is_home_based ? 'Home-Based' : 'Physical Shop'}
-                    </VText>
+            {isLoadingVendors ? (
+              // Show 3 skeletons during loading
+              [1, 2, 3].map((i) => (
+                <View key={i} style={styles.promoCard}>
+                  <VSkeleton width="100%" height={80} borderRadius={0} />
+                  <View style={{ padding: theme.spacing.md, gap: 8 }}>
+                    <VSkeleton width="80%" height={14} />
+                    <VSkeleton width="40%" height={10} />
                   </View>
                 </View>
-              </TouchableOpacity>
-            ))}
+              ))
+            ) : (
+              promoVendors.map((v, index) => (
+                <Animated.View
+                  key={v.id}
+                  entering={FadeInRight.delay(100 * index).duration(500)}
+                  layout={Layout.springify()}
+                >
+                  <TouchableOpacity
+                    key={v.id}
+                    activeOpacity={0.8}
+                    onPress={() => {
+                    trackProfileView(v.id, { actorUserId: user?.id, localityId: v.locality_id });
+
+                    // Track engagement: vendor view
+                    engagementStore.recordVendorInteraction(v.id, 'view', 0);
+                    engagementStore.addBrowsingEvent({
+                      vendorId: v.id,
+                      vendorName: v.business_name,
+                      category: v.category,
+                      durationSeconds: 15,
+                      interactionType: 'view',
+                    });
+
+                    onViewVendorProfile(v.id);
+                  }}
+                  style={[styles.promoCard, theme.shadows.soft]}
+                >
+                  <VImage source={v.image} style={styles.promoCardImage} />
+                  <View style={styles.promoCardContent}>
+                    <VText variant="subtext" numberOfLines={1}>{v.business_name}</VText>
+                    <View style={styles.ratingRow}>
+                      <Ionicons name="star" size={10} color={theme.colors.warning} />
+                      <VText variant="caption" style={{ marginLeft: 4 }}>{v.rating}</VText>
+                      <VText variant="caption" color={theme.colors.textMuted} style={{ marginLeft: 6 }}>
+                        {v.is_home_based ? 'Home-Based' : 'Physical Shop'}
+                      </VText>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              </Animated.View>
+              ))
+            )}
           </ScrollView>
         </View>
       )}
