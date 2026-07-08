@@ -6,6 +6,7 @@ buildscript {
         targetSdkVersion = Integer.parseInt(findProperty('android.targetSdkVersion') ?: '34')
         kotlinVersion = findProperty('android.kotlinVersion') ?: '1.9.24'
         frescoVersion = findProperty('expo.frescoVersion') ?: '3.2.0'
+        ndkVersion = findProperty('android.ndkVersion') ?: '26.1.10909125'
     }
     repositories {
         google()
