@@ -11,11 +11,10 @@ import {
   SafeAreaView
 } from 'react-native';
 import { Ionicons } from './VIcons';
-import * as Haptics from 'expo-haptics';
 import { theme, normalize } from '../theme/designSystem';
 import { useApp } from '../contexts/AppContext';
 
-// Typography component
+// VText component
 export const VText: React.FC<{
   variant?: 'h1' | 'h2' | 'h3' | 'body' | 'subtext' | 'caption';
   color?: string;
@@ -107,9 +106,6 @@ export const VButton: React.FC<{
 
   const handlePress = () => {
     if (disabled || loading) return;
-    if (Platform.OS !== 'web') {
-      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
     onPress();
   };
 
@@ -212,9 +208,6 @@ export const PointWidget: React.FC<{ onPress?: () => void }> = ({ onPress }) => 
 
   const handlePress = () => {
     if (onPress) {
-      if (Platform.OS !== 'web') {
-        void Haptics.selectionAsync();
-      }
       onPress();
     }
   };
