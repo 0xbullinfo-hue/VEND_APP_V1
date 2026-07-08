@@ -812,6 +812,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: normalize(38),
+    zIndex: 13, // Ensure categories are above zoom/legend
   },
   categoryScroll: {
     paddingHorizontal: theme.spacing.lg,
@@ -846,7 +847,7 @@ const styles = StyleSheet.create({
   },
   floatingExploreBtn: {
     position: 'absolute',
-    top: normalize(176),
+    top: normalize(280), // Lowered so it doesn't overlap legends/zoom
     right: theme.spacing.lg,
     flexDirection: 'row',
     backgroundColor: theme.colors.primary,
@@ -854,6 +855,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.lg,
     borderRadius: 30,
     alignItems: 'center',
+    zIndex: 11,
   },
 
   // Gems suggested banner
@@ -1024,7 +1026,7 @@ const styles = StyleSheet.create({
   zoomControls: {
     position: 'absolute',
     right: theme.spacing.md,
-    top: '42%',
+    top: normalize(180), // Positioned below the discovery rail
     backgroundColor: theme.colors.surface,
     borderRadius: normalize(12),
     ...theme.shadows.soft
@@ -1119,8 +1121,8 @@ const styles = StyleSheet.create({
   },
   tierLegendCard: {
     position: 'absolute',
-    right: theme.spacing.md,
-    top: normalize(238),
+    left: theme.spacing.md,
+    top: normalize(180), // Aligned with Zoom controls but on the left
     backgroundColor: 'rgba(255,255,255,0.95)',
     borderRadius: normalize(12),
     borderWidth: 1,
@@ -1129,6 +1131,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     gap: 5,
     ...theme.shadows.soft,
+    zIndex: 11,
   },
   legendRow: {
     flexDirection: 'row',
