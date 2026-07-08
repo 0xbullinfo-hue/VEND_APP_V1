@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, View, Image, SafeAreaView, Dimensions } from 'react-native';
+import Animated, { FadeInUp, FadeInDown, FadeIn } from 'react-native-reanimated';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, VButton } from '../../components/SharedComponents';
 
@@ -14,7 +15,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNext }) => {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         {/* Decorative Brand Section */}
-        <View style={styles.brandWrapper}>
+        <Animated.View entering={FadeInDown.duration(800)} style={styles.brandWrapper}>
           <View style={styles.logoCircle}>
             <VText variant="h1" color={theme.colors.background} style={styles.logoText}>
               V
@@ -26,10 +27,10 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNext }) => {
           <VText variant="caption" color={theme.colors.textMuted} style={styles.tagline}>
             HYPERLOCAL DISCOVERY • REAL-TIME CONNECTION
           </VText>
-        </View>
+        </Animated.View>
 
         {/* Hero Image / Illustration Mock */}
-        <View style={styles.illustrationContainer}>
+        <Animated.View entering={FadeIn.delay(400).duration(1000)} style={styles.illustrationContainer}>
           <View style={styles.mapGridMock}>
             {/* Mocking a map layout with absolute elements */}
             <View style={[styles.gridDot, { top: '30%', left: '20%' }]} />
@@ -39,27 +40,27 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNext }) => {
               <View style={styles.innerPin} />
             </View>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Welcome Text */}
-        <View style={styles.textWrapper}>
+        <Animated.View entering={FadeInUp.delay(600).duration(800)} style={styles.textWrapper}>
           <VText variant="h2" align="center" style={styles.heading}>
             Find active local vendors in real-time
           </VText>
           <VText variant="body" align="center" color={theme.colors.textMuted} style={styles.description}>
             Discover verified services, track live proximity on a map, and earn VEND rewards with every verified connection in your neighborhood.
           </VText>
-        </View>
+        </Animated.View>
 
         {/* Action Button */}
-        <View style={styles.buttonWrapper}>
+        <Animated.View entering={FadeInUp.delay(800).duration(800)} style={styles.buttonWrapper}>
           <VButton 
             title="Let's Explore" 
             onPress={onNext} 
             icon="arrow-forward-outline"
             style={theme.shadows.soft}
           />
-        </View>
+        </Animated.View>
       </View>
     </SafeAreaView>
   );

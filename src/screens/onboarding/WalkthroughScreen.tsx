@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, SafeAreaView, Dimensions, TouchableOpacity, Platform } from 'react-native';
+import Animated, { FadeIn, FadeOut, SlideInRight, SlideOutLeft, Layout } from 'react-native-reanimated';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, VButton } from '../../components/SharedComponents';
 import { Ionicons } from '../../components/VIcons';
@@ -69,20 +70,27 @@ export const WalkthroughScreen: React.FC<WalkthroughScreenProps> = ({ onGetStart
 
       {/* Main Slide Content */}
       <View style={styles.slideContent}>
-        {/* Animated Icon Circle */}
-        <View style={[styles.iconCircle, { backgroundColor: slide.color }]}>
-          <Ionicons name={slide.icon as any} size={normalize(64)} color={theme.colors.primary} />
-        </View>
+        <Animated.View
+          key={currentSlide}
+          entering={FadeIn.duration(400)}
+          exiting={FadeOut.duration(400)}
+          style={{ alignItems: 'center' }}
+        >
+          {/* Animated Icon Circle */}
+          <View style={[styles.iconCircle, { backgroundColor: slide.color }]}>
+            <Ionicons name={slide.icon as any} size={normalize(64)} color={theme.colors.primary} />
+          </View>
 
-        {/* Text Area */}
-        <View style={styles.textContainer}>
-          <VText variant="h2" align="center" style={styles.slideTitle}>
-            {slide.title}
-          </VText>
-          <VText variant="body" align="center" color={theme.colors.textMuted} style={styles.slideDesc}>
-            {slide.description}
-          </VText>
-        </View>
+          {/* Text Area */}
+          <View style={styles.textContainer}>
+            <VText variant="h2" align="center" style={styles.slideTitle}>
+              {slide.title}
+            </VText>
+            <VText variant="body" align="center" color={theme.colors.textMuted} style={styles.slideDesc}>
+              {slide.description}
+            </VText>
+          </View>
+        </Animated.View>
       </View>
 
       {/* Footer controls */}

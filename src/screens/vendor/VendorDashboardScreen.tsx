@@ -247,128 +247,133 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
           </Animated.View>
         )}
 
-        {/* VISIBILITY OPTIMIZER */}
-        <View style={styles.sectionHeader}>
-          <VText variant="h3" color={theme.colors.textMuted} style={{ fontSize: normalize(12), letterSpacing: 1 }}>VISIBILITY OPTIMIZER (3 Tasks)</VText>
-        </View>
+        <Animated.View entering={FadeInUp.delay(500).duration(600)}>
+          <View style={styles.sectionHeader}>
+            <VText variant="h3" color={theme.colors.textMuted} style={{ fontSize: normalize(12), letterSpacing: 1 }}>VISIBILITY OPTIMIZER (3 Tasks)</VText>
+          </View>
 
-        <View style={styles.taskContainer}>
-          <View style={styles.taskCard}>
-            <View style={styles.taskIconBg}>
-              <Ionicons name="camera" size={20} color={theme.colors.primary} />
+          <View style={styles.taskContainer}>
+            <View style={styles.taskCard}>
+              <View style={styles.taskIconBg}>
+                <Ionicons name="camera" size={20} color={theme.colors.primary} />
+              </View>
+              <View style={styles.taskInfo}>
+                <VText variant="h3" style={{ fontSize: normalize(15) }}>Post a Daily Snapshot</VText>
+                <VText variant="caption" color={theme.colors.textMuted}>Stay active and rank higher today</VText>
+              </View>
+              <TouchableOpacity style={styles.taskBtn} onPress={() => Alert.alert('Daily Snapshot', 'Camera module will open here.')}>
+                <VText variant="caption" color="#FFF" style={{ fontWeight: 'bold' }}>Post</VText>
+              </TouchableOpacity>
             </View>
-            <View style={styles.taskInfo}>
-              <VText variant="h3" style={{ fontSize: normalize(15) }}>Post a Daily Snapshot</VText>
-              <VText variant="caption" color={theme.colors.textMuted}>Stay active and rank higher today</VText>
+
+            <View style={[styles.taskCard, { borderBottomWidth: 0 }]}>
+              <View style={styles.taskIconBg}>
+                <Ionicons name="time" size={20} color={theme.colors.primary} />
+              </View>
+              <View style={styles.taskInfo}>
+                <VText variant="h3" style={{ fontSize: normalize(15) }}>Update business hours</VText>
+                <VText variant="caption" color={theme.colors.textMuted}>Boost customer trust by 40%</VText>
+              </View>
+              <TouchableOpacity style={styles.taskBtn} onPress={() => Alert.alert('Update Hours', 'Settings modal will open here.')}>
+                <VText variant="caption" color="#FFF" style={{ fontWeight: 'bold' }}>Update</VText>
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity style={styles.taskBtn} onPress={() => Alert.alert('Daily Snapshot', 'Camera module will open here.')}>
-              <VText variant="caption" color="#FFF" style={{ fontWeight: 'bold' }}>Post</VText>
+          </View>
+        </Animated.View>
+
+        <Animated.View entering={FadeInUp.delay(600).duration(600)}>
+          {/* GROWTH & PRESENCE */}
+          <View style={[styles.sectionHeader, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: theme.spacing.lg }]}>
+            <VText variant="h2" style={{ fontSize: normalize(18) }}>Growth & Presence</VText>
+            <TouchableOpacity onPress={onViewGrowth} style={styles.dailySnapshotBadge}>
+              <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: 'bold', fontSize: normalize(10) }}>DAILY SNAPSHOT</VText>
             </TouchableOpacity>
           </View>
 
-          <View style={[styles.taskCard, { borderBottomWidth: 0 }]}>
-            <View style={styles.taskIconBg}>
-              <Ionicons name="time" size={20} color={theme.colors.primary} />
-            </View>
-            <View style={styles.taskInfo}>
-              <VText variant="h3" style={{ fontSize: normalize(15) }}>Update business hours</VText>
-              <VText variant="caption" color={theme.colors.textMuted}>Boost customer trust by 40%</VText>
-            </View>
-            <TouchableOpacity style={styles.taskBtn} onPress={() => Alert.alert('Update Hours', 'Settings modal will open here.')}>
-              <VText variant="caption" color="#FFF" style={{ fontWeight: 'bold' }}>Update</VText>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll} contentContainerStyle={{ paddingHorizontal: theme.spacing.lg, gap: theme.spacing.md }}>
+            <Animated.View entering={SlideInRight.delay(100)} style={styles.metricCard}>
+              <View style={styles.metricIconRow}>
+                <Ionicons name="star" size={20} color={theme.colors.warning} />
+                <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: 'bold' }}>+45</VText>
+              </View>
+              <VText variant="h1" style={{ fontSize: normalize(24), marginVertical: 4 }}>1,240</VText>
+              <VText variant="caption" color={theme.colors.textMuted}>Visibility Points</VText>
+            </Animated.View>
+
+            <Animated.View entering={SlideInRight.delay(200)} style={styles.metricCard}>
+              <View style={styles.metricIconRow}>
+                <Ionicons name="people" size={20} color={theme.colors.primary} />
+                <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: 'bold' }}>Active</VText>
+              </View>
+              <VText variant="h1" style={{ fontSize: normalize(24), marginVertical: 4 }}>382</VText>
+              <VText variant="caption" color={theme.colors.textMuted}>User Check-ins</VText>
+            </Animated.View>
+
+            <Animated.View entering={SlideInRight.delay(300)} style={styles.metricCard}>
+              <View style={styles.metricIconRow}>
+                <Ionicons name="cube" size={20} color={theme.colors.primary} />
+                <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: 'bold' }}>Good</VText>
+              </View>
+              <VText variant="h1" style={{ fontSize: normalize(24), marginVertical: 4 }}>94%</VText>
+              <VText variant="caption" color={theme.colors.textMuted}>Active Services</VText>
+            </Animated.View>
+          </ScrollView>
+        </Animated.View>
+
+        <Animated.View entering={FadeInUp.delay(700).duration(600)}>
+          {/* MANAGE BUSINESS */}
+          <View style={[styles.sectionHeader, { marginTop: theme.spacing.lg }]}>
+            <VText variant="h2" style={{ fontSize: normalize(18) }}>Manage Business</VText>
+          </View>
+
+          <View style={styles.gridContainer}>
+            <TouchableOpacity activeOpacity={0.8} style={styles.gridBox} onPress={onManageProducts}>
+              <View style={styles.gridIconCircle}>
+                <Ionicons name="storefront" size={24} color={theme.colors.primary} />
+              </View>
+              <VText variant="h3" style={{ fontSize: normalize(16), marginBottom: 4 }}>Services</VText>
+              <VText variant="caption" color={theme.colors.textMuted}>Edit listings</VText>
+            </TouchableOpacity>
+
+            <TouchableOpacity activeOpacity={0.8} style={styles.gridBox} onPress={() => onStartChat('general')}>
+              <View style={styles.gridIconCircle}>
+                <Ionicons name="chatbubbles" size={24} color={theme.colors.primary} />
+                <View style={styles.gridBadge}>
+                  <VText variant="caption" color="#FFF" style={{ fontSize: 10, fontWeight: 'bold' }}>5</VText>
+                </View>
+              </View>
+              <VText variant="h3" style={{ fontSize: normalize(16), marginBottom: 4 }}>Inquiries</VText>
+              <VText variant="caption" color={theme.colors.textMuted}>Chat with leads</VText>
+            </TouchableOpacity>
+
+            <TouchableOpacity activeOpacity={0.8} style={styles.gridBox} onPress={() => Alert.alert('Reviews', 'Review manager will open here.')}>
+              <View style={styles.gridIconCircle}>
+                <Ionicons name="star-half" size={24} color={theme.colors.primary} />
+                <View style={styles.gridBadge}>
+                  <VText variant="caption" color="#FFF" style={{ fontSize: 10, fontWeight: 'bold' }}>3</VText>
+                </View>
+              </View>
+              <VText variant="h3" style={{ fontSize: normalize(16), marginBottom: 4 }}>Reviews</VText>
+              <VText variant="caption" color={theme.colors.textMuted}>Manage feedback</VText>
+            </TouchableOpacity>
+
+            <TouchableOpacity activeOpacity={0.8} style={styles.gridBox} onPress={() => { Alert.alert('Redeem', 'Redirecting to Growth Hub...'); onViewGrowth?.(); }}>
+              <View style={styles.gridIconCircle}>
+                <Ionicons name="rocket" size={24} color={theme.colors.primary} />
+              </View>
+              <VText variant="h3" style={{ fontSize: normalize(16), marginBottom: 4 }}>Redeem</VText>
+              <VText variant="caption" color={theme.colors.textMuted}>Use points</VText>
+            </TouchableOpacity>
+
+            <TouchableOpacity activeOpacity={0.8} style={styles.gridBox} onPress={onManageSubscription}>
+              <View style={styles.gridIconCircle}>
+                <Ionicons name="diamond" size={24} color={theme.colors.primary} />
+              </View>
+              <VText variant="h3" style={{ fontSize: normalize(16), marginBottom: 4 }}>Plan</VText>
+              <VText variant="caption" color={theme.colors.textMuted}>{myVendorPlan.name}</VText>
             </TouchableOpacity>
           </View>
-        </View>
-
-        {/* GROWTH & PRESENCE */}
-        <View style={[styles.sectionHeader, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: theme.spacing.lg }]}>
-          <VText variant="h2" style={{ fontSize: normalize(18) }}>Growth & Presence</VText>
-          <TouchableOpacity onPress={onViewGrowth} style={styles.dailySnapshotBadge}>
-            <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: 'bold', fontSize: normalize(10) }}>DAILY SNAPSHOT</VText>
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll} contentContainerStyle={{ paddingHorizontal: theme.spacing.lg, gap: theme.spacing.md }}>
-          <Animated.View entering={SlideInRight.delay(100)} style={styles.metricCard}>
-            <View style={styles.metricIconRow}>
-              <Ionicons name="star" size={20} color={theme.colors.warning} />
-              <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: 'bold' }}>+45</VText>
-            </View>
-            <VText variant="h1" style={{ fontSize: normalize(24), marginVertical: 4 }}>1,240</VText>
-            <VText variant="caption" color={theme.colors.textMuted}>Visibility Points</VText>
-          </Animated.View>
-
-          <Animated.View entering={SlideInRight.delay(200)} style={styles.metricCard}>
-            <View style={styles.metricIconRow}>
-              <Ionicons name="people" size={20} color={theme.colors.primary} />
-              <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: 'bold' }}>Active</VText>
-            </View>
-            <VText variant="h1" style={{ fontSize: normalize(24), marginVertical: 4 }}>382</VText>
-            <VText variant="caption" color={theme.colors.textMuted}>User Check-ins</VText>
-          </Animated.View>
-
-          <Animated.View entering={SlideInRight.delay(300)} style={styles.metricCard}>
-            <View style={styles.metricIconRow}>
-              <Ionicons name="cube" size={20} color={theme.colors.primary} />
-              <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: 'bold' }}>Good</VText>
-            </View>
-            <VText variant="h1" style={{ fontSize: normalize(24), marginVertical: 4 }}>94%</VText>
-            <VText variant="caption" color={theme.colors.textMuted}>Active Services</VText>
-          </Animated.View>
-        </ScrollView>
-
-        {/* MANAGE BUSINESS */}
-        <View style={[styles.sectionHeader, { marginTop: theme.spacing.lg }]}>
-          <VText variant="h2" style={{ fontSize: normalize(18) }}>Manage Business</VText>
-        </View>
-
-        <View style={styles.gridContainer}>
-          <TouchableOpacity activeOpacity={0.8} style={styles.gridBox} onPress={onManageProducts}>
-            <View style={styles.gridIconCircle}>
-              <Ionicons name="storefront" size={24} color={theme.colors.primary} />
-            </View>
-            <VText variant="h3" style={{ fontSize: normalize(16), marginBottom: 4 }}>Services</VText>
-            <VText variant="caption" color={theme.colors.textMuted}>Edit listings</VText>
-          </TouchableOpacity>
-
-          <TouchableOpacity activeOpacity={0.8} style={styles.gridBox} onPress={() => onStartChat('general')}>
-            <View style={styles.gridIconCircle}>
-              <Ionicons name="chatbubbles" size={24} color={theme.colors.primary} />
-              <View style={styles.gridBadge}>
-                <VText variant="caption" color="#FFF" style={{ fontSize: 10, fontWeight: 'bold' }}>5</VText>
-              </View>
-            </View>
-            <VText variant="h3" style={{ fontSize: normalize(16), marginBottom: 4 }}>Inquiries</VText>
-            <VText variant="caption" color={theme.colors.textMuted}>Chat with leads</VText>
-          </TouchableOpacity>
-
-          <TouchableOpacity activeOpacity={0.8} style={styles.gridBox} onPress={() => Alert.alert('Reviews', 'Review manager will open here.')}>
-            <View style={styles.gridIconCircle}>
-              <Ionicons name="star-half" size={24} color={theme.colors.primary} />
-              <View style={styles.gridBadge}>
-                <VText variant="caption" color="#FFF" style={{ fontSize: 10, fontWeight: 'bold' }}>3</VText>
-              </View>
-            </View>
-            <VText variant="h3" style={{ fontSize: normalize(16), marginBottom: 4 }}>Reviews</VText>
-            <VText variant="caption" color={theme.colors.textMuted}>Manage feedback</VText>
-          </TouchableOpacity>
-
-          <TouchableOpacity activeOpacity={0.8} style={styles.gridBox} onPress={() => { Alert.alert('Redeem', 'Redirecting to Growth Hub...'); onViewGrowth?.(); }}>
-            <View style={styles.gridIconCircle}>
-              <Ionicons name="rocket" size={24} color={theme.colors.primary} />
-            </View>
-            <VText variant="h3" style={{ fontSize: normalize(16), marginBottom: 4 }}>Redeem</VText>
-            <VText variant="caption" color={theme.colors.textMuted}>Use points</VText>
-          </TouchableOpacity>
-
-          <TouchableOpacity activeOpacity={0.8} style={styles.gridBox} onPress={onManageSubscription}>
-            <View style={styles.gridIconCircle}>
-              <Ionicons name="diamond" size={24} color={theme.colors.primary} />
-            </View>
-            <VText variant="h3" style={{ fontSize: normalize(16), marginBottom: 4 }}>Plan</VText>
-            <VText variant="caption" color={theme.colors.textMuted}>{myVendorPlan.name}</VText>
-          </TouchableOpacity>
-        </View>
+        </Animated.View>
 
       </ScrollView>
     </View>

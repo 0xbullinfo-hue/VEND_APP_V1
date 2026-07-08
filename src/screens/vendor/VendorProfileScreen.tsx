@@ -72,7 +72,7 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({ onBack
       </ScrollView>
 
       {/* Edit Profile Modal */}
-      <Modal visible={showEdit} animationType="slide" transparent={true}>
+      <Modal visible={showEdit} animationType="slide" transparent={true} onRequestClose={() => setShowEdit(false)}>
         <View style={styles.modalBackdrop}>
           <View style={[styles.modalCard, theme.shadows.premium]}>
             <VText variant="h2" style={{ marginBottom: theme.spacing.md }}>Edit Store Info</VText>
@@ -101,7 +101,7 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({ onBack
       </Modal>
 
       {/* Settings Modal */}
-      <Modal visible={showSettings} animationType="slide" transparent={true}>
+      <Modal visible={showSettings} animationType="slide" transparent={true} onRequestClose={() => setShowSettings(false)}>
         <View style={styles.modalBackdrop}>
           <View style={[styles.modalCard, theme.shadows.premium]}>
             <VText variant="h2" style={{ marginBottom: theme.spacing.md }}>Settings</VText>
