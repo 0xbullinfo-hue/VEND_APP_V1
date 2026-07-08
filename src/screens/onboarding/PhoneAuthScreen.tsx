@@ -15,7 +15,10 @@ export const PhoneAuthScreen: React.FC<PhoneAuthScreenProps> = ({ onAuthSuccess 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [role, setRole] = useState<'customer' | 'vendor'>('customer');
-  
+
+  // Country code support for global expansion
+  const [countryCode, setCountryCode] = useState('+234');
+
   // OTP Flow States
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [otpCode, setOtpCode] = useState('');
@@ -31,14 +34,16 @@ export const PhoneAuthScreen: React.FC<PhoneAuthScreenProps> = ({ onAuthSuccess 
       setErrorMsg('Please enter your name');
       return;
     }
-    if (!phone || phone.length < 10) {
+    if (!phone || phone.length < 8) {
       setErrorMsg('Please enter a valid phone number');
       return;
     }
-    
+
+    const fullPhone = `${countryCode}${phone.startsWith('0') ? phone.slice(1) : phone}`;
+
     setLoading(true);
     try {
-      const res = await sendOtp(phone);
+      const res = await sendOtp(fullPhone);
       setLoading(false);
       if (res.success) {
         setIsOtpSent(true);
@@ -57,10 +62,12 @@ export const PhoneAuthScreen: React.FC<PhoneAuthScreenProps> = ({ onAuthSuccess 
       setErrorMsg(`Please enter the ${expectedOtpLength}-digit verification code`);
       return;
     }
-    
+
+    const fullPhone = `${countryCode}${phone.startsWith('0') ? phone.slice(1) : phone}`;
+
     setLoading(true);
     try {
-      const res = await verifyOtp(phone, otpCode, role, name);
+      const res = await verifyOtp(fullPhone, otpCode, role, name);
       setLoading(false);
       if (res.success) {
         onAuthSuccess(role);
@@ -84,12 +91,12 @@ export const PhoneAuthScreen: React.FC<PhoneAuthScreenProps> = ({ onAuthSuccess 
           {/* Header Title */}
           <View style={styles.header}>
             <VText variant="h1" color={theme.colors.primary} style={styles.title}>
-              Welcome to VEND
+              Join the VEND Global Network
             </VText>
             <VText variant="body" color={theme.colors.textMuted}>
               {isOtpSent 
-                ? 'We sent a verification code to ' + phone
-                : 'Sign in to access hyper-local vendors in Nigeria'}
+                ? 'We sent a verification code to ' + countryCode + phone
+                : 'Sign in to access hyper-local vendors across Africa & the world'}
             </VText>
           </View>
 
@@ -118,7 +125,7 @@ export const PhoneAuthScreen: React.FC<PhoneAuthScreenProps> = ({ onAuthSuccess 
                     color={role === 'customer' ? theme.colors.background : theme.colors.primary}
                     style={{ marginLeft: 8 }}
                   >
-                    Customer (Find & Visit)
+                    Customer (Find & Support Locals)
                   </VText>
                 </TouchableOpacity>
 
@@ -131,7 +138,7 @@ export const PhoneAuthScreen: React.FC<PhoneAuthScreenProps> = ({ onAuthSuccess 
                   ]}
                 >
                   <Ionicons 
-                    name="storefront" 
+                    name="rocket"
                     size={20} 
                     color={role === 'vendor' ? theme.colors.background : theme.colors.primary} 
                   />
@@ -140,32 +147,47 @@ export const PhoneAuthScreen: React.FC<PhoneAuthScreenProps> = ({ onAuthSuccess 
                     color={role === 'vendor' ? theme.colors.background : theme.colors.primary}
                     style={{ marginLeft: 8 }}
                   >
-                    Vendor (Grow Business)
+                    Vendor (Scale Your Business)
                   </VText>
                 </TouchableOpacity>
               </View>
 
               {/* Name Input */}
-              <VText variant="h3" style={styles.label}>Your Name</VText>
+              <VText variant="h3" style={styles.label}>Full Name</VText>
               <VInput
-                placeholder="Enter your full name"
+                placeholder="e.g. Chinelo Okoro"
                 value={name}
                 onChangeText={setName}
                 icon="person-outline"
                 style={styles.inputSpacing}
               />
 
-              {/* Phone Input */}
+              {/* Phone Input with Country Code */}
               <VText variant="h3" style={styles.label}>Phone Number</VText>
-              <VInput
-                placeholder="0801 234 5678"
-                value={phone}
-                onChangeText={setPhone}
-                keyboardType="phone-pad"
-                icon="phone-portrait-outline"
-                maxLength={11}
-                style={styles.inputSpacing}
-              />
+              <View style={styles.phoneInputRow}>
+                <TouchableOpacity
+                  style={styles.countryCodeBtn}
+                  onPress={() => {
+                    // Simple toggle for demo: Nigeria -> Ghana -> Kenya -> SA
+                    const codes = ['+234', '+233', '+254', '+27'];
+                    const nextIndex = (codes.indexOf(countryCode) + 1) % codes.length;
+                    setCountryCode(codes[nextIndex]);
+                  }}
+                >
+                  <VText variant="body" style={{ fontWeight: 'bold' }}>{countryCode}</VText>
+                  <Ionicons name="chevron-down" size={14} color={theme.colors.textMuted} style={{ marginLeft: 4 }} />
+                </TouchableOpacity>
+                <View style={{ flex: 1 }}>
+                  <VInput
+                    placeholder="801 234 5678"
+                    value={phone}
+                    onChangeText={setPhone}
+                    keyboardType="phone-pad"
+                    icon="phone-portrait-outline"
+                    maxLength={10}
+                  />
+                </View>
+              </View>
 
               {errorMsg ? (
                 <VText variant="subtext" color={theme.colors.danger} style={styles.errorText}>
@@ -173,14 +195,15 @@ export const PhoneAuthScreen: React.FC<PhoneAuthScreenProps> = ({ onAuthSuccess 
                 </VText>
               ) : null}
 
-              {/* Submit Action */}
-              <VButton
-                title="Send Verification Code"
-                onPress={handleSendOtp}
-                loading={loading}
-                icon="mail-unread-outline"
-                style={[styles.actionBtn, theme.shadows.soft]}
-              />
+              <View style={{ marginTop: theme.spacing.lg }}>
+                <VButton
+                  title="Send Verification Code"
+                  onPress={handleSendOtp}
+                  loading={loading}
+                  icon="mail-unread-outline"
+                  style={[styles.actionBtn, theme.shadows.soft]}
+                />
+              </View>
 
             </View>
           ) : (
@@ -294,6 +317,23 @@ const styles = StyleSheet.create({
   },
   inputSpacing: {
     marginBottom: theme.spacing.lg,
+  },
+  phoneInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.lg,
+  },
+  countryCodeBtn: {
+    height: normalize(48),
+    paddingHorizontal: theme.spacing.md,
+    backgroundColor: theme.colors.surface,
+    borderRadius: normalize(12),
+    borderWidth: 1.5,
+    borderColor: theme.colors.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   errorText: {
     fontWeight: '700',

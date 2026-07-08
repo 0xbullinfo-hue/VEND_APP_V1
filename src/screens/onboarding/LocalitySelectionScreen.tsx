@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, SafeAreaView, TouchableOpacity, ScrollView, Platform, PermissionsAndroid } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { StyleSheet, View, SafeAreaView, TouchableOpacity, ScrollView, Platform, PermissionsAndroid, TextInput } from 'react-native';
 import Geolocation from '@react-native-community/geolocation';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, VButton } from '../../components/SharedComponents';
@@ -16,6 +16,18 @@ export const LocalitySelectionScreen: React.FC<LocalitySelectionScreenProps> = (
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Filter localities based on search query for global scalability
+  const filteredLocalities = useMemo(() => {
+    const query = searchQuery.toLowerCase().trim();
+    if (!query) return MOCK_LOCALITIES;
+    return MOCK_LOCALITIES.filter(
+      (loc) =>
+        loc.name.toLowerCase().includes(query) ||
+        loc.state.toLowerCase().includes(query)
+    );
+  }, [searchQuery]);
 
   const handleRequestPermission = async () => {
     setLoading(true);
@@ -25,8 +37,8 @@ export const LocalitySelectionScreen: React.FC<LocalitySelectionScreenProps> = (
         const granted = await PermissionsAndroid.request(
           PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
           {
-            title: 'VEND Location Permission',
-            message: 'VEND needs access to your location to show nearby vendors.',
+            title: 'VEND Global Access',
+            message: 'VEND needs your location to connect you with the nearest premium vendors in your region.',
             buttonNeutral: 'Ask Me Later',
             buttonNegative: 'Cancel',
             buttonPositive: 'OK',
@@ -48,14 +60,11 @@ export const LocalitySelectionScreen: React.FC<LocalitySelectionScreenProps> = (
       (position) => {
         setLoading(false);
         setPermissionGranted(true);
-        
-        // Find nearest locality based on coordinates (mocked to ID 1 for now)
-        // In a real app, you would use Turf.js or a backend spatial query
+        // Default to Lagos Mainland if position logic isn't integrated yet
         setSelectedId(1);
       },
       (error) => {
         setLoading(false);
-        console.log(error);
         setPermissionGranted(true);
         setSelectedId(1);
       },
@@ -78,10 +87,10 @@ export const LocalitySelectionScreen: React.FC<LocalitySelectionScreenProps> = (
         {/* Header */}
         <View style={styles.header}>
           <VText variant="h1" color={theme.colors.primary} style={styles.title}>
-            Locality Setup
+            Choose Your Region
           </VText>
           <VText variant="body" color={theme.colors.textMuted}>
-            VEND matches you with live vendors in your direct proximity. Choose your hyper-local LGA/Ward.
+            VEND is active across Africa and beyond. Select your hyper-local hub to see live services.
           </VText>
         </View>
 
@@ -89,17 +98,17 @@ export const LocalitySelectionScreen: React.FC<LocalitySelectionScreenProps> = (
         {!permissionGranted ? (
           <View style={styles.permissionBox}>
             <View style={styles.permissionCircle}>
-              <Ionicons name="location-outline" size={normalize(48)} color={theme.colors.primary} />
+              <Ionicons name="earth" size={normalize(48)} color={theme.colors.primary} />
             </View>
             <VText variant="h2" align="center" style={styles.boxTitle}>
-              Enable Location Services
+              Hyper-Local Discovery
             </VText>
             <VText variant="body" align="center" color={theme.colors.textMuted} style={styles.boxDesc}>
-              This allows VEND to display nearby vendors on your live map in real time.
+              Enable location to automatically find the VEND hub nearest to you.
             </VText>
             
             <VButton
-              title="Share Device Location"
+              title="Locate Me Automatically"
               onPress={handleRequestPermission}
               loading={loading}
               icon="locate-outline"
@@ -108,63 +117,88 @@ export const LocalitySelectionScreen: React.FC<LocalitySelectionScreenProps> = (
             
             <TouchableOpacity onPress={() => setPermissionGranted(true)} style={styles.skipLink}>
               <VText variant="subtext" color={theme.colors.primary} align="center">
-                Or select LGA/Ward manually
+                Or select city/region manually
               </VText>
             </TouchableOpacity>
           </View>
         ) : (
           <View style={{ flex: 1, marginVertical: theme.spacing.lg }}>
-            <VText variant="h3" style={styles.listLabel}>Select LGA/Ward</VText>
-            
-            <ScrollView contentContainerStyle={styles.listScroll} showsVerticalScrollIndicator={false}>
-              {MOCK_LOCALITIES.map((loc) => {
-                const isSelected = selectedId === loc.id;
-                return (
-                  <TouchableOpacity
-                    key={loc.id}
-                    activeOpacity={0.8}
-                    onPress={() => setSelectedId(loc.id)}
-                    style={[
-                      styles.localityItem,
-                      isSelected ? styles.itemActive : styles.itemInactive
-                    ]}
-                  >
-                    <View style={styles.itemLeft}>
-                      <Ionicons 
-                        name="compass-outline" 
-                        size={20} 
-                        color={isSelected ? theme.colors.primary : theme.colors.textMuted} 
-                      />
-                      <View style={{ marginLeft: 12 }}>
-                        <VText 
-                          variant="h3" 
-                          color={isSelected ? theme.colors.primary : theme.colors.textMain}
-                        >
-                          {loc.name}
-                        </VText>
-                        <VText variant="caption" color={theme.colors.textMuted}>
-                          {loc.state} State
-                        </VText>
-                      </View>
-                    </View>
 
-                    <View style={styles.itemRight}>
-                      {isSelected ? (
-                        <Ionicons name="checkmark-circle" size={24} color={theme.colors.primary} />
-                      ) : (
-                        <View style={styles.uncheckedCircle} />
-                      )}
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
+            {/* Premium Search Bar */}
+            <View style={styles.searchContainer}>
+              <Ionicons name="search" size={20} color={theme.colors.textMuted} style={{ marginRight: 10 }} />
+              <TextInput
+                placeholder="Search city, state, or country..."
+                placeholderTextColor={theme.colors.textMuted}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                style={[styles.searchInput, { fontFamily: theme.typography.fontSans }]}
+              />
+              {searchQuery ? (
+                <TouchableOpacity onPress={() => setSearchQuery('')}>
+                  <Ionicons name="close-circle" size={18} color={theme.colors.textMuted} />
+                </TouchableOpacity>
+              ) : null}
+            </View>
+
+            <ScrollView contentContainerStyle={styles.listScroll} showsVerticalScrollIndicator={false}>
+              {filteredLocalities.length > 0 ? (
+                filteredLocalities.map((loc) => {
+                  const isSelected = selectedId === loc.id;
+                  return (
+                    <TouchableOpacity
+                      key={loc.id}
+                      activeOpacity={0.8}
+                      onPress={() => setSelectedId(loc.id)}
+                      style={[
+                        styles.localityItem,
+                        isSelected ? styles.itemActive : styles.itemInactive
+                      ]}
+                    >
+                      <View style={styles.itemLeft}>
+                        <Ionicons
+                          name="business"
+                          size={20}
+                          color={isSelected ? theme.colors.primary : theme.colors.textMuted}
+                        />
+                        <View style={{ marginLeft: 12 }}>
+                          <VText
+                            variant="h3"
+                            color={isSelected ? theme.colors.primary : theme.colors.textMain}
+                          >
+                            {loc.name}
+                          </VText>
+                          <VText variant="caption" color={theme.colors.textMuted}>
+                            {loc.state}
+                          </VText>
+                        </View>
+                      </View>
+
+                      <View style={styles.itemRight}>
+                        {isSelected ? (
+                          <Ionicons name="checkmark-circle" size={24} color={theme.colors.primary} />
+                        ) : (
+                          <View style={styles.uncheckedCircle} />
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })
+              ) : (
+                <View style={styles.emptyState}>
+                  <Ionicons name="map-outline" size={48} color={theme.colors.border} />
+                  <VText variant="body" color={theme.colors.textMuted} align="center" style={{ marginTop: 12 }}>
+                    We haven't reached "{searchQuery}" yet.{"\n"}VEND is expanding daily!
+                  </VText>
+                </View>
+              )}
             </ScrollView>
 
             <VButton
-              title="Confirm Locality"
+              title="Join This Locality"
               onPress={handleConfirm}
               disabled={selectedId === null}
-              icon="checkmark"
+              icon="arrow-forward"
               style={[styles.confirmBtn, theme.shadows.soft]}
             />
           </View>
@@ -187,7 +221,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   header: {
-    marginTop: normalize(20),
+    marginTop: normalize(10),
     marginBottom: theme.spacing.xl,
   },
   title: {
@@ -224,9 +258,23 @@ const styles = StyleSheet.create({
     paddingVertical: theme.spacing.sm,
   },
   
-  // List styling
-  listLabel: {
-    marginBottom: theme.spacing.md,
+  // Search & List styling
+  searchContainer: {
+    height: normalize(52),
+    backgroundColor: theme.colors.surface,
+    borderRadius: normalize(12),
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.md,
+    marginBottom: theme.spacing.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  searchInput: {
+    flex: 1,
+    height: '100%',
+    color: theme.colors.textMain,
+    fontSize: normalize(14),
   },
   listScroll: {
     paddingBottom: theme.spacing.xl,
@@ -235,11 +283,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: theme.spacing.md,
+    paddingVertical: theme.spacing.lg,
     paddingHorizontal: theme.spacing.lg,
-    borderRadius: normalize(12),
-    marginBottom: theme.spacing.sm,
+    borderRadius: normalize(16),
+    marginBottom: theme.spacing.md,
     borderWidth: 1.5,
+    ...theme.shadows.soft,
   },
   itemActive: {
     backgroundColor: theme.colors.primaryLight,
@@ -247,7 +296,7 @@ const styles = StyleSheet.create({
   },
   itemInactive: {
     backgroundColor: theme.colors.background,
-    borderColor: theme.colors.border,
+    borderColor: theme.colors.cardBorder,
   },
   itemLeft: {
     flexDirection: 'row',
@@ -255,11 +304,15 @@ const styles = StyleSheet.create({
   },
   itemRight: {},
   uncheckedCircle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     borderWidth: 1.5,
     borderColor: theme.colors.border,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingTop: theme.spacing.xxl,
   },
   confirmBtn: {
     marginTop: theme.spacing.md,

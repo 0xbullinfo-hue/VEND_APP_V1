@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Platform } from 'react-native';
+import MapView, { Marker, PROVIDER_GOOGLE } from '../../components/MapViewCompat';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, VButton, VInput, HeaderBar } from '../../components/SharedComponents';
 import { Ionicons } from '../../components/VIcons';
+import { useApp } from '../../contexts/AppContext';
+import { uberMapStyle } from '../../theme/mapStyles';
 
 interface DetailedLocationSetupScreenProps {
   onBack: () => void;
@@ -13,25 +16,58 @@ export const DetailedLocationSetupScreen: React.FC<DetailedLocationSetupScreenPr
   onBack,
   onComplete
 }) => {
+  const { locality, registerVendor, user } = useApp();
   const [businessType, setBusinessType] = useState<'home' | 'physical'>('physical');
   const [address, setAddress] = useState('');
   const [mapLink, setMapLink] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const initialRegion = {
+    latitude: locality?.center_location?.latitude || 6.5165,
+    longitude: locality?.center_location?.longitude || 3.3792,
+    latitudeDelta: 0.01,
+    longitudeDelta: 0.01,
+  };
+
+  const [markerLocation, setMarkerLocation] = useState({
+    latitude: initialRegion.latitude,
+    longitude: initialRegion.longitude
+  });
+
+  const handleComplete = async () => {
+    setLoading(true);
+    // In a real app, you would pass more detailed bio/category info here
+    // For now, we use the values from the form
+    await registerVendor(
+      user,
+      user?.name || 'My Business',
+      'Premium vendor on VEND.',
+      'Professional Services',
+      'General',
+      address,
+      businessType === 'home',
+      markerLocation.latitude,
+      markerLocation.longitude
+    );
+    setLoading(false);
+    onComplete();
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      <HeaderBar title="Detailed Location Setup" showPoints={false} showBack={true} onBack={onBack} />
+      <HeaderBar title="Business Discovery Map" showPoints={false} showBack={true} onBack={onBack} />
       
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.progressRow}>
-          <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: 'bold' }}>Step 3 of 3</VText>
+          <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: 'bold' }}>FINAL STEP</VText>
           <View style={styles.progressBar}>
             <View style={[styles.progressFill, { width: '100%' }]} />
           </View>
         </View>
 
-        <VText variant="h1" style={styles.pageTitle}>Where can customers find you?</VText>
+        <VText variant="h1" style={styles.pageTitle}>Map Visibility Setup</VText>
         <VText variant="body" color={theme.colors.textMuted} style={styles.pageSub}>
-          VEND relies heavily on precise location pinning. Please help us place you on the live map.
+          Confirm where customers will see your business pin on the live map.
         </VText>
 
         <View style={styles.typeCards}>
@@ -41,10 +77,10 @@ export const DetailedLocationSetupScreen: React.FC<DetailedLocationSetupScreenPr
             style={[styles.typeCard, businessType === 'home' && styles.typeCardActive]}
           >
             <View style={[styles.typeIconBox, businessType === 'home' && styles.typeIconBoxActive]}>
-              <Ionicons name="home-outline" size={24} color={businessType === 'home' ? theme.colors.primary : theme.colors.textMuted} />
+              <Ionicons name="home" size={24} color={businessType === 'home' ? theme.colors.primary : theme.colors.textMuted} />
             </View>
-            <VText variant="h3" style={{ marginBottom: 4 }}>Home-Based Business</VText>
-            <VText variant="caption" color={theme.colors.textMuted}>I operate from my residence. Pin drop is approximate.</VText>
+            <VText variant="h3" style={{ marginBottom: 4 }}>Home-Based / Mobile</VText>
+            <VText variant="caption" color={theme.colors.textMuted}>I visit customers or work from home. (Fuzzy map pin)</VText>
           </TouchableOpacity>
 
           <TouchableOpacity 
@@ -53,41 +89,48 @@ export const DetailedLocationSetupScreen: React.FC<DetailedLocationSetupScreenPr
             style={[styles.typeCard, businessType === 'physical' && styles.typeCardActive]}
           >
             <View style={[styles.typeIconBox, businessType === 'physical' && styles.typeIconBoxActive]}>
-              <Ionicons name="storefront-outline" size={24} color={businessType === 'physical' ? theme.colors.primary : theme.colors.textMuted} />
+              <Ionicons name="business" size={24} color={businessType === 'physical' ? theme.colors.primary : theme.colors.textMuted} />
             </View>
-            <VText variant="h3" style={{ marginBottom: 4 }}>Physical Shop/Storefront</VText>
-            <VText variant="caption" color={theme.colors.textMuted}>I have a dedicated retail space. Pin drop is exact.</VText>
+            <VText variant="h3" style={{ marginBottom: 4 }}>Physical Storefront</VText>
+            <VText variant="caption" color={theme.colors.textMuted}>I have a fixed walk-in location. (Precise map pin)</VText>
           </TouchableOpacity>
         </View>
 
-        <VText variant="h3" style={styles.sectionLabel}>Physical Address Details</VText>
+        <VText variant="h3" style={styles.sectionLabel}>Display Address</VText>
         <VInput
-          placeholder="e.g. 123 Market Road, Ikeja"
+          placeholder="e.g. Suite 4, Abuja Shopping Mall"
           value={address}
           onChangeText={setAddress}
           icon="location-outline"
-          style={{ marginBottom: theme.spacing.md }}
-        />
-
-        <VText variant="h3" style={styles.sectionLabel}>Direct Map Link (Google/Apple)</VText>
-        <VInput
-          placeholder="Paste shared map link here..."
-          value={mapLink}
-          onChangeText={setMapLink}
-          icon="link-outline"
           style={{ marginBottom: theme.spacing.lg }}
         />
 
         <View style={styles.pinDropCard}>
           <View style={styles.pinDropHeader}>
             <Ionicons name="map" size={20} color={theme.colors.primary} />
-            <VText variant="h3" style={{ marginLeft: 8 }}>Drop a Pin</VText>
+            <VText variant="h3" style={{ marginLeft: 8 }}>Drop Your Business Pin</VText>
           </View>
-          <View style={styles.mockMapArea}>
-            <View style={styles.mockMapPin}>
-              <Ionicons name="location" size={32} color={theme.colors.danger} />
+          <View style={styles.mapWrapper}>
+            <MapView
+              style={styles.map}
+              provider={PROVIDER_GOOGLE}
+              customMapStyle={uberMapStyle}
+              initialRegion={initialRegion}
+              onPress={(e) => setMarkerLocation(e.nativeEvent.coordinate)}
+            >
+              <Marker
+                coordinate={markerLocation}
+                draggable
+                onDragEnd={(e) => setMarkerLocation(e.nativeEvent.coordinate)}
+              >
+                <View style={styles.markerContainer}>
+                  <Ionicons name="location" size={40} color={theme.colors.primary} />
+                </View>
+              </Marker>
+            </MapView>
+            <View style={styles.mapOverlayPill}>
+              <VText variant="caption" color={theme.colors.primary}>LONG PRESS PIN TO DRAG</VText>
             </View>
-            <VText variant="caption" color={theme.colors.primary} style={styles.mockMapText}>Tap map to adjust</VText>
           </View>
         </View>
 
@@ -95,8 +138,9 @@ export const DetailedLocationSetupScreen: React.FC<DetailedLocationSetupScreenPr
 
       <View style={styles.footer}>
         <VButton
-          title="Complete Profile Setup"
-          onPress={onComplete}
+          title="Launch Business on VEND"
+          onPress={handleComplete}
+          loading={loading}
           style={styles.fullBtn}
         />
       </View>
@@ -176,6 +220,7 @@ const styles = StyleSheet.create({
     borderRadius: normalize(16),
     overflow: 'hidden',
     backgroundColor: theme.colors.surface,
+    marginBottom: theme.spacing.lg,
   },
   pinDropHeader: {
     flexDirection: 'row',
@@ -184,22 +229,30 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
   },
-  mockMapArea: {
-    height: normalize(150),
-    backgroundColor: '#E1E6EB',
-    justifyContent: 'center',
-    alignItems: 'center',
+  mapWrapper: {
+    height: normalize(220),
+    position: 'relative',
   },
-  mockMapPin: {
+  map: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  markerContainer: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
+    elevation: 10,
   },
-  mockMapText: {
+  mapOverlayPill: {
     position: 'absolute',
-    bottom: theme.spacing.sm,
-    fontWeight: 'bold',
+    bottom: theme.spacing.md,
+    left: theme.spacing.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: theme.colors.primaryLight,
   },
   footer: {
     paddingHorizontal: theme.spacing.lg,
