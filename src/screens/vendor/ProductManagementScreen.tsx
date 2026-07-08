@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, ScrollView, TouchableOpacity, Image, Platform, Alert } from 'react-native';
+import Animated, { FadeInUp, Layout } from 'react-native-reanimated';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, VButton, VInput, HeaderBar } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
@@ -95,8 +96,13 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
       </View>
 
       <ScrollView contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false}>
-        {vendor.services.map((item: any) => (
-          <View key={item.id} style={[styles.productCard, theme.shadows.soft]}>
+        {vendor.services.map((item: any, index: number) => (
+          <Animated.View
+            key={item.id}
+            entering={FadeInUp.delay(index * 100).duration(500)}
+            layout={Layout.springify()}
+            style={[styles.productCard, theme.shadows.soft]}
+          >
             {/* Top Badge */}
             <View style={[styles.stockBadge, item.stockStatus === 'SOLD OUT' ? styles.stockSoldOut : styles.stockAvailable]}>
               <VText variant="caption" color={item.stockStatus === 'SOLD OUT' ? theme.colors.danger : theme.colors.primary} style={{ fontWeight: 'bold', fontSize: 10 }}>
@@ -134,7 +140,7 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
                 </TouchableOpacity>
               </View>
             </View>
-          </View>
+          </Animated.View>
         ))}
         
         <View style={{ height: normalize(180) }} />

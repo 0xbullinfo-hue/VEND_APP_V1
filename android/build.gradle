@@ -1,64 +1,38 @@
-import org.apache.tools.ant.taskdefs.condition.Os
-
 buildscript {
     ext {
-        buildToolsVersion = findProperty('android.buildToolsVersion') ?: '31.0.0'
-        minSdkVersion = Integer.parseInt(findProperty('android.minSdkVersion') ?: '21')
-        compileSdkVersion = Integer.parseInt(findProperty('android.compileSdkVersion') ?: '31')
-        targetSdkVersion = Integer.parseInt(findProperty('android.targetSdkVersion') ?: '31')
-        if (findProperty('android.kotlinVersion')) {
-            kotlinVersion = findProperty('android.kotlinVersion')
-        }
-        frescoVersion = findProperty('expo.frescoVersion') ?: '2.5.0'
-
-        if (System.properties['os.arch'] == 'aarch64') {
-            ndkVersion = '24.0.8215888'
-        } else {
-            ndkVersion = '21.4.7075529'
-        }
+        buildToolsVersion = findProperty('android.buildToolsVersion') ?: '34.0.0'
+        minSdkVersion = Integer.parseInt(findProperty('android.minSdkVersion') ?: '24')
+        compileSdkVersion = Integer.parseInt(findProperty('android.compileSdkVersion') ?: '34')
+        targetSdkVersion = Integer.parseInt(findProperty('android.targetSdkVersion') ?: '34')
+        kotlinVersion = findProperty('android.kotlinVersion') ?: '1.9.24'
+        frescoVersion = findProperty('expo.frescoVersion') ?: '3.2.0'
     }
     repositories {
         google()
         mavenCentral()
     }
     dependencies {
-        classpath('com.android.tools.build:gradle:7.1.1')
-        classpath('com.facebook.react:react-native-gradle-plugin')
-        classpath('de.undercouch:gradle-download-task:5.0.1')
+        classpath("com.android.tools.build:gradle:8.5.1")
+        classpath("com.facebook.react:react-native-gradle-plugin")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
     }
 }
 
-def REACT_NATIVE_VERSION = new File(['node', '--print',"JSON.parse(require('fs').readFileSync(require.resolve('react-native/package.json'), 'utf-8')).version"].execute(null, rootDir).text.trim())
+apply plugin: "com.facebook.react.rootproject"
 
 allprojects {
-    configurations.all {
-        resolutionStrategy {
-            force "com.facebook.react:react-native:" + REACT_NATIVE_VERSION
-            
-            // CRITICAL: Force Google Play Services ALIGNMENT to resolve FusedLocationProviderClient "Found interface but class expected" crash.
-            // Using v21.0.1 and ensuring all related libs are aligned to v18.1.0+ which supports the interface change.
-            force "com.google.android.gms:play-services-location:21.0.1"
-            force "com.google.android.gms:play-services-maps:18.1.0"
-            force "com.google.android.gms:play-services-base:18.1.0"
-            force "com.google.android.gms:play-services-basement:18.1.0"
-            force "com.google.android.gms:play-services-tasks:18.0.2"
-        }
-    }
-
     repositories {
-        mavenLocal()
         maven {
+            // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
             url(new File(['node', '--print', "require.resolve('react-native/package.json')"].execute(null, rootDir).text.trim(), '../android'))
         }
         maven {
+            // Android JSC is installed from npm
             url(new File(['node', '--print', "require.resolve('jsc-android/package.json')"].execute(null, rootDir).text.trim(), '../dist'))
         }
+
         google()
-        mavenCentral {
-            content {
-                excludeGroup 'com.facebook.react'
-            }
-        }
+        mavenCentral()
         maven { url 'https://www.jitpack.io' }
     }
 }

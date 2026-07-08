@@ -88,56 +88,58 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
           </TouchableOpacity>
         </Animated.View>
 
-        <View style={[styles.sectionHeader, { marginTop: theme.spacing.xs }]}>
-          <VText variant="h2" style={{ fontSize: normalize(18) }}>Boost Impact Analytics</VText>
-        </View>
-
-        <View style={[styles.boostImpactCard, theme.shadows.soft]}>
-          <View style={styles.boostImpactHeaderRow}>
-            <View>
-              <VText variant="caption" color={theme.colors.textMuted}>LOCALITY RANK POSITION</VText>
-              <VText variant="h1" style={{ fontSize: normalize(28), marginTop: 2 }}>#{rankingPosition}</VText>
-            </View>
-            <View style={styles.planPill}>
-              <Ionicons name={myVendorPlan.boosted ? 'sparkles' : 'diamond-outline'} size={14} color={theme.colors.primary} />
-              <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 6, fontWeight: '700' }}>
-                {myVendorPlan.name}
-              </VText>
-            </View>
+        <Animated.View entering={FadeInUp.delay(100).duration(600)}>
+          <View style={[styles.sectionHeader, { marginTop: theme.spacing.xs }]}>
+            <VText variant="h2" style={{ fontSize: normalize(18) }}>Boost Impact Analytics</VText>
           </View>
 
-          <View style={styles.analyticsGrid}>
-            <View style={styles.analyticsCell}>
-              <VText variant="caption" color={theme.colors.textMuted}>Visibility Lift</VText>
-              <VText variant="h2" color={theme.colors.primary} style={{ marginTop: 2 }}>{visibilityDelta}</VText>
+          <View style={[styles.boostImpactCard, theme.shadows.soft]}>
+            <View style={styles.boostImpactHeaderRow}>
+              <View>
+                <VText variant="caption" color={theme.colors.textMuted}>LOCALITY RANK POSITION</VText>
+                <VText variant="h1" style={{ fontSize: normalize(28), marginTop: 2 }}>#{rankingPosition}</VText>
+              </View>
+              <View style={styles.planPill}>
+                <Ionicons name={myVendorPlan.boosted ? 'sparkles' : 'diamond-outline'} size={14} color={theme.colors.primary} />
+                <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 6, fontWeight: '700' }}>
+                  {myVendorPlan.name}
+                </VText>
+              </View>
             </View>
-            <View style={styles.analyticsCell}>
-              <VText variant="caption" color={theme.colors.textMuted}>Boosted Competitors</VText>
-              <VText variant="h2" style={{ marginTop: 2 }}>{boostedCompetitors}</VText>
+
+            <View style={styles.analyticsGrid}>
+              <View style={styles.analyticsCell}>
+                <VText variant="caption" color={theme.colors.textMuted}>Visibility Lift</VText>
+                <VText variant="h2" color={theme.colors.primary} style={{ marginTop: 2 }}>{visibilityDelta}</VText>
+              </View>
+              <View style={styles.analyticsCell}>
+                <VText variant="caption" color={theme.colors.textMuted}>Boosted Competitors</VText>
+                <VText variant="h2" style={{ marginTop: 2 }}>{boostedCompetitors}</VText>
+              </View>
+              <View style={styles.analyticsCell}>
+                <VText variant="caption" color={theme.colors.textMuted}>Est. Weekly Leads</VText>
+                <VText variant="h2" style={{ marginTop: 2 }}>{estimatedWeeklyLeads}</VText>
+              </View>
             </View>
-            <View style={styles.analyticsCell}>
-              <VText variant="caption" color={theme.colors.textMuted}>Est. Weekly Leads</VText>
-              <VText variant="h2" style={{ marginTop: 2 }}>{estimatedWeeklyLeads}</VText>
-            </View>
+
+            <VText variant="caption" color={theme.colors.textMuted} style={{ marginTop: theme.spacing.sm }}>
+              {rankingHint}
+            </VText>
+
+            {!myVendorPlan.boosted && (
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={onManageSubscription}
+                style={styles.upgradePromptBtn}
+              >
+                <Ionicons name="rocket-outline" size={16} color="#FFFFFF" />
+                <VText variant="caption" color="#FFFFFF" style={{ marginLeft: 8, fontWeight: '700' }}>
+                  Upgrade To Premium Boosted
+                </VText>
+              </TouchableOpacity>
+            )}
           </View>
-
-          <VText variant="caption" color={theme.colors.textMuted} style={{ marginTop: theme.spacing.sm }}>
-            {rankingHint}
-          </VText>
-
-          {!myVendorPlan.boosted && (
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={onManageSubscription}
-              style={styles.upgradePromptBtn}
-            >
-              <Ionicons name="rocket-outline" size={16} color="#FFFFFF" />
-              <VText variant="caption" color="#FFFFFF" style={{ marginLeft: 8, fontWeight: '700' }}>
-                Upgrade To Premium Boosted
-              </VText>
-            </TouchableOpacity>
-          )}
-        </View>
+        </Animated.View>
 
         {/* RANK-UP NUDGE */}
         {rankUpNudge.type !== 'already_top' && (
@@ -195,7 +197,7 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
 
         {/* NEARBY CUSTOMERS (Proximity Notifications) */}
         {nearbyCustomers.length > 0 && (
-          <View style={[styles.nearbyCustomersCard, theme.shadows.soft]}>
+          <Animated.View entering={FadeInUp.delay(300).duration(600)} style={[styles.nearbyCustomersCard, theme.shadows.soft]}>
             <View style={styles.nearbyHeader}>
               <View style={styles.nearbyIconWrap}>
                 <Ionicons name="location-sharp" size={18} color={theme.colors.accent} />
@@ -210,22 +212,26 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
               </View>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.customersList}>
-              {nearbyCustomers.slice(0, 3).map((customer) => (
-                <TouchableOpacity
+              {nearbyCustomers.slice(0, 3).map((customer, index) => (
+                <Animated.View
                   key={customer.id}
-                  onPress={() => onStartChat(customer.triggerEntityId)}
-                  style={[styles.customerChip, theme.shadows.soft]}
+                  entering={SlideInRight.delay(400 + (index * 100))}
                 >
-                  <Ionicons name="person-circle" size={32} color={theme.colors.primary} />
-                  <VText variant="caption" style={{ fontSize: 10, marginTop: 4, textAlign: 'center' }}>
-                    {customer.triggerEntityName.split('\n')[0]}
-                  </VText>
-                  {customer.distance && (
-                    <VText variant="caption" color={theme.colors.textMuted} style={{ fontSize: 9, marginTop: 2 }}>
-                      {customer.distance.toFixed(1)}km
+                  <TouchableOpacity
+                    onPress={() => onStartChat(customer.triggerEntityId)}
+                    style={[styles.customerChip, theme.shadows.soft]}
+                  >
+                    <Ionicons name="person-circle" size={32} color={theme.colors.primary} />
+                    <VText variant="caption" style={{ fontSize: 10, marginTop: 4, textAlign: 'center' }}>
+                      {customer.triggerEntityName.split('\n')[0]}
                     </VText>
-                  )}
-                </TouchableOpacity>
+                    {customer.distance && (
+                      <VText variant="caption" color={theme.colors.textMuted} style={{ fontSize: 9, marginTop: 2 }}>
+                        {customer.distance.toFixed(1)}km
+                      </VText>
+                    )}
+                  </TouchableOpacity>
+                </Animated.View>
               ))}
               {nearbyCustomers.length > 3 && (
                 <View style={[styles.customerChip, styles.moreChip]}>
@@ -238,7 +244,7 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
                 </View>
               )}
             </ScrollView>
-          </View>
+          </Animated.View>
         )}
 
         {/* VISIBILITY OPTIMIZER */}

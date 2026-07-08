@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import Animated, { FadeInUp, FadeInDown, Layout } from 'react-native-reanimated';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, HeaderBar } from '../../components/SharedComponents';
 import { Ionicons } from '../../components/VIcons';
@@ -184,53 +185,55 @@ export const VendorGrowthScreen: React.FC<VendorGrowthScreenProps> = ({ onBack }
           <VText variant="h3" color={theme.colors.textMuted} style={{ fontSize: normalize(12), letterSpacing: 1 }}>7-DAY IMPACT SNAPSHOT</VText>
         </View>
 
-        <View style={styles.impactCard}>
-          <View style={styles.impactTopRow}>
-            <View>
-              <VText variant="caption" color={theme.colors.textMuted}>DISCOVERY MOMENTUM</VText>
-              <VText variant="h1" style={{ fontSize: normalize(28), marginTop: 2 }}>
-                {growthDeltaPct >= 0 ? '+' : ''}{growthDeltaPct}%
-              </VText>
+        <Animated.View entering={FadeInUp.duration(600)}>
+          <View style={styles.impactCard}>
+            <View style={styles.impactTopRow}>
+              <View>
+                <VText variant="caption" color={theme.colors.textMuted}>DISCOVERY MOMENTUM</VText>
+                <VText variant="h1" style={{ fontSize: normalize(28), marginTop: 2 }}>
+                  {growthDeltaPct >= 0 ? '+' : ''}{growthDeltaPct}%
+                </VText>
+              </View>
+              <View style={styles.rankBadge}>
+                <Ionicons name="trending-up" size={14} color={theme.colors.primary} />
+                <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 5, fontWeight: '700' }}>
+                  #{rankNow} in locality
+                </VText>
+              </View>
             </View>
-            <View style={styles.rankBadge}>
-              <Ionicons name="trending-up" size={14} color={theme.colors.primary} />
-              <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 5, fontWeight: '700' }}>
-                #{rankNow} in locality
-              </VText>
+
+            <View style={styles.impactMetricsRow}>
+              <View style={styles.impactMetricCell}>
+                <VText variant="caption" color={theme.colors.textMuted}>Profile Views</VText>
+                <VText variant="h2" style={{ marginTop: 2 }}>{profileViews7d}</VText>
+              </View>
+              <View style={styles.impactMetricCell}>
+                <VText variant="caption" color={theme.colors.textMuted}>Direction Requests</VText>
+                <VText variant="h2" style={{ marginTop: 2 }}>{directions7d}</VText>
+              </View>
+              <View style={styles.impactMetricCell}>
+                <VText variant="caption" color={theme.colors.textMuted}>Chat Starts</VText>
+                <VText variant="h2" style={{ marginTop: 2 }}>{chats7d}</VText>
+              </View>
+            </View>
+
+            <VText variant="caption" color={theme.colors.textMuted} style={{ marginTop: theme.spacing.sm }}>
+              Rank moved +{rankMovement} this week based on recent customer interactions across profile views, directions, and chats.
+            </VText>
+
+            {/* Engagement Quality Score */}
+            <View style={styles.qualityScoreRow}>
+              <View style={styles.qualityScoreLeft}>
+                <VText variant="caption" color={theme.colors.textMuted} style={{ fontSize: 11 }}>ENGAGEMENT QUALITY</VText>
+                <VText variant="h3" style={{ marginTop: 2, color: scoreColor }}>{scoreLabel}</VText>
+              </View>
+              <View style={styles.qualityBar}>
+                <View style={[styles.qualityFill, { width: `${engagementQuality}%` as any, backgroundColor: scoreColor }]} />
+              </View>
+              <VText variant="caption" color={scoreColor} style={{ fontWeight: '700', marginLeft: 8, fontSize: 13 }}>{engagementQuality}%</VText>
             </View>
           </View>
-
-          <View style={styles.impactMetricsRow}>
-            <View style={styles.impactMetricCell}>
-              <VText variant="caption" color={theme.colors.textMuted}>Profile Views</VText>
-              <VText variant="h2" style={{ marginTop: 2 }}>{profileViews7d}</VText>
-            </View>
-            <View style={styles.impactMetricCell}>
-              <VText variant="caption" color={theme.colors.textMuted}>Direction Requests</VText>
-              <VText variant="h2" style={{ marginTop: 2 }}>{directions7d}</VText>
-            </View>
-            <View style={styles.impactMetricCell}>
-              <VText variant="caption" color={theme.colors.textMuted}>Chat Starts</VText>
-              <VText variant="h2" style={{ marginTop: 2 }}>{chats7d}</VText>
-            </View>
-          </View>
-
-          <VText variant="caption" color={theme.colors.textMuted} style={{ marginTop: theme.spacing.sm }}>
-            Rank moved +{rankMovement} this week based on recent customer interactions across profile views, directions, and chats.
-          </VText>
-
-          {/* Engagement Quality Score */}
-          <View style={styles.qualityScoreRow}>
-            <View style={styles.qualityScoreLeft}>
-              <VText variant="caption" color={theme.colors.textMuted} style={{ fontSize: 11 }}>ENGAGEMENT QUALITY</VText>
-              <VText variant="h3" style={{ marginTop: 2, color: scoreColor }}>{scoreLabel}</VText>
-            </View>
-            <View style={styles.qualityBar}>
-              <View style={[styles.qualityFill, { width: `${engagementQuality}%` as any, backgroundColor: scoreColor }]} />
-            </View>
-            <VText variant="caption" color={scoreColor} style={{ fontWeight: '700', marginLeft: 8, fontSize: 13 }}>{engagementQuality}%</VText>
-          </View>
-        </View>
+        </Animated.View>
 
         {/* RECENT ENGAGEMENT DRILL-DOWN */}
         <View style={styles.sectionHeader}>

@@ -267,32 +267,36 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           {/* Integrated Category Bar (Right under search) */}
           <View style={styles.integratedCategoryBar}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
-              {categories.map((cat, i) => {
+              {categories.map((cat, index) => {
                 const isSelected = selectedCategory === cat.name || (selectedCategory === null && cat.name === 'All');
                 return (
-                  <TouchableOpacity
-                    key={i}
-                    activeOpacity={0.8}
-                    onPress={() => setSelectedCategory(cat.name === 'All' ? null : cat.name)}
-                    style={[
-                      styles.categoryTag,
-                      isSelected ? styles.tagActive : styles.tagInactive
-                    ]}
+                  <Animated.View
+                    key={cat.name}
+                    entering={FadeInRight.delay(400 + (index * 50)).duration(400)}
                   >
-                    <Ionicons
-                      name={cat.icon as any}
-                      size={normalize(13)}
-                      color={isSelected ? theme.colors.background : theme.colors.primary}
-                      style={{ marginRight: 4 }}
-                    />
-                    <VText
-                      variant="caption"
-                      color={isSelected ? theme.colors.background : theme.colors.primary}
-                      style={{ fontSize: normalize(11) }}
+                    <TouchableOpacity
+                      activeOpacity={0.8}
+                      onPress={() => setSelectedCategory(cat.name === 'All' ? null : cat.name)}
+                      style={[
+                        styles.categoryTag,
+                        isSelected ? styles.tagActive : styles.tagInactive
+                      ]}
                     >
-                      {cat.name}
-                    </VText>
-                  </TouchableOpacity>
+                      <Ionicons
+                        name={cat.icon as any}
+                        size={normalize(13)}
+                        color={isSelected ? theme.colors.background : theme.colors.primary}
+                        style={{ marginRight: 4 }}
+                      />
+                      <VText
+                        variant="caption"
+                        color={isSelected ? theme.colors.background : theme.colors.primary}
+                        style={{ fontSize: normalize(11) }}
+                      >
+                        {cat.name}
+                      </VText>
+                    </TouchableOpacity>
+                  </Animated.View>
                 );
               })}
             </ScrollView>

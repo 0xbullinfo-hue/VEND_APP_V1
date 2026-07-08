@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, ScrollView, Modal } from 'react-native';
+import { StyleSheet, View, ScrollView, Modal, TouchableOpacity } from 'react-native';
+import Animated, { FadeInUp, SlideInRight } from 'react-native-reanimated';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, VButton, VInput, HeaderBar } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
@@ -127,7 +128,7 @@ export const SubscriptionManagerScreen: React.FC<SubscriptionManagerScreenProps>
         {/* Subscription plan cards (data-driven so future tiers can be added in one place) */}
         <VText variant="h2" style={styles.sectionTitle}>Choose Your Plan</VText>
 
-        {SUBSCRIPTION_PLANS.map((plan) => {
+        {SUBSCRIPTION_PLANS.map((plan, index) => {
           const isCurrent = vendor.subscription_tier === plan.tier;
           const isUpgrade = plan.tier > vendor.subscription_tier;
           const isDowngrade = plan.tier < vendor.subscription_tier;
@@ -135,8 +136,9 @@ export const SubscriptionManagerScreen: React.FC<SubscriptionManagerScreenProps>
           const lockedByMilestone = isPaidTier && !isMilestoneCleared && isUpgrade;
 
           return (
-            <View
+            <Animated.View
               key={plan.tier}
+              entering={SlideInRight.delay(index * 150).duration(600)}
               style={[
                 styles.planCard,
                 isCurrent && styles.planActive,
@@ -188,7 +190,7 @@ export const SubscriptionManagerScreen: React.FC<SubscriptionManagerScreenProps>
                   style={styles.planActionBtn}
                 />
               ) : null}
-            </View>
+            </Animated.View>
           );
         })}
 
