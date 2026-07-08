@@ -47,7 +47,21 @@ class CertificatePinningService {
   }> = [];
 
   constructor(config: SSLPinningConfig[] = []) {
-    this.loadConfig(config);
+    // Dynamic config injection based on environment
+    const supabaseDomain = getSupabaseDomain();
+    const finalConfig = [...config];
+
+    if (supabaseDomain && !finalConfig.find(p => p.domain === supabaseDomain)) {
+      finalConfig.push({
+        domain: supabaseDomain,
+        publicKeyHash: 'sha256/PLACEHOLDER_PUBLIC_KEY_HASH', // Must be replaced before prod launch
+        certificateHash: 'sha256/PLACEHOLDER_CERT_HASH',
+        validFrom: Date.now(),
+        validUntil: Date.now() + (365 * 24 * 60 * 60 * 1000), // 1 year
+      });
+    }
+
+    this.loadConfig(finalConfig);
   }
 
   /**

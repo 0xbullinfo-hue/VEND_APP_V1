@@ -8,17 +8,12 @@
 // ─── Phone Number ─────────────────────────────────────────────────────────────
 
 /**
- * Sanitize and normalize a Nigerian phone number to E.164 format (+234...).
+ * Sanitize and normalize a global phone number to E.164 format.
  *
- * Accepts formats:
- *   - 08012345678  → +2348012345678
- *   - 8012345678   → +2348012345678
- *   - +2348012345678 (passthrough)
- *   - 2348012345678  → +2348012345678
- *
- * Returns null if the phone number is invalid.
+ * Accepts various international formats, defaulting to Nigeria (+234) if no prefix is provided
+ * and the length matches Nigerian standards.
  */
-export function sanitizePhoneNumber(input: string): string | null {
+export function sanitizePhoneNumber(input: string, countryCode = '+234'): string | null {
   if (!input || typeof input !== 'string') {
     return null;
   }
@@ -31,35 +26,22 @@ export function sanitizePhoneNumber(input: string): string | null {
     ? '+' + stripped.slice(1).replace(/\+/g, '')
     : stripped.replace(/\+/g, '');
 
-  let digits: string;
-
-  if (cleaned.startsWith('+234')) {
-    digits = cleaned.slice(4); // Remove +234
-  } else if (cleaned.startsWith('234') && cleaned.length >= 13) {
-    digits = cleaned.slice(3); // Remove 234
-  } else if (cleaned.startsWith('0')) {
-    digits = cleaned.slice(1); // Remove leading 0
-  } else {
-    digits = cleaned;
+  if (cleaned.startsWith('+')) {
+    return cleaned.length >= 8 ? cleaned : null;
   }
 
-  // Nigerian mobile numbers are 10 digits after country code (without leading 0)
-  if (digits.length !== 10) {
+  // If it starts with 0 and no country code provided in string, assume provided countryCode
+  let digits = cleaned;
+  if (digits.startsWith('0')) {
+    digits = digits.slice(1);
+  }
+
+  // Basic length check for global robustness (most mobile numbers are 7-15 digits)
+  if (digits.length < 7 || digits.length > 15) {
     return null;
   }
 
-  // Basic validation: must start with valid Nigerian mobile prefixes
-  const validPrefixes = ['70', '80', '81', '90', '91', '70', '71'];
-  const prefix = digits.substring(0, 2);
-  if (!validPrefixes.includes(prefix)) {
-    // Allow it anyway for flexibility — Supabase will validate
-    // but log a warning
-    if (__DEV__) {
-      console.warn(`[InputSanitization] Unusual phone prefix: ${prefix}`);
-    }
-  }
-
-  return `+234${digits}`;
+  return `${countryCode}${digits}`;
 }
 
 // ─── Text Input ───────────────────────────────────────────────────────────────

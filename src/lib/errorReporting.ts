@@ -92,8 +92,8 @@ class ErrorReporter {
     if (typeof obj === 'string') {
       // 1. Email regex
       let scrubbed = obj.replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '[EMAIL_REDACTED]');
-      // 2. Phone number pattern (Nigerian formats and standard mobile)
-      scrubbed = scrubbed.replace(/(?:\+?234|0)[789][01]\d{8}/g, '[PHONE_REDACTED]');
+      // 2. Phone number pattern (Global robustness: digits within context of identifiers)
+      scrubbed = scrubbed.replace(/(?:phone|mobile|tel|contact)\s*[:=]\s*["']?[+]?[\d\s\-()]{7,15}["']?/gi, '[PHONE_REDACTED]');
       // 3. Bearer tokens, API keys, passwords, credentials
       scrubbed = scrubbed.replace(/(?:bearer|sb-[a-zA-Z0-9-]+-key|token|password|key|secret)\s*[:=]\s*["']?[a-zA-Z0-9_\-\.\+]{15,}["']?/gi, '[SENSITIVE_REDACTED]');
       return scrubbed;
