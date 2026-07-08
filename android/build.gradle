@@ -35,13 +35,13 @@ allprojects {
         resolutionStrategy {
             force "com.facebook.react:react-native:" + REACT_NATIVE_VERSION
             
-            // CRITICAL: Force Google Play Services v20.x to resolve FusedLocationProviderClient "Found interface but class expected" crash.
-            // React Native Maps 0.31.x requires FusedLocationProviderClient to be a CLASS (v20.0.0 and below).
-            force "com.google.android.gms:play-services-location:20.0.0"
-            force "com.google.android.gms:play-services-maps:18.0.2"
-            force "com.google.android.gms:play-services-base:18.0.1"
-            force "com.google.android.gms:play-services-basement:18.0.0"
-            force "com.google.android.gms:play-services-tasks:18.0.1"
+            // CRITICAL: Force Google Play Services ALIGNMENT to resolve FusedLocationProviderClient "Found interface but class expected" crash.
+            // Using v21.0.1 and ensuring all related libs are aligned to v18.1.0+ which supports the interface change.
+            force "com.google.android.gms:play-services-location:21.0.1"
+            force "com.google.android.gms:play-services-maps:18.1.0"
+            force "com.google.android.gms:play-services-base:18.1.0"
+            force "com.google.android.gms:play-services-basement:18.1.0"
+            force "com.google.android.gms:play-services-tasks:18.0.2"
         }
     }
 
