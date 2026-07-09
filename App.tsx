@@ -22,7 +22,8 @@ export default function App() {
   useEffect(() => {
     async function prepare() {
       try {
-        // Pre-load fonts, make any API calls you need to do here
+        // Pre-load fonts if they exist
+        /*
         await Font.loadAsync({
           'Inter-Regular': require('./assets/fonts/Inter-Regular.ttf'),
           'Inter-Medium': require('./assets/fonts/Inter-Medium.ttf'),
@@ -30,10 +31,11 @@ export default function App() {
           'Inter-ExtraBold': require('./assets/fonts/Inter-ExtraBold.ttf'),
           'Inter-Black': require('./assets/fonts/Inter-Black.ttf'),
         });
+        */
       } catch (e) {
-        console.warn(e);
+        console.warn('Font loading failed:', e);
       } finally {
-        // Tell the application to render
+        // Tell the application to render even if fonts fail
         setAppIsReady(true);
       }
     }
