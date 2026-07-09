@@ -1,3 +1,3 @@
-import MapView, { Marker, Circle, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker, Circle, Polyline, Heatmap, PROVIDER_GOOGLE } from 'react-native-map-clustering';
 export default MapView;
-export { Marker, Circle, Polyline, PROVIDER_GOOGLE };
+export { Marker, Circle, Polyline, Heatmap, PROVIDER_GOOGLE };

@@ -49,33 +49,46 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Array<{ id: string; text: string; sender: 'me' | 'them'; time: string }>>([
     { id: '1', text: `Hello! Thanks for reaching out to ${vendor.business_name}. How can we help you today?`, sender: 'them', time: '10:02 AM' },
-    { id: '2', text: 'Hi! I want to confirm if you are open today and if you have the Senator Attire designs available?', sender: 'me', time: '10:05 AM' },
-    { id: '3', text: 'Yes, we are open! We have several materials and colors in stock. You can request directions using the top bar to visit our shop.', sender: 'them', time: '10:06 AM' }
   ]);
 
-  const handleSendMessage = () => {
-    if (!message.trim()) return;
+  const faqs = [
+    { q: 'Are you open today?', a: vendor.is_open ? 'Yes, we are open and ready to serve you!' : 'We are currently closed, but we typically open at 9 AM.' },
+    { q: 'Where are you located?', a: `Our shop is located at ${vendor.street_address}. You can request directions via the map!` },
+    { q: 'What services do you offer?', a: `We offer various services in the ${vendor.category} category. Check our profile for the full list!` },
+  ];
+
+  const handleSendMessage = (text?: string) => {
+    const messageToSend = text || message;
+    if (!messageToSend.trim()) return;
     
     const newMsg = {
       id: Math.random().toString(36).substring(2, 11),
-      text: message.trim(),
+      text: messageToSend.trim(),
       sender: 'me' as const,
-      time: '10:08 AM'
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
     
-    setMessages(prev => [...prev, newMsg]);
-    setMessage('');
-    addPoints(1); // Reward small point for messaging interaction
+    setMessages(prev => [newMsg, ...prev]);
+    if (!text) setMessage('');
+    addPoints(1);
 
-    // Trigger mock response after a delay
+    // Handle FAQ responses
+    const faqMatch = faqs.find(f => f.q === messageToSend);
+
     setTimeout(() => {
+      const responseText = faqMatch
+        ? faqMatch.a
+        : !vendor.is_open
+          ? `Thanks for your message! ${vendor.business_name} is currently away, but they'll get back to you as soon as they're back online.`
+          : "Perfect! We're ready for you. Let us know when you request directions.";
+
       const mockResponse = {
         id: Math.random().toString(36).substring(2, 11),
-        text: "Perfect! We're ready for you. Let us know when you request directions.",
+        text: responseText,
         sender: 'them' as const,
-        time: '10:09 AM'
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
-      setMessages(prev => [...prev, mockResponse]);
+      setMessages(prev => [mockResponse, ...prev]);
       addPoints(1);
     }, 1500);
   };
@@ -139,6 +152,25 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           contentContainerStyle={styles.messageScroll}
           showsVerticalScrollIndicator={false}
         />
+
+        {/* FAQ Quick Buttons */}
+        {messages.length < 5 && (
+          <View style={styles.faqContainer}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.faqScroll}>
+              {faqs.map((f, i) => (
+                <TouchableOpacity
+                  key={i}
+                  style={styles.faqBtn}
+                  onPress={() => handleSendMessage(f.q)}
+                >
+                  <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: '700' }}>
+                    {f.q}
+                  </VText>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
 
         {/* Messaging Text Input Bar */}
         <View style={styles.inputBar}>
@@ -207,6 +239,22 @@ const styles = StyleSheet.create({
   timeText: {
     fontSize: 9,
     marginTop: 4,
+  },
+  faqContainer: {
+    paddingVertical: 10,
+    backgroundColor: theme.colors.background,
+  },
+  faqScroll: {
+    paddingHorizontal: theme.spacing.lg,
+    gap: 8,
+  },
+  faqBtn: {
+    backgroundColor: theme.colors.primaryLight,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(17, 92, 85, 0.1)',
   },
   inputBar: {
     flexDirection: 'row',

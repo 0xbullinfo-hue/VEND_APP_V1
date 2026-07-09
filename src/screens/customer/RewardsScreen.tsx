@@ -12,7 +12,7 @@ interface RewardsScreenProps {
 }
 
 export const RewardsScreen: React.FC<RewardsScreenProps> = ({ onBackToHome }) => {
-  const { points, setPoints, addPoints } = useApp();
+  const { points, setPoints, addPoints, quests } = useApp();
   const [selectedReward, setSelectedReward] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [successCode, setSuccessCode] = useState<string | null>(null);
@@ -120,6 +120,54 @@ export const RewardsScreen: React.FC<RewardsScreenProps> = ({ onBackToHome }) =>
               <View style={[styles.progressBarFill, { width: `${Math.min(100, Math.max(5, progressPercent))}%` }]} />
             </View>
           )}
+        </View>
+
+        {/* Locality Quests Section */}
+        <View style={styles.section}>
+          <VText variant="h2" style={styles.sectionTitle}>Active Locality Quests</VText>
+          {quests.map((quest) => (
+            <VCard
+              key={quest.id}
+              variant="outline"
+              style={[styles.questCard, quest.isCompleted && styles.questCompleted]}
+            >
+              <View style={styles.questHeader}>
+                <View style={{ flex: 1 }}>
+                  <VText variant="h3" color={quest.isCompleted ? theme.colors.accent : theme.colors.textMain}>
+                    {quest.title} {quest.isCompleted && '✓'}
+                  </VText>
+                  <VText variant="caption" color={theme.colors.textMuted}>{quest.description}</VText>
+                </View>
+                <View style={styles.questReward}>
+                  <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: '900' }}>
+                    +{quest.pointsReward} PTS
+                  </VText>
+                </View>
+              </View>
+
+              <View style={styles.questProgressBox}>
+                <View style={styles.questProgressRow}>
+                  <VText variant="caption" color={theme.colors.textMuted}>
+                    Progress: {quest.currentCount}/{quest.targetCount}
+                  </VText>
+                  <VText variant="caption" color={theme.colors.textMuted}>
+                    {Math.round((quest.currentCount / quest.targetCount) * 100)}%
+                  </VText>
+                </View>
+                <View style={styles.questBarBg}>
+                  <View
+                    style={[
+                      styles.questBarFill,
+                      {
+                        width: `${Math.min(100, (quest.currentCount / quest.targetCount) * 100)}%`,
+                        backgroundColor: quest.isCompleted ? theme.colors.accent : theme.colors.primary
+                      }
+                    ]}
+                  />
+                </View>
+              </View>
+            </VCard>
+          ))}
         </View>
 
         {/* Earning Opportunities */}
@@ -451,5 +499,44 @@ const styles = StyleSheet.create({
   codeText: {
     fontWeight: '900',
     letterSpacing: 2,
+  },
+
+  // Quest styles
+  questCard: {
+    marginBottom: theme.spacing.sm,
+    padding: theme.spacing.md,
+  },
+  questCompleted: {
+    borderColor: theme.colors.accent + '30',
+    backgroundColor: theme.colors.accent + '05',
+  },
+  questHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  questReward: {
+    backgroundColor: theme.colors.primaryLight,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  questProgressBox: {
+    marginTop: 4,
+  },
+  questProgressRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  questBarBg: {
+    height: 6,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  questBarFill: {
+    height: '100%',
+    borderRadius: 3,
   },
 });

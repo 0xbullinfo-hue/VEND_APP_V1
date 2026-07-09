@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MOCK_VENDORS } from '../lib/mockData';
 import { getPlanForTier, clampTier } from '../lib/subscriptionPlans';
 import { useUIStore } from './useUIStore';
-import { UserProfile, VendorProfile } from '../types';
+import { UserProfile, VendorProfile, VendorSnapshot } from '../types';
 import { useLocationStore } from './useLocationStore';
 import { fetchVendorsByLocality, subscribeToVendorRealtime } from '../lib/vendorDataProvider';
 import { rankVendorsForCustomer } from '../lib/vendorRanking';
@@ -12,6 +12,7 @@ import { rankVendorsForCustomer } from '../lib/vendorRanking';
 interface VendorState {
   vendors: VendorProfile[];
   savedVendors: string[];
+  snapshots: VendorSnapshot[];
   dataSource: 'mock' | 'supabase';
   isRealtimeConnected: boolean;
   isLoadingVendors: boolean;
@@ -20,6 +21,7 @@ interface VendorState {
   
   ensureVendorProfile: (user: UserProfile) => void;
   toggleSaveVendor: (vendorId: string) => void;
+  addSnapshot: (vendorId: string, image: string, caption: string) => void;
   registerVendor: (
     user: UserProfile | null,
     businessName: string,
@@ -50,6 +52,26 @@ export const useVendorStore = create<VendorState>()(
     (set, get) => ({
       vendors: MOCK_VENDORS,
       savedVendors: [],
+      snapshots: [
+        {
+          id: 'sn1',
+          vendor_id: 'v1',
+          vendor_name: "Mama Titi's Kitchen",
+          vendor_image: 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=500&q=80',
+          image: 'https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=500&q=80',
+          caption: 'Fresh batch of Egusi soup ready for pickup! 🥘',
+          timestamp: new Date().toISOString(),
+        },
+        {
+          id: 'sn2',
+          vendor_id: 'v3',
+          vendor_name: 'GlowUp Braids & Beauty',
+          vendor_image: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=500&q=80',
+          image: 'https://images.unsplash.com/photo-1519762822-dea94f2a5a4e?w=500&q=80',
+          caption: 'New slot available for box braids tomorrow at 10 AM. DM to book! ✨',
+          timestamp: new Date().toISOString(),
+        }
+      ],
       dataSource: 'mock',
       isRealtimeConnected: false,
       isLoadingVendors: false,
@@ -64,17 +86,28 @@ export const useVendorStore = create<VendorState>()(
         });
       },
 
-      connectVendorRealtime: (localityId) => {
-        if (!localityId) {
-          set({ isRealtimeConnected: false });
-          return () => {};
-        }
+  connectVendorRealtime: (localityId) => {
+    if (!localityId) {
+      set({ isRealtimeConnected: false });
+      return () => {};
+    }
 
-        const cleanup = subscribeToVendorRealtime(localityId, async () => {
-          await get().refreshVendorsForLocality(localityId);
-        });
+    const cleanup = subscribeToVendorRealtime(
+      localityId,
+      async () => {
+        await get().refreshVendorsForLocality(localityId);
+      },
+      (onlineIds) => {
+        set((state) => ({
+          vendors: state.vendors.map(v => ({
+            ...v,
+            is_online: onlineIds.includes(v.id)
+          }))
+        }));
+      }
+    );
 
-        set({ isRealtimeConnected: true });
+    set({ isRealtimeConnected: true });
 
         return () => {
           cleanup();
@@ -115,6 +148,28 @@ export const useVendorStore = create<VendorState>()(
             return { savedVendors: [...state.savedVendors, vendorId] };
           }
         });
+      },
+
+      addSnapshot: (vendorId, image, caption) => {
+        const vendor = get().vendors.find(v => v.id === vendorId);
+        if (!vendor) return;
+
+        const newSnapshot: VendorSnapshot = {
+          id: 'sn_' + Math.random().toString(36).substring(2, 11),
+          vendor_id: vendorId,
+          vendor_name: vendor.business_name,
+          vendor_image: vendor.image,
+          image,
+          caption,
+          timestamp: new Date().toISOString(),
+        };
+
+        set((state) => ({
+          snapshots: [newSnapshot, ...state.snapshots].slice(0, 20) // Keep latest 20
+        }));
+
+        useUIStore.getState().addPoints(50);
+        useUIStore.getState().triggerNotification("Daily Snapshot posted! +50 VEND points earned.");
       },
 
       registerVendor: (user, businessName, bio, category, subCategory, address, isHomeBased, latitude, longitude) => {

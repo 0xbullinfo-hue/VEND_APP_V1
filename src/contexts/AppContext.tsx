@@ -6,6 +6,7 @@ import { getPlanForTier } from '../lib/subscriptionPlans';
 import { initializeNetworkMonitoring, subscribeToNetworkChanges } from '../lib/networkConnectivity';
 import { initializeErrorReporting, setErrorUser, clearErrorUser } from '../lib/errorReporting';
 import { initializeSSLPinning } from '../lib/sslPinning';
+import { useProximityEngine } from '../hooks/useProximityEngine';
 
 // Export types so components importing from AppContext don't break
 export type { UserProfile, DirectionRequest, EmergencyContact } from '../types';
@@ -32,6 +33,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const hydrateAnalyticsEvents = useAnalyticsStore((state) => state.hydrateAnalyticsEvents);
   const flushPendingEvents = useAnalyticsStore((state) => state.flushPendingEvents);
   const checkAllProximityTriggers = useProximityNotificationStore((state) => state.checkAllProximityTriggers);
+
+  // Initialize hyperlocal proximity engine
+  useProximityEngine();
 
   useEffect(() => {
     devLog('hydrateAuthSession:start');

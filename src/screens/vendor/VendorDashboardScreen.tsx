@@ -3,6 +3,7 @@ import { StyleSheet, View, ScrollView, TouchableOpacity, Image, Dimensions, Plat
 import Animated, { FadeInUp, FadeInDown, SlideInRight } from 'react-native-reanimated';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, HeaderBar, VImage, VCard } from '../../components/SharedComponents';
+import { SnapshotModal } from '../../components/SnapshotModal';
 import { useApp } from '../../contexts/AppContext';
 import { Ionicons } from '../../components/VIcons';
 import { computeRankUpNudge } from '../../lib/rankUpNudge';
@@ -28,9 +29,10 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
   onStartChat,
   onViewProfile
 }) => {
-  const { vendors, myVendorProfile, myVendorPlan } = useApp();
+  const { vendors, myVendorProfile, myVendorPlan, addSnapshot } = useApp();
   const { notifications } = useProximityNotificationStore();
-  
+  const [showSnapshotModal, setShowSnapshotModal] = React.useState(false);
+
   // Get nearby customer notifications (vendor perspective)
   const nearbyCustomers = filterNotifications(notifications, {
     type: 'vendor_customer_nearby',
@@ -276,7 +278,7 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
                 <VText variant="h3" style={{ fontSize: normalize(15) }}>Post a Daily Snapshot</VText>
                 <VText variant="caption" color={theme.colors.textMuted}>Stay active and rank higher today</VText>
               </View>
-              <TouchableOpacity style={styles.taskBtn} onPress={() => Alert.alert('Daily Snapshot', 'Camera module will open here.')}>
+              <TouchableOpacity style={styles.taskBtn} onPress={() => setShowSnapshotModal(true)}>
                 <VText variant="caption" color="#FFF" style={{ fontWeight: 'bold' }}>Post</VText>
               </TouchableOpacity>
             </View>
@@ -397,6 +399,12 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
         </Animated.View>
 
       </ScrollView>
+
+      <SnapshotModal
+        visible={showSnapshotModal}
+        onClose={() => setShowSnapshotModal(false)}
+        onPost={(img, cap) => addSnapshot(vendor.id, img, cap)}
+      />
     </View>
   );
 };

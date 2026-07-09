@@ -9,6 +9,7 @@ import {
   Platform,
   Image,
 } from 'react-native';
+import Animated, { useAnimatedStyle, withRepeat, withTiming, withSequence } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, IonIconName } from './VIcons';
 import { theme, normalize } from '../theme/designSystem';
@@ -399,6 +400,49 @@ export const VCard: React.FC<{
   );
 };
 
+// Pulsing "Live Now" indicator
+export const VPulse: React.FC<{ size?: number; color?: string; style?: any }> = ({
+  size = 12,
+  color = theme.colors.accent,
+  style
+}) => {
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: withRepeat(
+      withSequence(
+        withTiming(0.4, { duration: 1000 }),
+        withTiming(1, { duration: 1000 })
+      ),
+      -1,
+      true
+    ),
+    transform: [
+      {
+        scale: withRepeat(
+          withSequence(
+            withTiming(1, { duration: 1000 }),
+            withTiming(1.3, { duration: 1000 })
+          ),
+          -1,
+          true
+        ),
+      },
+    ],
+  }));
+
+  return (
+    <View style={[styles.pulseContainer, { width: size, height: size }, style]}>
+      <Animated.View
+        style={[
+          styles.pulseCircle,
+          { backgroundColor: color, borderRadius: size / 2 },
+          animatedStyle
+        ]}
+      />
+      <View style={[styles.pulseDot, { backgroundColor: color, borderRadius: size / 4, width: size / 2, height: size / 2 }]} />
+    </View>
+  );
+};
+
 // Skeleton loader component for premium loading states
 export const VSkeleton: React.FC<{
   width?: any;
@@ -528,5 +572,18 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
     borderRadius: normalize(16),
     padding: theme.spacing.lg,
-  }
+  },
+  pulseContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  pulseCircle: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+  },
+  pulseDot: {
+    zIndex: 1,
+  },
 });

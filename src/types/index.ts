@@ -48,5 +48,27 @@ export interface VendorProfile {
   exact_location: { latitude: number; longitude: number };
   services: VendorServiceItem[];
   last_seen_at?: string;
+  is_online?: boolean;
   realtime_source?: 'mock' | 'supabase';
+}
+
+export interface VendorSnapshot {
+  id: string;
+  vendor_id: string;
+  vendor_name: string;
+  vendor_image: string;
+  image: string;
+  caption: string;
+  timestamp: string;
+}
+
+export interface LocalityQuest {
+  id: string;
+  title: string;
+  description: string;
+  targetCount: number;
+  currentCount: number;
+  pointsReward: number;
+  category: string;
+  isCompleted: boolean;
 }

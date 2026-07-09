@@ -12,9 +12,10 @@ import {
 } from 'react-native';
 import Animated, { FadeInUp, FadeInRight, Layout } from 'react-native-reanimated';
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
-import MapView, { Marker, Circle, PROVIDER_GOOGLE } from '../../components/MapViewCompat';
+import MapView, { Marker, Circle, PROVIDER_GOOGLE, Heatmap } from '../../components/MapViewCompat';
 import { theme, normalize } from '../../theme/designSystem';
-import { VText, HeaderBar, VButton, VSkeleton, VImage, VCard } from '../../components/SharedComponents';
+import { VText, HeaderBar, VButton, VSkeleton, VImage, VCard, VPulse } from '../../components/SharedComponents';
+import { VibeFeed } from '../../components/VibeFeed';
 import { useApp } from '../../contexts/AppContext';
 import { Ionicons, IonIconName } from '../../components/VIcons';
 import { uberMapStyle } from '../../theme/mapStyles';
@@ -35,7 +36,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onViewVendorProfile,
   onViewRewards
 }) => {
-  const { vendors, addPoints, locality, dataSource, isRealtimeConnected, isLoadingVendors, trackProfileView, user } = useApp();
+  const { vendors, addPoints, locality, dataSource, isRealtimeConnected, isLoadingVendors, trackProfileView, user, snapshots, setCurrentLocation, verifiedVisitCounts } = useApp();
   const engagementStore = useCustomerEngagementStore();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedVendorId, setSelectedVendorId] = useState<string | null>(null); // Starts with no selection, showing promo bar
@@ -43,6 +44,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const [onlyBoosted, setOnlyBoosted] = useState(false);
   const [onlyOpen, setOnlyOpen] = useState(true);
   const [onlyHomeBased, setOnlyHomeBased] = useState(false);
+  const [showHeatmap, setShowHeatmap] = useState(false);
 
   const categories = useMemo(
     () => [
@@ -225,6 +227,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         </View>
       </View>
 
+      <VibeFeed snapshots={snapshots} onViewVendor={onViewVendorProfile} />
+
       {/* Interactive Map Viewport */}
       <View style={styles.mapContainer}>
         <Animated.View entering={FadeInUp.delay(300).duration(600)} style={styles.discoveryRail}>
@@ -254,6 +258,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     { text: onlyBoosted ? '✓ Boosted Only' : 'Boosted Only', onPress: () => setOnlyBoosted(!onlyBoosted) },
                     { text: onlyOpen ? '✓ Open Now' : 'Open Now', onPress: () => setOnlyOpen(!onlyOpen) },
                     { text: onlyHomeBased ? '✓ Home-Based' : 'Home-Based', onPress: () => setOnlyHomeBased(!onlyHomeBased) },
+                    { text: showHeatmap ? '✓ Hide Activity Heatmap' : 'Show Activity Heatmap', onPress: () => setShowHeatmap(!showHeatmap) },
                     { text: 'Close', style: 'cancel' }
                   ]
                 );
@@ -309,6 +314,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           provider={PROVIDER_GOOGLE}
           customMapStyle={uberMapStyle}
           initialRegion={initialRegion}
+          clusterColor={theme.colors.primary}
+          clusterTextColor="#FFFFFF"
           onPress={() => setSelectedVendorId(null)}
           onRegionChangeComplete={(region) => {
             currentRegion.current = region;
@@ -318,13 +325,35 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             }
           }}
           showsUserLocation={true}
+          onUserLocationChange={(event) => {
+            const { latitude, longitude } = event.nativeEvent.coordinate || {};
+            if (latitude && longitude) setCurrentLocation(latitude, longitude);
+          }}
           showsMyLocationButton={false}
           showsCompass={false}
         >
+          {showHeatmap && (
+            <Heatmap
+              points={vendors.map(v => ({
+                latitude: v.exact_location.latitude,
+                longitude: v.exact_location.longitude,
+                weight: v.subscription_tier * 5, // Boosted vendors weigh more in the heatmap
+              }))}
+              radius={40}
+              opacity={0.7}
+              gradient={{
+                colors: ["#7928CA", "#FF0080", "#FF4D4D", "#F9CB28"],
+                startPoints: [0.01, 0.25, 0.5, 0.75],
+                colorMapSize: 256
+              }}
+            />
+          )}
+
           {filteredVendors.map((vendor) => {
             const isSelected = selectedVendorId === vendor.id;
             const isBoosted = vendor.subscription_tier > 1;
             const coordinate = vendor.exact_location || initialRegion;
+            const isMayor = (verifiedVisitCounts[vendor.id] || 0) >= 5;
             const { icon } = getCategoryMeta(vendor.category);
             const catIcon = icon.replace('-outline', '');
 
@@ -373,7 +402,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   isBoosted && styles.boostedPin,
                   theme.shadows.glow
                 ]}>
-                  <Ionicons 
+                  {vendor.is_online && (
+                    <VPulse
+                      size={12}
+                      color={theme.colors.accent}
+                      style={styles.pinPulse}
+                    />
+                  )}
+                  <Ionicons
                     name={catIcon as IonIconName}
                     size={normalize(14)} 
                     color={isSelected ? theme.colors.background : theme.colors.primary} 
@@ -381,6 +417,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   {isBoosted && (
                     <View style={styles.premiumBadge}>
                       <Ionicons name="sparkles" size={6} color="#FFFFFF" />
+                    </View>
+                  )}
+                  {isMayor && (
+                    <View style={styles.mayorBadge}>
+                      <Ionicons name="medal" size={8} color="#FFFFFF" />
                     </View>
                   )}
                 </View>
@@ -466,6 +507,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     }}
                     style={styles.promoCard}
                   >
+                    {v.is_online && (
+                      <View style={styles.onlineBadge}>
+                        <VPulse size={8} color="#FFF" />
+                        <VText variant="caption" color="#FFF" style={{ fontSize: 8, marginLeft: 4, fontWeight: '900' }}>LIVE</VText>
+                      </View>
+                    )}
                     <VImage source={v.image} style={styles.promoCardImage} />
                     <View style={styles.promoCardContent}>
                       <VText variant="subtext" numberOfLines={1}>{v.business_name}</VText>
@@ -924,5 +971,37 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.primaryLight,
     borderRadius: 8,
     marginRight: theme.spacing.sm,
+  },
+  pinPulse: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+  },
+  onlineBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: theme.colors.accent,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    zIndex: 2,
+    ...theme.shadows.soft,
+  },
+  mayorBadge: {
+    position: 'absolute',
+    bottom: -4,
+    right: -4,
+    backgroundColor: theme.colors.warning,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+    zIndex: 3,
   },
 });

@@ -174,14 +174,21 @@ export const fetchVendorsByLocality = async (localityId?: number): Promise<Vendo
 
 export const subscribeToVendorRealtime = (
   localityId: number | undefined,
-  onRefresh: () => Promise<void>
+  onRefresh: () => Promise<void>,
+  onPresenceSync: (userIds: string[]) => void
 ) => {
   if (!localityId || !isSupabaseConfigured()) {
     return () => {};
   }
 
   const channel = supabase
-    .channel(`vendors-locality-${localityId}`)
+    .channel(`vendors-locality-${localityId}`, {
+      config: {
+        presence: {
+          key: 'online',
+        },
+      },
+    })
     .on(
       'postgres_changes',
       {
@@ -205,7 +212,24 @@ export const subscribeToVendorRealtime = (
         await onRefresh();
       }
     )
-    .subscribe();
+    .on('presence', { event: 'sync' }, () => {
+      const state = channel.presenceState();
+      const onlineIds = Object.values(state).flatMap((presences: any) =>
+        presences.map((p: any) => p.user_id)
+      );
+      onPresenceSync(onlineIds);
+    })
+    .subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          await channel.track({
+            user_id: session.user.id,
+            online_at: new Date().toISOString(),
+          });
+        }
+      }
+    });
 
   return () => {
     supabase.removeChannel(channel);

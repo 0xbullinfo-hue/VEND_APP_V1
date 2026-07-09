@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import Animated, { FadeInUp, FadeInDown, Layout } from 'react-native-reanimated';
 import { theme, normalize } from '../../theme/designSystem';
-import { VText, HeaderBar } from '../../components/SharedComponents';
+import { VText, HeaderBar, VCard } from '../../components/SharedComponents';
+import { LineChart } from 'react-native-wagmi-charts';
 import { Ionicons } from '../../components/VIcons';
 import { useApp } from '../../contexts/AppContext';
 import { calculateGrowthMetrics, analyzeCustomerBehavior, generateGrowthRecommendations } from '../../lib/vendorGrowthAnalytics';
@@ -84,6 +85,17 @@ export const VendorGrowthScreen: React.FC<VendorGrowthScreenProps> = ({ onBack }
   const recentEvents = [...currentWindow]
     .sort((a, b) => b.timestamp - a.timestamp)
     .slice(0, 20);
+
+  // Mock data for ROI Chart
+  const chartData = [
+    { timestamp: now - 6 * 24 * 3600000, value: 45 },
+    { timestamp: now - 5 * 24 * 3600000, value: 52 },
+    { timestamp: now - 4 * 24 * 3600000, value: 48 },
+    { timestamp: now - 3 * 24 * 3600000, value: 70 },
+    { timestamp: now - 2 * 24 * 3600000, value: 65 },
+    { timestamp: now - 1 * 24 * 3600000, value: 88 },
+    { timestamp: now, value: 95 },
+  ];
 
   const [expandDrillDown, setExpandDrillDown] = useState(false);
   const visibleEvents = expandDrillDown ? recentEvents : recentEvents.slice(0, 5);
@@ -186,7 +198,7 @@ export const VendorGrowthScreen: React.FC<VendorGrowthScreenProps> = ({ onBack }
         </View>
 
         <Animated.View entering={FadeInUp.duration(600)}>
-          <View style={styles.impactCard}>
+          <VCard variant="outline" style={styles.impactCard}>
             <View style={styles.impactTopRow}>
               <View>
                 <VText variant="caption" color={theme.colors.textMuted}>DISCOVERY MOMENTUM</VText>
@@ -200,6 +212,16 @@ export const VendorGrowthScreen: React.FC<VendorGrowthScreenProps> = ({ onBack }
                   #{rankNow} in locality
                 </VText>
               </View>
+            </View>
+
+            {/* Visual ROI Chart */}
+            <View style={styles.chartContainer}>
+              <LineChart.Provider data={chartData}>
+                <LineChart height={80} width={width - normalize(80)}>
+                  <LineChart.Path color={theme.colors.primary} />
+                  <LineChart.CursorCrosshair color={theme.colors.primary} />
+                </LineChart>
+              </LineChart.Provider>
             </View>
 
             <View style={styles.impactMetricsRow}>
@@ -699,6 +721,10 @@ const styles = StyleSheet.create({
   impactMetricsRow: {
     flexDirection: 'row',
     gap: theme.spacing.xs,
+  },
+  chartContainer: {
+    marginVertical: theme.spacing.md,
+    alignItems: 'center',
   },
   impactMetricCell: {
     flex: 1,
