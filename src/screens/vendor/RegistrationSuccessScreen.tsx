@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme, normalize } from '../../theme/designSystem';
-import { VText, VButton, VImage } from '../../components/SharedComponents';
+import { VText, VButton, VImage, VendorProfilePendingState } from '../../components/SharedComponents';
 import { Ionicons } from '../../components/VIcons';
 import { useApp } from '../../contexts/AppContext';
 
@@ -17,6 +17,17 @@ export const RegistrationSuccessScreen: React.FC<RegistrationSuccessScreenProps>
 }) => {
   const { vendors, myVendorProfile } = useApp();
   const vendor = myVendorProfile || vendors[0];
+
+  if (!vendor) {
+    return (
+      <VendorProfilePendingState
+        title="Processing..."
+        message="Please wait while we finalize your registration."
+        onAction={onGoToDashboard}
+        actionTitle="Go to Dashboard"
+      />
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -35,11 +46,11 @@ export const RegistrationSuccessScreen: React.FC<RegistrationSuccessScreenProps>
 
         <View style={styles.summaryCard}>
           <View style={styles.summaryTop}>
-            <VImage source={vendor.image} style={styles.storeLogo} />
+            <VImage source={vendor?.image || ''} style={styles.storeLogo} />
             <View style={styles.storeInfo}>
-              <VText variant="h2">{vendor.business_name}</VText>
+              <VText variant="h2">{vendor?.business_name}</VText>
               <VText variant="caption" color={theme.colors.textMuted} style={{ marginTop: 4 }}>
-                {vendor.street_address}
+                {vendor?.street_address}
               </VText>
             </View>
           </View>

@@ -350,7 +350,7 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
                     isPremium ? styles.cardPremium : styles.cardNormal,
                   ]}
                 >
-                  <VImage source={vendor.image} style={styles.vendorCardImg} />
+                  <VImage source={vendor?.image || ''} style={styles.vendorCardImg} />
                   <View style={styles.vendorCardInfo}>
                     <View style={styles.vendorTitleRow}>
                       <VText variant="h3" numberOfLines={1} style={{ maxWidth: '70%' }}>

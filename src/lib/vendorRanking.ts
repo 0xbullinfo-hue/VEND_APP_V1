@@ -17,3 +17,12 @@ export const rankVendorsForCustomer = (vendors: VendorProfile[]): VendorProfile[
     return a.business_name.localeCompare(b.business_name);
   });
 };
+
+/**
+ * Calculates Euclidean distance between two points in km (approx).
+ */
+export const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const latDiff = lat2 - lat1;
+  const lngDiff = lon2 - lon1;
+  return Math.sqrt(latDiff * latDiff + lngDiff * lngDiff) * 111;
+};

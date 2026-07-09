@@ -6,10 +6,11 @@ import {
   TouchableOpacity, 
   TextInput, 
   KeyboardAvoidingView, 
-  Platform 
+  Platform,
+  ScrollView
 } from 'react-native';
 import { theme, normalize } from '../../theme/designSystem';
-import { VText, HeaderBar } from '../../components/SharedComponents';
+import { VText, HeaderBar, VendorProfilePendingState } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
 import { Ionicons } from '../../components/VIcons';
 
@@ -30,20 +31,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   const vendor = vendors.find(v => v.id === recipientId);
 
   if (!vendor) {
-    return (
-      <View style={styles.container}>
-        <HeaderBar showBack={true} onBack={onBack} title="Chat" />
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: theme.spacing.lg }}>
-          <Ionicons name="alert-circle-outline" size={normalize(42)} color={theme.colors.warning} style={{ marginBottom: theme.spacing.sm }} />
-          <VText variant="h2" align="center" style={{ marginBottom: theme.spacing.xs }}>
-            Chat Unavailable
-          </VText>
-          <VText variant="body" align="center" color={theme.colors.textMuted}>
-            This vendor is no longer available in your current locality feed.
-          </VText>
-        </View>
-      </View>
-    );
+    return <VendorProfilePendingState title="Chat Unavailable" onBack={onBack} />;
   }
 
   const [message, setMessage] = useState('');
@@ -184,7 +172,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           
           <TouchableOpacity 
             activeOpacity={0.8}
-            onPress={handleSendMessage}
+            onPress={() => handleSendMessage()}
             style={styles.sendBtn}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >

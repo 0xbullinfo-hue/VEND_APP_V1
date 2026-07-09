@@ -223,14 +223,14 @@ export const CustomerProfileScreen: React.FC<CustomerProfileScreenProps> = ({
                   onPress={() => onViewVendorProfile(vendor.id)}
                   style={styles.vendorCard}
                 >
-                  <VImage source={vendor.image} style={styles.vendorImg} />
+                  <VImage source={vendor?.image || ''} style={styles.vendorImg} />
                   <View style={styles.vendorInfo}>
-                    <VText variant="h3" numberOfLines={1}>{vendor.business_name}</VText>
-                    <VText variant="caption" color={theme.colors.textMuted} numberOfLines={1}>{vendor.category}</VText>
+                    <VText variant="h3" numberOfLines={1}>{vendor?.business_name}</VText>
+                    <VText variant="caption" color={theme.colors.textMuted} numberOfLines={1}>{vendor?.category}</VText>
                     
                     <View style={styles.ratingRow}>
                       <Ionicons name="star" size={12} color={theme.colors.warning} />
-                      <VText variant="caption" style={{ marginLeft: 4 }}>{vendor.rating}</VText>
+                      <VText variant="caption" style={{ marginLeft: 4 }}>{vendor?.rating}</VText>
                     </View>
                   </View>
                 </VCard>

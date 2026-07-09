@@ -158,8 +158,8 @@ export const useVendorStore = create<VendorState>()(
           id: 'sn_' + Math.random().toString(36).substring(2, 11),
           vendor_id: vendorId,
           vendor_name: vendor.business_name,
-          vendor_image: vendor.image,
-          image,
+          vendor_image: vendor.image || '',
+          image: image || '',
           caption,
           timestamp: new Date().toISOString(),
         };

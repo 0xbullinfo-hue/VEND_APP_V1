@@ -114,14 +114,14 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
             </View>
 
             <View style={styles.productTopRow}>
-              <VImage source={item.image} style={styles.productImg} />
+              <VImage source={item?.image || ''} style={styles.productImg} />
               <View style={styles.productInfo}>
-                <VText variant="h3">{item.title}</VText>
+                <VText variant="h3">{item?.title}</VText>
                 <VText variant="caption" color={theme.colors.textMuted} style={{ marginVertical: 2 }}>
-                  {item.category || 'Product'}
+                  {item?.category || 'Product'}
                 </VText>
                 <VText variant="h3" color={theme.colors.primary}>
-                  ₦ {item.price?.toLocaleString() || 'N/A'}
+                  ₦ {item?.price?.toLocaleString() || 'N/A'}
                 </VText>
               </View>
             </View>

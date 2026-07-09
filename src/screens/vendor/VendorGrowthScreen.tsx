@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import Animated, { FadeInUp, FadeInDown, Layout } from 'react-native-reanimated';
 import { theme, normalize } from '../../theme/designSystem';
-import { VText, HeaderBar, VCard } from '../../components/SharedComponents';
+import { VText, HeaderBar, VCard, VendorProfilePendingState } from '../../components/SharedComponents';
 import { LineChart } from 'react-native-wagmi-charts';
 import { Ionicons } from '../../components/VIcons';
 import { useApp } from '../../contexts/AppContext';
@@ -18,6 +18,10 @@ export const VendorGrowthScreen: React.FC<VendorGrowthScreenProps> = ({ onBack }
   const { analyticsEvents, myVendorProfile, vendors, analyticsSyncSource, analyticsPendingCount, lastRemoteSyncAt, networkAvailable, subscribeToRealtimeUpdates, unsubscribeFromRealtimeUpdates, realtimeConnected } = useApp();
 
   const vendor = myVendorProfile || vendors[0];
+
+  if (!vendor) {
+    return <VendorProfilePendingState title="Growth Hub" onBack={onBack} />;
+  }
 
   // Subscribe to realtime updates when screen mounts
   useEffect(() => {
@@ -254,7 +258,7 @@ export const VendorGrowthScreen: React.FC<VendorGrowthScreenProps> = ({ onBack }
               </View>
               <VText variant="caption" color={scoreColor} style={{ fontWeight: '700', marginLeft: 8, fontSize: 13 }}>{engagementQuality}%</VText>
             </View>
-          </View>
+          </VCard>
         </Animated.View>
 
         {/* RECENT ENGAGEMENT DRILL-DOWN */}

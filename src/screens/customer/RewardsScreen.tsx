@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, ScrollView, TouchableOpacity, Image, Modal, Dimensions } from 'react-native';
 import { theme, normalize } from '../../theme/designSystem';
-import { VText, VButton, HeaderBar } from '../../components/SharedComponents';
+import { VText, VButton, HeaderBar, VCard } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
 import { Ionicons } from '../../components/VIcons';
 

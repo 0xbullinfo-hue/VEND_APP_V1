@@ -3,7 +3,7 @@ import { StyleSheet, View, TouchableOpacity, Share, Alert, Platform } from 'reac
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from '../../components/MapViewCompat';
 import { theme, normalize } from '../../theme/designSystem';
-import { VText, VButton, HeaderBar } from '../../components/SharedComponents';
+import { VText, VButton, HeaderBar, VendorProfilePendingState } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
 import { Ionicons } from '../../components/VIcons';
 import { uberMapStyle } from '../../theme/mapStyles';
@@ -22,25 +22,7 @@ export const LiveTripScreen: React.FC<LiveTripScreenProps> = ({ onTripEnd, onArr
   const mapRef = useRef<MapView>(null);
 
   if (!vendor) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <HeaderBar showBack={true} onBack={onTripEnd} showPoints={false} title="Live Navigation Map" />
-        <View style={[styles.tripInfoCard, { margin: theme.spacing.lg, flex: 1, justifyContent: 'center' }]}>
-          <Ionicons name="alert-circle-outline" size={normalize(42)} color={theme.colors.warning} style={{ marginBottom: theme.spacing.sm, alignSelf: 'center' }} />
-          <VText variant="h2" align="center" style={{ marginBottom: theme.spacing.xs }}>
-            Trip Unavailable
-          </VText>
-          <VText variant="body" align="center" color={theme.colors.textMuted}>
-            The selected vendor is no longer available in your locality feed.
-          </VText>
-          <VButton
-            title="Back"
-            onPress={onTripEnd}
-            style={{ marginTop: theme.spacing.lg }}
-          />
-        </View>
-      </SafeAreaView>
-    );
+    return <VendorProfilePendingState title="Trip Unavailable" onBack={onTripEnd} />;
   }
 
   // Mock User Location (Ideally fetched via expo-location)

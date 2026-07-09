@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, View, ScrollView, TouchableOpacity, Image, Dimensions, Platform, Alert } from 'react-native';
 import Animated, { FadeInUp, FadeInDown, SlideInRight } from 'react-native-reanimated';
 import { theme, normalize } from '../../theme/designSystem';
-import { VText, HeaderBar, VImage, VCard } from '../../components/SharedComponents';
+import { VText, HeaderBar, VImage, VCard, VendorProfilePendingState } from '../../components/SharedComponents';
 import { SnapshotModal } from '../../components/SnapshotModal';
 import { useApp } from '../../contexts/AppContext';
 import { Ionicons } from '../../components/VIcons';
@@ -41,6 +41,18 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
   
   // Use the logged-in vendor's own linked business profile.
   const vendor = myVendorProfile || vendors[0];
+
+  if (!vendor) {
+    return (
+      <VendorProfilePendingState
+        title="CRITICAL: VENDOR IS NULL"
+        message="We could not retrieve your vendor profile. Please try logging in again."
+        onAction={onLogout}
+        actionTitle="Emergency Logout"
+      />
+    );
+  }
+
   const rankedLocalityVendors = vendors.filter((item) => item.locality_id === vendor.locality_id);
   const rankingPosition = Math.max(1, rankedLocalityVendors.findIndex((item) => item.id === vendor.id) + 1);
   const boostedCompetitors = rankedLocalityVendors.filter((item) => item.subscription_tier > 1).length;
@@ -85,9 +97,9 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
             onPress={onViewProfile}
             style={styles.profileCard}
           >
-            <VImage source={vendor.image} style={styles.businessLogo} />
+            <VImage source={vendor?.image || ''} style={styles.businessLogo} />
             <View style={styles.businessInfo}>
-              <VText variant="h2" style={{ marginBottom: 4 }}>{vendor.business_name}</VText>
+              <VText variant="h2" style={{ marginBottom: 4 }}>{vendor?.business_name}</VText>
               <View style={styles.statusRow}>
                 <View style={styles.statusDot} />
                 <VText variant="caption" color={theme.colors.primary}>

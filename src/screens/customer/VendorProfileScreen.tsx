@@ -9,7 +9,7 @@ import {
   Platform
 } from 'react-native';
 import { theme, normalize } from '../../theme/designSystem';
-import { VText, VButton, HeaderBar, VImage } from '../../components/SharedComponents';
+import { VText, VButton, HeaderBar, VImage, VendorProfilePendingState } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
 import { Ionicons } from '../../components/VIcons';
 
@@ -32,25 +32,7 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({
 
   const vendor = vendors.find(v => v.id === vendorId);
   if (!vendor) {
-    return (
-      <View style={styles.container}>
-        <HeaderBar showBack={true} onBack={onBack} />
-        <View style={[styles.section, { flex: 1, justifyContent: 'center', alignItems: 'center' }]}>
-          <Ionicons name="alert-circle-outline" size={normalize(42)} color={theme.colors.warning} style={{ marginBottom: theme.spacing.sm }} />
-          <VText variant="h2" align="center" style={{ marginBottom: theme.spacing.xs }}>
-            Vendor Not Found
-          </VText>
-          <VText variant="body" align="center" color={theme.colors.textMuted}>
-            This vendor is no longer available in your current locality feed.
-          </VText>
-          <VButton
-            title="Back"
-            onPress={onBack}
-            style={{ marginTop: theme.spacing.lg, width: '100%' }}
-          />
-        </View>
-      </View>
-    );
+    return <VendorProfilePendingState onBack={onBack} />;
   }
 
   const isSaved = savedVendors.includes(vendor.id);
@@ -92,7 +74,7 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Vendor Banner Image */}
-        <VImage source={vendor.image} style={styles.bannerImage} />
+        <VImage source={vendor?.image || ''} style={styles.bannerImage} />
 
         {/* Business Title Details */}
         <View style={styles.infoSection}>

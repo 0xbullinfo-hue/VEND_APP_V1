@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { StyleSheet, View, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme, normalize } from '../../theme/designSystem';
-import { VText, VButton, VInput, HeaderBar } from '../../components/SharedComponents';
+import { VText, VButton, VInput, HeaderBar, VendorProfilePendingState } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
 import { Ionicons } from '../../components/VIcons';
 
@@ -19,25 +19,7 @@ export const LeaveReviewScreen: React.FC<LeaveReviewScreenProps> = ({
   const vendor = vendors.find(v => v.id === vendorId);
 
   if (!vendor) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <HeaderBar showBack={true} onBack={onBack} title="Write a Review" />
-        <View style={styles.successBox}>
-          <Ionicons name="alert-circle-outline" size={normalize(42)} color={theme.colors.warning} style={{ marginBottom: theme.spacing.sm }} />
-          <VText variant="h2" align="center" style={{ marginBottom: theme.spacing.xs }}>
-            Vendor Not Found
-          </VText>
-          <VText variant="body" align="center" color={theme.colors.textMuted}>
-            We could not load this vendor in your current locality feed.
-          </VText>
-          <VButton
-            title="Back"
-            onPress={onBack}
-            style={{ marginTop: theme.spacing.lg, width: '100%' }}
-          />
-        </View>
-      </SafeAreaView>
-    );
+    return <VendorProfilePendingState title="Write a Review" onBack={onBack} />;
   }
 
   const [rating, setRating] = useState(5);

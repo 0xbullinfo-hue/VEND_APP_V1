@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, TouchableOpacity, Linking, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme, normalize } from '../../theme/designSystem';
-import { VText, VButton, VInput, HeaderBar } from '../../components/SharedComponents';
+import { VText, VButton, VInput, HeaderBar, VendorProfilePendingState } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
 import { Ionicons } from '../../components/VIcons';
 
@@ -21,25 +21,7 @@ export const DirectionRequestScreen: React.FC<DirectionRequestScreenProps> = ({
   const vendor = vendors.find(v => v.id === vendorId);
 
   if (!vendor) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <HeaderBar showBack={true} onBack={onBack} title="Direction Center" />
-        <View style={styles.actionBox}>
-          <Ionicons name="alert-circle-outline" size={normalize(42)} color={theme.colors.warning} style={{ marginBottom: theme.spacing.sm }} />
-          <VText variant="h2" align="center" style={{ marginBottom: theme.spacing.xs }}>
-            Vendor Not Found
-          </VText>
-          <VText variant="body" align="center" color={theme.colors.textMuted}>
-            This vendor is no longer available in your current locality feed.
-          </VText>
-          <VButton
-            title="Back"
-            onPress={onBack}
-            style={{ marginTop: theme.spacing.lg, width: '100%' }}
-          />
-        </View>
-      </SafeAreaView>
-    );
+    return <VendorProfilePendingState title="Direction Center" onBack={onBack} />;
   }
 
   const [handshakeCode, setHandshakeCode] = useState('');

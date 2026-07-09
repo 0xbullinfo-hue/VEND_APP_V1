@@ -507,20 +507,20 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     }}
                     style={styles.promoCard}
                   >
-                    {v.is_online && (
+                    {v?.is_online && (
                       <View style={styles.onlineBadge}>
                         <VPulse size={8} color="#FFF" />
                         <VText variant="caption" color="#FFF" style={{ fontSize: 8, marginLeft: 4, fontWeight: '900' }}>LIVE</VText>
                       </View>
                     )}
-                    <VImage source={v.image} style={styles.promoCardImage} />
+                    <VImage source={v?.image || ''} style={styles.promoCardImage} />
                     <View style={styles.promoCardContent}>
-                      <VText variant="subtext" numberOfLines={1}>{v.business_name}</VText>
+                      <VText variant="subtext" numberOfLines={1}>{v?.business_name}</VText>
                       <View style={styles.ratingRow}>
                         <Ionicons name="star" size={10} color={theme.colors.warning} />
-                        <VText variant="caption" style={{ marginLeft: 4 }}>{v.rating}</VText>
+                        <VText variant="caption" style={{ marginLeft: 4 }}>{v?.rating}</VText>
                         <VText variant="caption" color={theme.colors.textMuted} style={{ marginLeft: 6 }}>
-                          {v.is_home_based ? 'Home-Based' : 'Physical Shop'}
+                          {v?.is_home_based ? 'Home-Based' : 'Physical Shop'}
                         </VText>
                       </View>
                     </View>

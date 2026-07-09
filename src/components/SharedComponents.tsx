@@ -337,20 +337,26 @@ export const NotificationToast: React.FC = () => {
 
 // Premium Image component with professional placeholder logic
 export const VImage: React.FC<{
-  source: string;
+  source: any;
   style?: any;
   resizeMode?: 'cover' | 'contain' | 'stretch';
 }> = ({ source, style, resizeMode = 'cover' }) => {
   const [error, setError] = React.useState(false);
 
-  // Fallback to a local asset if the remote one fails or is missing
-  const imageSource = error || !source
-    ? require('../../assets/images/placeholder-vendor.png')
-    : { uri: source };
+  // Determine the final image source with fallback logic
+  const getImageSource = () => {
+    if (error || !source) {
+      return require('../../assets/images/placeholder-vendor.png');
+    }
+    if (typeof source === 'string') {
+      return { uri: source };
+    }
+    return source;
+  };
 
   return (
     <Image
-      source={imageSource}
+      source={getImageSource()}
       style={style}
       resizeMode={resizeMode}
       onError={() => setError(true)}
@@ -463,6 +469,50 @@ export const VSkeleton: React.FC<{
         style
       ]}
     />
+  );
+};
+
+// Unified Pending/Error State for Vendor Profiles
+export const VendorProfilePendingState: React.FC<{
+  title?: string;
+  message?: string;
+  icon?: IonIconName;
+  onBack?: () => void;
+  actionTitle?: string;
+  onAction?: () => void;
+}> = ({
+  title = 'Vendor Not Found',
+  message = 'This vendor is no longer available in your current locality feed.',
+  icon = 'alert-circle-outline',
+  onBack,
+  actionTitle = 'Back',
+  onAction
+}) => {
+  return (
+    <View style={styles.pendingContainer}>
+      {onBack && <HeaderBar showBack={true} onBack={onBack} />}
+      <View style={styles.pendingContent}>
+        <Ionicons
+          name={icon as IonIconName}
+          size={normalize(48)}
+          color={theme.colors.warning}
+          style={{ marginBottom: theme.spacing.md }}
+        />
+        <VText variant="h2" align="center" style={{ marginBottom: theme.spacing.sm }}>
+          {title}
+        </VText>
+        <VText variant="body" align="center" color={theme.colors.textMuted} style={{ marginBottom: theme.spacing.xl }}>
+          {message}
+        </VText>
+        {(onAction || onBack) && (
+          <VButton
+            title={onAction ? actionTitle : 'Back'}
+            onPress={onAction || onBack || (() => {})}
+            style={{ width: '100%' }}
+          />
+        )}
+      </View>
+    </View>
   );
 };
 
@@ -585,5 +635,15 @@ const styles = StyleSheet.create({
   },
   pulseDot: {
     zIndex: 1,
+  },
+  pendingContainer: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  pendingContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.xl,
   },
 });

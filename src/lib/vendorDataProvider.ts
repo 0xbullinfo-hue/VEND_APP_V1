@@ -145,7 +145,10 @@ export const fetchVendorsByLocality = async (localityId?: number): Promise<Vendo
     }
 
     if (!vendorRows || vendorRows.length === 0) {
-      return [];
+      if (__DEV__) {
+        console.info('[vendorDataProvider] No vendors found in Supabase for locality. Falling back to mock data.');
+      }
+      return toMockVendors(localityId);
     }
 
     const vendorIds = vendorRows.map((v: VendorPublicRow) => v.id);
