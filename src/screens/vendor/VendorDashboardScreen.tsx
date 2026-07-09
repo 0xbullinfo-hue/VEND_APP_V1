@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, View, ScrollView, TouchableOpacity, Image, Dimensions, Platform, Alert } from 'react-native';
 import Animated, { FadeInUp, FadeInDown, SlideInRight } from 'react-native-reanimated';
 import { theme, normalize } from '../../theme/designSystem';
-import { VText, HeaderBar, VImage } from '../../components/SharedComponents';
+import { VText, HeaderBar, VImage, VCard } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
 import { Ionicons } from '../../components/VIcons';
 import { computeRankUpNudge } from '../../lib/rankUpNudge';
@@ -56,7 +56,10 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
       <View style={styles.header}>
         <VText variant="h2" style={{ fontSize: normalize(22) }}>Dashboard</VText>
         <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.bellIcon}>
+          <TouchableOpacity
+            style={styles.bellIcon}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
             <Ionicons name="notifications-outline" size={24} color={theme.colors.textMain} />
             <View style={styles.notificationBadge} />
           </TouchableOpacity>
@@ -64,6 +67,7 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
             style={styles.logoutBtn}
             onPress={onLogout}
             activeOpacity={0.8}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Ionicons name="log-out-outline" size={22} color={theme.colors.danger} />
           </TouchableOpacity>
@@ -74,7 +78,11 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
         
         {/* Profile Card */}
         <Animated.View entering={FadeInDown.duration(600)}>
-          <TouchableOpacity activeOpacity={0.9} onPress={onViewProfile} style={styles.profileCard}>
+          <VCard
+            variant="flat"
+            onPress={onViewProfile}
+            style={styles.profileCard}
+          >
             <VImage source={vendor.image} style={styles.businessLogo} />
             <View style={styles.businessInfo}>
               <VText variant="h2" style={{ marginBottom: 4 }}>{vendor.business_name}</VText>
@@ -85,7 +93,7 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
                 </VText>
               </View>
             </View>
-          </TouchableOpacity>
+          </VCard>
         </Animated.View>
 
         <Animated.View entering={FadeInUp.delay(100).duration(600)}>
@@ -93,7 +101,7 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
             <VText variant="h2" style={{ fontSize: normalize(18) }}>Boost Impact Analytics</VText>
           </View>
 
-          <View style={[styles.boostImpactCard, theme.shadows.soft]}>
+          <VCard variant="outline" style={styles.boostImpactCard}>
             <View style={styles.boostImpactHeaderRow}>
               <View>
                 <VText variant="caption" color={theme.colors.textMuted}>LOCALITY RANK POSITION</VText>
@@ -138,15 +146,18 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
                 </VText>
               </TouchableOpacity>
             )}
-          </View>
+          </VCard>
         </Animated.View>
 
         {/* RANK-UP NUDGE */}
         {rankUpNudge.type !== 'already_top' && (
-          <View style={[
-            styles.rankNudgeCard,
-            rankUpNudge.urgent && styles.rankNudgeCardUrgent,
-          ]}>
+          <VCard
+            variant="outline"
+            style={[
+              styles.rankNudgeCard,
+              rankUpNudge.urgent && styles.rankNudgeCardUrgent,
+            ]}
+          >
             <View style={styles.rankNudgeTop}>
               <View style={[
                 styles.rankNudgeIconWrap,
@@ -177,6 +188,7 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
                 if (rankUpNudge.type === 'upgrade') onManageSubscription();
                 else onViewGrowth?.();
               }}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <VText
                 variant="caption"
@@ -192,58 +204,61 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
                 style={{ marginLeft: 4 }}
               />
             </TouchableOpacity>
-          </View>
+          </VCard>
         )}
 
         {/* NEARBY CUSTOMERS (Proximity Notifications) */}
         {nearbyCustomers.length > 0 && (
-          <Animated.View entering={FadeInUp.delay(300).duration(600)} style={[styles.nearbyCustomersCard, theme.shadows.soft]}>
-            <View style={styles.nearbyHeader}>
-              <View style={styles.nearbyIconWrap}>
-                <Ionicons name="location-sharp" size={18} color={theme.colors.accent} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <VText variant="h3" style={{ fontSize: normalize(15), fontWeight: '700' }}>
-                  Customers Nearby
-                </VText>
-                <VText variant="caption" color={theme.colors.textMuted}>
-                  {nearbyCustomers.length} previous customer{nearbyCustomers.length > 1 ? 's' : ''} in your area
-                </VText>
-              </View>
-            </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.customersList}>
-              {nearbyCustomers.slice(0, 3).map((customer, index) => (
-                <Animated.View
-                  key={customer.id}
-                  entering={SlideInRight.delay(400 + (index * 100))}
-                >
-                  <TouchableOpacity
-                    onPress={() => onStartChat(customer.triggerEntityId)}
-                    style={[styles.customerChip, theme.shadows.soft]}
-                  >
-                    <Ionicons name="person-circle" size={32} color={theme.colors.primary} />
-                    <VText variant="caption" style={{ fontSize: 10, marginTop: 4, textAlign: 'center' }}>
-                      {customer.triggerEntityName.split('\n')[0]}
-                    </VText>
-                    {customer.distance && (
-                      <VText variant="caption" color={theme.colors.textMuted} style={{ fontSize: 9, marginTop: 2 }}>
-                        {customer.distance.toFixed(1)}km
-                      </VText>
-                    )}
-                  </TouchableOpacity>
-                </Animated.View>
-              ))}
-              {nearbyCustomers.length > 3 && (
-                <View style={[styles.customerChip, styles.moreChip]}>
-                  <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: '700' }}>
-                    +{nearbyCustomers.length - 3}
+          <Animated.View entering={FadeInUp.delay(300).duration(600)}>
+            <VCard variant="outline" style={styles.nearbyCustomersCard}>
+              <View style={styles.nearbyHeader}>
+                <View style={styles.nearbyIconWrap}>
+                  <Ionicons name="location-sharp" size={18} color={theme.colors.accent} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <VText variant="h3" style={{ fontSize: normalize(15), fontWeight: '700' }}>
+                    Customers Nearby
                   </VText>
-                  <VText variant="caption" color={theme.colors.textMuted} style={{ fontSize: 9 }}>
-                    more
+                  <VText variant="caption" color={theme.colors.textMuted}>
+                    {nearbyCustomers.length} previous customer{nearbyCustomers.length > 1 ? 's' : ''} in your area
                   </VText>
                 </View>
-              )}
-            </ScrollView>
+              </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.customersList}>
+                {nearbyCustomers.slice(0, 3).map((customer, index) => (
+                  <Animated.View
+                    key={customer.id}
+                    entering={SlideInRight.delay(400 + (index * 100))}
+                  >
+                    <TouchableOpacity
+                      onPress={() => onStartChat(customer.triggerEntityId)}
+                      style={[styles.customerChip, theme.shadows.soft]}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                      <Ionicons name="person-circle" size={32} color={theme.colors.primary} />
+                      <VText variant="caption" style={{ fontSize: 10, marginTop: 4, textAlign: 'center' }}>
+                        {customer.triggerEntityName.split('\n')[0]}
+                      </VText>
+                      {customer.distance && (
+                        <VText variant="caption" color={theme.colors.textMuted} style={{ fontSize: 9, marginTop: 2 }}>
+                          {customer.distance.toFixed(1)}km
+                        </VText>
+                      )}
+                    </TouchableOpacity>
+                  </Animated.View>
+                ))}
+                {nearbyCustomers.length > 3 && (
+                  <View style={[styles.customerChip, styles.moreChip]}>
+                    <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: '700' }}>
+                      +{nearbyCustomers.length - 3}
+                    </VText>
+                    <VText variant="caption" color={theme.colors.textMuted} style={{ fontSize: 9 }}>
+                      more
+                    </VText>
+                  </View>
+                )}
+              </ScrollView>
+            </VCard>
           </Animated.View>
         )}
 
@@ -291,31 +306,37 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
           </View>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll} contentContainerStyle={{ paddingHorizontal: theme.spacing.lg, gap: theme.spacing.md }}>
-            <Animated.View entering={SlideInRight.delay(100)} style={styles.metricCard}>
-              <View style={styles.metricIconRow}>
-                <Ionicons name="star" size={20} color={theme.colors.warning} />
-                <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: 'bold' }}>+45</VText>
-              </View>
-              <VText variant="h1" style={{ fontSize: normalize(24), marginVertical: 4 }}>1,240</VText>
-              <VText variant="caption" color={theme.colors.textMuted}>Visibility Points</VText>
+            <Animated.View entering={SlideInRight.delay(100)}>
+              <VCard variant="outline" style={styles.metricCard}>
+                <View style={styles.metricIconRow}>
+                  <Ionicons name="star" size={20} color={theme.colors.warning} />
+                  <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: 'bold' }}>+45</VText>
+                </View>
+                <VText variant="h1" style={{ fontSize: normalize(24), marginVertical: 4 }}>1,240</VText>
+                <VText variant="caption" color={theme.colors.textMuted}>Visibility Points</VText>
+              </VCard>
             </Animated.View>
 
-            <Animated.View entering={SlideInRight.delay(200)} style={styles.metricCard}>
-              <View style={styles.metricIconRow}>
-                <Ionicons name="people" size={20} color={theme.colors.primary} />
-                <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: 'bold' }}>Active</VText>
-              </View>
-              <VText variant="h1" style={{ fontSize: normalize(24), marginVertical: 4 }}>382</VText>
-              <VText variant="caption" color={theme.colors.textMuted}>User Check-ins</VText>
+            <Animated.View entering={SlideInRight.delay(200)}>
+              <VCard variant="outline" style={styles.metricCard}>
+                <View style={styles.metricIconRow}>
+                  <Ionicons name="people" size={20} color={theme.colors.primary} />
+                  <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: 'bold' }}>Active</VText>
+                </View>
+                <VText variant="h1" style={{ fontSize: normalize(24), marginVertical: 4 }}>382</VText>
+                <VText variant="caption" color={theme.colors.textMuted}>User Check-ins</VText>
+              </VCard>
             </Animated.View>
 
-            <Animated.View entering={SlideInRight.delay(300)} style={styles.metricCard}>
-              <View style={styles.metricIconRow}>
-                <Ionicons name="cube" size={20} color={theme.colors.primary} />
-                <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: 'bold' }}>Good</VText>
-              </View>
-              <VText variant="h1" style={{ fontSize: normalize(24), marginVertical: 4 }}>94%</VText>
-              <VText variant="caption" color={theme.colors.textMuted}>Active Services</VText>
+            <Animated.View entering={SlideInRight.delay(300)}>
+              <VCard variant="outline" style={styles.metricCard}>
+                <View style={styles.metricIconRow}>
+                  <Ionicons name="cube" size={20} color={theme.colors.primary} />
+                  <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: 'bold' }}>Good</VText>
+                </View>
+                <VText variant="h1" style={{ fontSize: normalize(24), marginVertical: 4 }}>94%</VText>
+                <VText variant="caption" color={theme.colors.textMuted}>Active Services</VText>
+              </VCard>
             </Animated.View>
           </ScrollView>
         </Animated.View>
@@ -327,15 +348,15 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
           </View>
 
           <View style={styles.gridContainer}>
-            <TouchableOpacity activeOpacity={0.8} style={styles.gridBox} onPress={onManageProducts}>
+            <VCard variant="outline" style={styles.gridBox} onPress={onManageProducts}>
               <View style={styles.gridIconCircle}>
                 <Ionicons name="storefront" size={24} color={theme.colors.primary} />
               </View>
               <VText variant="h3" style={{ fontSize: normalize(16), marginBottom: 4 }}>Services</VText>
               <VText variant="caption" color={theme.colors.textMuted}>Edit listings</VText>
-            </TouchableOpacity>
+            </VCard>
 
-            <TouchableOpacity activeOpacity={0.8} style={styles.gridBox} onPress={() => onStartChat('general')}>
+            <VCard variant="outline" style={styles.gridBox} onPress={() => onStartChat('general')}>
               <View style={styles.gridIconCircle}>
                 <Ionicons name="chatbubbles" size={24} color={theme.colors.primary} />
                 <View style={styles.gridBadge}>
@@ -344,9 +365,9 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
               </View>
               <VText variant="h3" style={{ fontSize: normalize(16), marginBottom: 4 }}>Inquiries</VText>
               <VText variant="caption" color={theme.colors.textMuted}>Chat with leads</VText>
-            </TouchableOpacity>
+            </VCard>
 
-            <TouchableOpacity activeOpacity={0.8} style={styles.gridBox} onPress={() => Alert.alert('Reviews', 'Review manager will open here.')}>
+            <VCard variant="outline" style={styles.gridBox} onPress={() => Alert.alert('Reviews', 'Review manager will open here.')}>
               <View style={styles.gridIconCircle}>
                 <Ionicons name="star-half" size={24} color={theme.colors.primary} />
                 <View style={styles.gridBadge}>
@@ -355,23 +376,23 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
               </View>
               <VText variant="h3" style={{ fontSize: normalize(16), marginBottom: 4 }}>Reviews</VText>
               <VText variant="caption" color={theme.colors.textMuted}>Manage feedback</VText>
-            </TouchableOpacity>
+            </VCard>
 
-            <TouchableOpacity activeOpacity={0.8} style={styles.gridBox} onPress={() => { Alert.alert('Redeem', 'Redirecting to Growth Hub...'); onViewGrowth?.(); }}>
+            <VCard variant="outline" style={styles.gridBox} onPress={() => { Alert.alert('Redeem', 'Redirecting to Growth Hub...'); onViewGrowth?.(); }}>
               <View style={styles.gridIconCircle}>
                 <Ionicons name="rocket" size={24} color={theme.colors.primary} />
               </View>
               <VText variant="h3" style={{ fontSize: normalize(16), marginBottom: 4 }}>Redeem</VText>
               <VText variant="caption" color={theme.colors.textMuted}>Use points</VText>
-            </TouchableOpacity>
+            </VCard>
 
-            <TouchableOpacity activeOpacity={0.8} style={styles.gridBox} onPress={onManageSubscription}>
+            <VCard variant="outline" style={styles.gridBox} onPress={onManageSubscription}>
               <View style={styles.gridIconCircle}>
                 <Ionicons name="diamond" size={24} color={theme.colors.primary} />
               </View>
               <VText variant="h3" style={{ fontSize: normalize(16), marginBottom: 4 }}>Plan</VText>
               <VText variant="caption" color={theme.colors.textMuted}>{myVendorPlan.name}</VText>
-            </TouchableOpacity>
+            </VCard>
           </View>
         </Animated.View>
 

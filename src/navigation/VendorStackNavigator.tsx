@@ -46,6 +46,10 @@ const RegistrationSuccessAdapter = () => {
   return (
     <RegistrationSuccessScreen
       onGoToDashboard={() => nav.navigate('VendorTabs')}
+      onAddFirstService={() => {
+        // Direct to Services tab within the VendorTabs navigator
+        nav.navigate('VendorTabs', { screen: 'Services' });
+      }}
     />
   );
 };

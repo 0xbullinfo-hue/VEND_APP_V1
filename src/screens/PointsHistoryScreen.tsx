@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet, View, SafeAreaView, FlatList } from 'react-native';
+import { StyleSheet, View, FlatList } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme, normalize } from '../theme/designSystem';
 import { VText, HeaderBar } from '../components/SharedComponents';
 import { useApp } from '../contexts/AppContext';

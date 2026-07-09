@@ -2,16 +2,16 @@ import React, { useMemo, useState, useRef } from 'react';
 import {
   StyleSheet,
   View,
+  FlatList,
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Image,
   Modal,
 } from 'react-native';
 import { theme, normalize } from '../../theme/designSystem';
-import { VText, HeaderBar } from '../../components/SharedComponents';
+import { VText, HeaderBar, VImage, VCard } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
-import { Ionicons } from '../../components/VIcons';
+import { Ionicons, IonIconName } from '../../components/VIcons';
 import { CATEGORY_CATALOG } from '../../lib/categoryCatalog';
 import { rankVendorsForCustomer } from '../../lib/vendorRanking';
 import { getRankingPolicy } from '../../lib/rankingTransparency';
@@ -86,163 +86,161 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
     addPoints(2); // Earn points for narrowing down
   };
 
-  const renderVendors = () => {
-    if (filteredVendors.length === 0) {
-      return (
-        <View style={styles.emptyContainer}>
-          <Ionicons name="search-outline" size={normalize(48)} color={theme.colors.textMuted} />
-          <VText variant="body" color={theme.colors.textMuted} align="center" style={{ marginTop: theme.spacing.sm }}>
-            No active vendors found in this category right now.
-          </VText>
-        </View>
-      );
-    }
-
-    return filteredVendors.map((vendor) => {
-      const isPremium = vendor.subscription_tier > 1;
-      return (
-        <TouchableOpacity
-          key={vendor.id}
-          activeOpacity={0.85}
-          onPress={() => {
-            trackProfileView(vendor.id, { actorUserId: user?.id, localityId: vendor.locality_id });
-            
-            // Track engagement: vendor view
-            engagementStore.recordVendorInteraction(vendor.id, 'view', 0);
-            engagementStore.addBrowsingEvent({
-              vendorId: vendor.id,
-              vendorName: vendor.business_name,
-              category: vendor.category,
-              durationSeconds: 15, // Estimate for profile view
-              interactionType: 'view',
-            });
-            
-            onViewVendorProfile(vendor.id);
-          }}
-          style={[
-            styles.vendorResultCard,
-            isPremium ? styles.cardPremium : styles.cardNormal,
-            theme.shadows.soft,
-          ]}
-        >
-          <Image source={{ uri: vendor.image }} style={styles.vendorCardImg} />
-          <View style={styles.vendorCardInfo}>
-            <View style={styles.vendorTitleRow}>
-              <VText variant="h3" numberOfLines={1} style={{ maxWidth: '70%' }}>
-                {vendor.business_name}
-              </VText>
-              {isPremium && (
-                <View style={styles.premiumBadge}>
-                  <Ionicons name="sparkles" size={8} color="#FFFFFF" style={{ marginRight: 2 }} />
-                  <VText variant="caption" color="#FFFFFF" style={{ fontSize: normalize(8) }}>
-                    BOOSTED
-                  </VText>
-                </View>
-              )}
-            </View>
-
-            <VText variant="caption" color={theme.colors.textMuted} numberOfLines={1}>
-              {vendor.sub_category} • {vendor.is_home_based ? 'Home-Based' : 'Physical Shop'}
-            </VText>
-
-            <View style={styles.ratingRow}>
-              <Ionicons name="star" size={normalize(12)} color={theme.colors.warning} />
-              <VText variant="caption" style={{ marginLeft: 4 }}>
-                {vendor.rating}
-              </VText>
-              <View
-                style={[
-                  styles.statusDot,
-                  { backgroundColor: vendor.is_open ? theme.colors.accent : theme.colors.textMuted },
-                ]}
-              />
-              <VText
-                variant="caption"
-                color={vendor.is_open ? theme.colors.accent : theme.colors.textMuted}
-                style={{ fontSize: 9 }}
-              >
-                {vendor.is_open ? 'ONLINE' : 'OFFLINE'}
-              </VText>
-              {isPremium && (
-                <View style={[styles.rankReasonBadge]}>
-                  <VText variant="caption" color={theme.colors.primary} style={{ fontSize: 7, fontWeight: '700' }}>Boosted</VText>
-                </View>
-              )}
-            </View>
-          </View>
-        </TouchableOpacity>
-      );
-    });
-  };
 
   const renderGridMode = () => {
     return (
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.gridModeContent}>
-        <View style={styles.gridCategoryWrap}>
-          {CATEGORY_CATALOG.map((cat, idx) => {
-            const isActive = idx === activeCategoryIndex;
-            return (
-              <TouchableOpacity
-                key={cat.name}
-                activeOpacity={0.85}
-                onPress={() => handleCategoryPress(idx)}
-                style={[styles.gridCategoryCard, isActive && styles.gridCategoryCardActive]}
-              >
-                <View style={[styles.gridIconShell, { backgroundColor: isActive ? '#FFFFFF' : cat.color }]}>
-                  <Ionicons
-                    name={cat.icon as any}
-                    size={normalize(20)}
-                    color={theme.colors.primary}
-                  />
-                </View>
-                <VText
-                  variant="subtext"
-                  align="center"
-                  color={isActive ? '#FFFFFF' : theme.colors.textMain}
-                  style={styles.gridCategoryText}
-                >
-                  {cat.name}
+      <FlatList
+        data={filteredVendors}
+        keyExtractor={item => item.id}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.gridModeContent}
+        ListHeaderComponent={(
+          <>
+            <View style={styles.gridCategoryWrap}>
+              {CATEGORY_CATALOG.map((cat, idx) => {
+                const isActive = idx === activeCategoryIndex;
+                return (
+                  <TouchableOpacity
+                    key={cat.name}
+                    activeOpacity={0.85}
+                    onPress={() => handleCategoryPress(idx)}
+                    style={[styles.gridCategoryCard, isActive && styles.gridCategoryCardActive]}
+                  >
+                    <View style={[styles.gridIconShell, { backgroundColor: isActive ? '#FFFFFF' : cat.color }]}>
+                      <Ionicons
+                        name={cat.icon as IonIconName}
+                        size={normalize(20)}
+                        color={theme.colors.primary}
+                      />
+                    </View>
+                    <VText
+                      variant="subtext"
+                      align="center"
+                      color={isActive ? '#FFFFFF' : theme.colors.textMain}
+                      style={styles.gridCategoryText}
+                    >
+                      {cat.name}
+                    </VText>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <View style={styles.subcategoryBarGridMode}>
+              <VText variant="h3" style={{ marginBottom: theme.spacing.sm }}>
+                {activeCategory.name}
+              </VText>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.subTagScroll}>
+                {activeCategory.subcategories.map((sub) => {
+                  const isSelected = selectedSubcategory === sub;
+                  return (
+                    <TouchableOpacity
+                      key={sub}
+                      activeOpacity={0.8}
+                      onPress={() => handleSubcategoryPress(sub)}
+                      style={[styles.subTag, isSelected ? styles.subTagActive : styles.subTagInactive]}
+                    >
+                      <VText variant="caption" color={isSelected ? theme.colors.background : theme.colors.primary}>
+                        {sub}
+                      </VText>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+
+            <View style={styles.resultsHeader}>
+              <View>
+                <VText variant="caption" color={theme.colors.textMuted}>
+                  {filteredVendors.length} VENDORS FOUND
                 </VText>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        <View style={styles.subcategoryBarGridMode}>
-          <VText variant="h3" style={{ marginBottom: theme.spacing.sm }}>
-            {activeCategory.name}
-          </VText>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.subTagScroll}>
-            {activeCategory.subcategories.map((sub) => {
-              const isSelected = selectedSubcategory === sub;
-              return (
-                <TouchableOpacity
-                  key={sub}
-                  activeOpacity={0.8}
-                  onPress={() => handleSubcategoryPress(sub)}
-                  style={[styles.subTag, isSelected ? styles.subTagActive : styles.subTagInactive]}
-                >
-                  <VText variant="caption" color={isSelected ? theme.colors.background : theme.colors.primary}>
-                    {sub}
-                  </VText>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        </View>
-
-        <View style={styles.resultsHeader}>
-          <View>
-            <VText variant="caption" color={theme.colors.textMuted}>
-              {filteredVendors.length} VENDORS FOUND
-            </VText>
-            <VText variant="caption" color={theme.colors.primary}>
-              Boosted profiles prioritized in your locality
+                <VText variant="caption" color={theme.colors.primary}>
+                  Boosted profiles prioritized in your locality
+                </VText>
+              </View>
+            </View>
+          </>
+        )}
+        ListEmptyComponent={(
+          <View style={styles.emptyContainer}>
+            <Ionicons name="search-outline" size={normalize(48)} color={theme.colors.textMuted} />
+            <VText variant="body" color={theme.colors.textMuted} align="center" style={{ marginTop: theme.spacing.sm }}>
+              No active vendors found in this category right now.
             </VText>
           </View>
-        </View>
-        {renderVendors()}
-      </ScrollView>
+        )}
+        renderItem={({ item: vendor }) => {
+          const isPremium = vendor.subscription_tier > 1;
+          return (
+            <VCard
+              variant={isPremium ? 'elevated' : 'outline'}
+              onPress={() => {
+                trackProfileView(vendor.id, { actorUserId: user?.id, localityId: vendor.locality_id });
+
+                // Track engagement: vendor view
+                engagementStore.recordVendorInteraction(vendor.id, 'view', 0);
+                engagementStore.addBrowsingEvent({
+                  vendorId: vendor.id,
+                  vendorName: vendor.business_name,
+                  category: vendor.category,
+                  durationSeconds: 15, // Estimate for profile view
+                  interactionType: 'view',
+                });
+
+                onViewVendorProfile(vendor.id);
+              }}
+              style={[
+                styles.vendorResultCard,
+                isPremium ? styles.cardPremium : styles.cardNormal,
+              ]}
+            >
+              <VImage source={vendor.image} style={styles.vendorCardImg} />
+              <View style={styles.vendorCardInfo}>
+                <View style={styles.vendorTitleRow}>
+                  <VText variant="h3" numberOfLines={1} style={{ maxWidth: '70%' }}>
+                    {vendor.business_name}
+                  </VText>
+                  {isPremium && (
+                    <View style={styles.premiumBadge}>
+                      <Ionicons name="sparkles" size={10} color="#FFFFFF" style={{ marginRight: 2 }} />
+                      <VText variant="caption" color="#FFFFFF">BOOSTED</VText>
+                    </View>
+                  )}
+                </View>
+
+                <VText variant="caption" color={theme.colors.textMuted} numberOfLines={1}>
+                  {vendor.sub_category} • {vendor.is_home_based ? 'Home-Based' : 'Physical Shop'}
+                </VText>
+
+                <View style={styles.ratingRow}>
+                  <Ionicons name="star" size={normalize(12)} color={theme.colors.warning} />
+                  <VText variant="caption" style={{ marginLeft: 4 }}>
+                    {vendor.rating}
+                  </VText>
+                  <View
+                    style={[
+                      styles.statusDot,
+                      { backgroundColor: vendor.is_open ? theme.colors.accent : theme.colors.textMuted },
+                    ]}
+                  />
+                  <VText
+                    variant="caption"
+                    color={vendor.is_open ? theme.colors.accent : theme.colors.textMuted}
+                    style={{ fontSize: 9 }}
+                  >
+                    {vendor.is_open ? 'ONLINE' : 'OFFLINE'}
+                  </VText>
+                  {isPremium && (
+                    <View style={[styles.rankReasonBadge]}>
+                      <VText variant="caption" color={theme.colors.primary} style={{ fontSize: 7, fontWeight: '700' }}>Boosted</VText>
+                    </View>
+                  )}
+                </View>
+              </View>
+            </VCard>
+          );
+        }}
+      />
     );
   };
 
@@ -261,7 +259,7 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
                   style={[styles.categoryMenuItem, isActive ? styles.itemActive : styles.itemInactive]}
                 >
                   <View style={[styles.iconBox, { backgroundColor: isActive ? theme.colors.background : cat.color }]}>
-                    <Ionicons name={cat.icon as any} size={normalize(18)} color={theme.colors.primary} />
+                    <Ionicons name={cat.icon as IonIconName} size={normalize(18)} color={theme.colors.primary} />
                   </View>
                   <VText
                     variant="caption"
@@ -302,19 +300,105 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
             </ScrollView>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.resultsScroll}>
-            <View style={styles.resultsHeader}>
-              <View>
-                <VText variant="caption" color={theme.colors.textMuted}>
-                  {filteredVendors.length} VENDORS FOUND
-                </VText>
-                <VText variant="caption" color={theme.colors.primary}>
-                  Boosted profiles prioritized in your locality
+          <FlatList
+            data={filteredVendors}
+            keyExtractor={item => item.id}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.resultsScroll}
+            ListHeaderComponent={(
+              <View style={styles.resultsHeader}>
+                <View>
+                  <VText variant="caption" color={theme.colors.textMuted}>
+                    {filteredVendors.length} VENDORS FOUND
+                  </VText>
+                  <VText variant="caption" color={theme.colors.primary}>
+                    Boosted profiles prioritized in your locality
+                  </VText>
+                </View>
+              </View>
+            )}
+            ListEmptyComponent={(
+              <View style={styles.emptyContainer}>
+                <Ionicons name="search-outline" size={normalize(48)} color={theme.colors.textMuted} />
+                <VText variant="body" color={theme.colors.textMuted} align="center" style={{ marginTop: theme.spacing.sm }}>
+                  No active vendors found in this category right now.
                 </VText>
               </View>
-            </View>
-            {renderVendors()}
-          </ScrollView>
+            )}
+            renderItem={({ item: vendor }) => {
+              const isPremium = vendor.subscription_tier > 1;
+              return (
+                <VCard
+                  variant={isPremium ? 'elevated' : 'outline'}
+                  onPress={() => {
+                    trackProfileView(vendor.id, { actorUserId: user?.id, localityId: vendor.locality_id });
+
+                    // Track engagement: vendor view
+                    engagementStore.recordVendorInteraction(vendor.id, 'view', 0);
+                    engagementStore.addBrowsingEvent({
+                      vendorId: vendor.id,
+                      vendorName: vendor.business_name,
+                      category: vendor.category,
+                      durationSeconds: 15, // Estimate for profile view
+                      interactionType: 'view',
+                    });
+
+                    onViewVendorProfile(vendor.id);
+                  }}
+                  style={[
+                    styles.vendorResultCard,
+                    isPremium ? styles.cardPremium : styles.cardNormal,
+                  ]}
+                >
+                  <VImage source={vendor.image} style={styles.vendorCardImg} />
+                  <View style={styles.vendorCardInfo}>
+                    <View style={styles.vendorTitleRow}>
+                      <VText variant="h3" numberOfLines={1} style={{ maxWidth: '70%' }}>
+                        {vendor.business_name}
+                      </VText>
+                      {isPremium && (
+                        <View style={styles.premiumBadge}>
+                          <Ionicons name="sparkles" size={8} color="#FFFFFF" style={{ marginRight: 2 }} />
+                          <VText variant="caption" color="#FFFFFF" style={{ fontSize: normalize(8) }}>
+                            BOOSTED
+                          </VText>
+                        </View>
+                      )}
+                    </View>
+
+                    <VText variant="caption" color={theme.colors.textMuted} numberOfLines={1}>
+                      {vendor.sub_category} • {vendor.is_home_based ? 'Home-Based' : 'Physical Shop'}
+                    </VText>
+
+                    <View style={styles.ratingRow}>
+                      <Ionicons name="star" size={normalize(12)} color={theme.colors.warning} />
+                      <VText variant="caption" style={{ marginLeft: 4 }}>
+                        {vendor.rating}
+                      </VText>
+                      <View
+                        style={[
+                          styles.statusDot,
+                          { backgroundColor: vendor.is_open ? theme.colors.accent : theme.colors.textMuted },
+                        ]}
+                      />
+                      <VText
+                        variant="caption"
+                        color={vendor.is_open ? theme.colors.accent : theme.colors.textMuted}
+                        style={{ fontSize: 9 }}
+                      >
+                        {vendor.is_open ? 'ONLINE' : 'OFFLINE'}
+                      </VText>
+                      {isPremium && (
+                        <View style={[styles.rankReasonBadge]}>
+                          <VText variant="caption" color={theme.colors.primary} style={{ fontSize: 7, fontWeight: '700' }}>Boosted</VText>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                </VCard>
+              );
+            }}
+          />
         </View>
       </View>
     );

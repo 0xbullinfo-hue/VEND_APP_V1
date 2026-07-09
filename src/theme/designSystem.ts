@@ -30,44 +30,35 @@ export const theme = {
     overlay: 'rgba(0, 0, 0, 0.4)',
   },
   typography: {
-    // System-safe font stack. Inter is shipped as 'Inter' on iOS 16+ and
-    // Android 12+ natively. On older OS, it falls back to the system sans-serif.
-    // All weight differences are expressed via fontWeight so no custom font
-    // loading/Expo font hook is needed.
-    fontDisplay: 'Inter',
-    fontSans: 'Inter',
+    // Brand typeface: Inter
+    fontDisplay: 'Inter-Black',
+    fontSans: 'Inter-Medium',
     h1: {
       fontSize: normalize(28),
-      fontFamily: 'Inter',
-      fontWeight: '900' as const,
+      fontFamily: 'Inter-Black',
       letterSpacing: -0.5,
     },
     h2: {
       fontSize: normalize(20),
-      fontFamily: 'Inter',
-      fontWeight: '800' as const,
+      fontFamily: 'Inter-ExtraBold',
       letterSpacing: -0.3,
     },
     h3: {
       fontSize: normalize(16),
-      fontFamily: 'Inter',
-      fontWeight: '700' as const,
+      fontFamily: 'Inter-Bold',
     },
     body: {
       fontSize: normalize(14),
-      fontFamily: 'Inter',
-      fontWeight: '500' as const,
+      fontFamily: 'Inter-Medium',
       lineHeight: normalize(20),
     },
     subtext: {
       fontSize: normalize(12),
-      fontFamily: 'Inter',
-      fontWeight: '500' as const,
+      fontFamily: 'Inter-Regular',
     },
     caption: {
       fontSize: normalize(10),
-      fontFamily: 'Inter',
-      fontWeight: '700' as const,
+      fontFamily: 'Inter-Bold',
       letterSpacing: 0.5,
     },
   },

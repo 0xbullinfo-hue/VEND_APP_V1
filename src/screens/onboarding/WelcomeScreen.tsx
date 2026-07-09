@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet, View, Image, SafeAreaView, Dimensions } from 'react-native';
+import { StyleSheet, View, Image, Dimensions } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, FadeInDown, FadeIn } from 'react-native-reanimated';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, VButton } from '../../components/SharedComponents';

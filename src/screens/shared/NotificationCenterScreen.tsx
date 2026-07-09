@@ -120,6 +120,7 @@ export const NotificationCenterScreen: React.FC<NotificationCenterScreenProps> =
           <TouchableOpacity
             style={styles.closeBtn}
             onPress={() => handleClearNotification(notification.id)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Ionicons name="close-circle-outline" size={20} color={theme.colors.textMuted} />
           </TouchableOpacity>
@@ -138,7 +139,7 @@ export const NotificationCenterScreen: React.FC<NotificationCenterScreenProps> =
 
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
-      <Ionicons name="bell-off-outline" size={normalize(48)} color={theme.colors.textMuted} />
+      <Ionicons name="notifications-off-outline" size={normalize(48)} color={theme.colors.textMuted} />
       <VText variant="body" color={theme.colors.textMuted} align="center" style={{ marginTop: theme.spacing.md }}>
         No notifications yet
       </VText>

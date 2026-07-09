@@ -3,7 +3,7 @@ import { Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from './createStackNavigatorCompat';
-import { Ionicons } from '../components/VIcons';
+import { Ionicons, IonIconName } from '../components/VIcons';
 import { theme, normalize } from '../theme/designSystem';
 import { useApp } from '../contexts/AppContext';
 
@@ -79,7 +79,7 @@ export const VendorTabNavigator = () => {
           else if (route.name === 'Services') iconName = focused ? 'storefront'  : 'storefront-outline';
           else if (route.name === 'Growth')   iconName = focused ? 'trending-up' : 'trending-up-outline';
           else if (route.name === 'VendorProfile') iconName = focused ? 'person' : 'person-outline';
-          return <Ionicons name={iconName as any} size={normalize(20)} color={color} />;
+          return <Ionicons name={iconName as IonIconName} size={normalize(20)} color={color} />;
         },
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.textMuted,

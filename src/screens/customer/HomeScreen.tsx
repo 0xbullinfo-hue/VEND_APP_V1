@@ -14,9 +14,9 @@ import Animated, { FadeInUp, FadeInRight, Layout } from 'react-native-reanimated
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import MapView, { Marker, Circle, PROVIDER_GOOGLE } from '../../components/MapViewCompat';
 import { theme, normalize } from '../../theme/designSystem';
-import { VText, HeaderBar, VButton, VSkeleton, VImage } from '../../components/SharedComponents';
+import { VText, HeaderBar, VButton, VSkeleton, VImage, VCard } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
-import { Ionicons } from '../../components/VIcons';
+import { Ionicons, IonIconName } from '../../components/VIcons';
 import { uberMapStyle } from '../../theme/mapStyles';
 import { CATEGORY_CATALOG, getCategoryMeta } from '../../lib/categoryCatalog';
 import { rankVendorsForCustomer } from '../../lib/vendorRanking';
@@ -283,7 +283,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                       ]}
                     >
                       <Ionicons
-                        name={cat.icon as any}
+                        name={cat.icon as IonIconName}
                         size={normalize(13)}
                         color={isSelected ? theme.colors.background : theme.colors.primary}
                         style={{ marginRight: 4 }}
@@ -374,7 +374,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   theme.shadows.glow
                 ]}>
                   <Ionicons 
-                    name={catIcon as any} 
+                    name={catIcon as IonIconName}
                     size={normalize(14)} 
                     color={isSelected ? theme.colors.background : theme.colors.primary} 
                   />
@@ -391,11 +391,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
         {/* Floating Zoom Controls */}
         <View style={styles.zoomControls}>
-          <TouchableOpacity activeOpacity={0.8} onPress={handleZoomIn} style={styles.zoomBtn}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={handleZoomIn}
+            style={styles.zoomBtn}
+            hitSlop={{ top: 5, bottom: 5, left: 15, right: 15 }}
+          >
             <Ionicons name="add" size={24} color={theme.colors.primary} />
           </TouchableOpacity>
           <View style={styles.zoomDivider} />
-          <TouchableOpacity activeOpacity={0.8} onPress={handleZoomOut} style={styles.zoomBtn}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={handleZoomOut}
+            style={styles.zoomBtn}
+            hitSlop={{ top: 5, bottom: 5, left: 15, right: 15 }}
+          >
             <Ionicons name="remove" size={24} color={theme.colors.primary} />
           </TouchableOpacity>
         </View>
@@ -441,8 +451,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   entering={FadeInRight.delay(100 * index).duration(500)}
                   layout={Layout.springify()}
                 >
-                  <TouchableOpacity
-                    activeOpacity={0.8}
+                  <VCard
                     onPress={() => {
                       trackProfileView(v.id, { actorUserId: user?.id, localityId: v.locality_id });
                       engagementStore.recordVendorInteraction(v.id, 'view', 0);
@@ -455,7 +464,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                       });
                       onViewVendorProfile(v.id);
                     }}
-                    style={[styles.promoCard, theme.shadows.soft]}
+                    style={styles.promoCard}
                   >
                     <VImage source={v.image} style={styles.promoCardImage} />
                     <View style={styles.promoCardContent}>
@@ -468,7 +477,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                         </VText>
                       </View>
                     </View>
-                  </TouchableOpacity>
+                  </VCard>
                 </Animated.View>
               ))
             )}

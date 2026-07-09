@@ -1,3 +1,5 @@
+import { NavigatorScreenParams } from '@react-navigation/native';
+
 /**
  * Navigation Type Definitions
  *
@@ -28,6 +30,8 @@ export type CustomerStackParamList = {
   LeaveReview: { vendorId: string };
   Chat: { recipientId: string };
   PointsHistory: undefined;
+  TermsOfService: undefined;
+  PrivacyPolicy: undefined;
 };
 
 // ─── Customer Tab Bar ─────────────────────────────────────────────────────────
@@ -40,7 +44,7 @@ export type CustomerTabParamList = {
 
 // ─── Vendor Stack (wraps tabs + full-screen overlays) ────────────────────────
 export type VendorStackParamList = {
-  VendorTabs: undefined;
+  VendorTabs: NavigatorScreenParams<VendorTabParamList> | undefined;
   SubscriptionManager: undefined;
   LocationSetup: undefined;
   RegistrationSuccess: undefined;

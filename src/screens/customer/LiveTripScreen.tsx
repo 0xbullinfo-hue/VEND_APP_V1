@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { StyleSheet, View, SafeAreaView, TouchableOpacity, Share, Alert, Platform } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, Share, Alert, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from '../../components/MapViewCompat';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, VButton, HeaderBar } from '../../components/SharedComponents';

@@ -4,13 +4,12 @@ import {
   View, 
   ScrollView, 
   TouchableOpacity, 
-  Image, 
   Alert,
   Text,
   Platform
 } from 'react-native';
 import { theme, normalize } from '../../theme/designSystem';
-import { VText, VButton, HeaderBar } from '../../components/SharedComponents';
+import { VText, VButton, HeaderBar, VImage } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
 import { Ionicons } from '../../components/VIcons';
 
@@ -93,7 +92,7 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Vendor Banner Image */}
-        <Image source={{ uri: vendor.image }} style={styles.bannerImage} />
+        <VImage source={vendor.image} style={styles.bannerImage} />
 
         {/* Business Title Details */}
         <View style={styles.infoSection}>

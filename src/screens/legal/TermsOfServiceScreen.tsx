@@ -11,18 +11,29 @@ import { VText, VButton } from '../../components/SharedComponents';
 import { Ionicons } from '../../components/VIcons';
 
 interface TermsOfServiceScreenProps {
-  onAccept: () => void;
-  onDecline: () => void;
+  onAccept?: () => void;
+  onDecline?: () => void;
+  onBack?: () => void;
+  hideActions?: boolean;
 }
 
 export const TermsOfServiceScreen: React.FC<TermsOfServiceScreenProps> = ({
   onAccept,
   onDecline,
+  onBack,
+  hideActions = false
 }) => {
   const [accepted, setAccepted] = useState(false);
 
   return (
     <SafeAreaView style={styles.container}>
+      {hideActions && (
+        <View style={{ padding: theme.spacing.md }}>
+          <TouchableOpacity onPress={onBack} style={{ width: 40, height: 40, justifyContent: 'center' }}>
+            <Ionicons name="arrow-back" size={24} color={theme.colors.textMain} />
+          </TouchableOpacity>
+        </View>
+      )}
       <ScrollView
         style={styles.content}
         contentContainerStyle={styles.scrollContent}
@@ -136,50 +147,54 @@ export const TermsOfServiceScreen: React.FC<TermsOfServiceScreenProps> = ({
         </View>
 
         {/* Acceptance Checkbox */}
-        <TouchableOpacity
-          style={styles.checkboxContainer}
-          onPress={() => setAccepted(!accepted)}
-          accessibilityLabel="Accept terms of service"
-          accessibilityRole="checkbox"
-          accessibilityState={{ checked: accepted }}
-        >
-          <View
-            style={[
-              styles.checkbox,
-              accepted && styles.checkboxChecked,
-            ]}
+        {!hideActions && (
+          <TouchableOpacity
+            style={styles.checkboxContainer}
+            onPress={() => setAccepted(!accepted)}
+            accessibilityLabel="Accept terms of service"
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: accepted }}
           >
-            {accepted && (
-              <Ionicons
-                name="checkmark"
-                size={16}
-                color="#FFFFFF"
-              />
-            )}
-          </View>
-          <VText variant="body" color={theme.colors.textMain} style={styles.checkboxLabel}>
-            I agree to the Terms of Service
-          </VText>
-        </TouchableOpacity>
+            <View
+              style={[
+                styles.checkbox,
+                accepted && styles.checkboxChecked,
+              ]}
+            >
+              {accepted && (
+                <Ionicons
+                  name="checkmark"
+                  size={16}
+                  color="#FFFFFF"
+                />
+              )}
+            </View>
+            <VText variant="body" color={theme.colors.textMain} style={styles.checkboxLabel}>
+              I agree to the Terms of Service
+            </VText>
+          </TouchableOpacity>
+        )}
       </ScrollView>
 
       {/* Action Buttons */}
-      <View style={styles.buttonContainer}>
-        <VButton
-          title="Decline"
-          onPress={onDecline}
-          variant="secondary"
-          disabled={false}
-          style={styles.button}
-        />
-        <VButton
-          title="Accept & Continue"
-          onPress={onAccept}
-          variant="primary"
-          disabled={!accepted}
-          style={styles.button}
-        />
-      </View>
+      {!hideActions && (
+        <View style={styles.buttonContainer}>
+          <VButton
+            title="Decline"
+            onPress={onDecline!}
+            variant="secondary"
+            disabled={false}
+            style={styles.button}
+          />
+          <VButton
+            title="Accept & Continue"
+            onPress={onAccept!}
+            variant="primary"
+            disabled={!accepted}
+            style={styles.button}
+          />
+        </View>
+      )}
     </SafeAreaView>
   );
 };

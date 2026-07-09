@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, SafeAreaView, Modal, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, Modal, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, VButton, VInput } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';

@@ -102,7 +102,10 @@ export const useTripStore = create<TripState>((set, get) => ({
   },
 
   triggerSOS: () => {
-    useUIStore.getState().triggerNotification("🚨 SOS ACTIVATED! Emergency contacts and local security notified with your live location.");
+    // Note: This is currently a simulated safety action.
+    // In a production environment, this would integrate with an SMS gateway (e.g. Twilio)
+    // or a backend emergency dispatch system to send live coordinates to the contacts below.
+    useUIStore.getState().triggerNotification("🚨 SOS SIMULATED: Your coordinates have been logged. Please call emergency services (112/999) if you are in immediate danger.");
   },
 
   resetTrips: () => {

@@ -1,16 +1,19 @@
 import React from 'react';
-import { View, StyleSheet, SafeAreaView, Image } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme, normalize } from '../../theme/designSystem';
-import { VText, VButton } from '../../components/SharedComponents';
+import { VText, VButton, VImage } from '../../components/SharedComponents';
 import { Ionicons } from '../../components/VIcons';
 import { useApp } from '../../contexts/AppContext';
 
 interface RegistrationSuccessScreenProps {
   onGoToDashboard: () => void;
+  onAddFirstService: () => void;
 }
 
 export const RegistrationSuccessScreen: React.FC<RegistrationSuccessScreenProps> = ({
-  onGoToDashboard
+  onGoToDashboard,
+  onAddFirstService
 }) => {
   const { vendors, myVendorProfile } = useApp();
   const vendor = myVendorProfile || vendors[0];
@@ -32,7 +35,7 @@ export const RegistrationSuccessScreen: React.FC<RegistrationSuccessScreenProps>
 
         <View style={styles.summaryCard}>
           <View style={styles.summaryTop}>
-            <Image source={{ uri: vendor.image }} style={styles.storeLogo} />
+            <VImage source={vendor.image} style={styles.storeLogo} />
             <View style={styles.storeInfo}>
               <VText variant="h2">{vendor.business_name}</VText>
               <VText variant="caption" color={theme.colors.textMuted} style={{ marginTop: 4 }}>
@@ -64,7 +67,7 @@ export const RegistrationSuccessScreen: React.FC<RegistrationSuccessScreenProps>
         />
         <VButton
           title="Add First Service"
-          onPress={() => {}}
+          onPress={onAddFirstService}
           variant="outline"
           style={[styles.fullBtn, { marginTop: theme.spacing.md }]}
         />

@@ -2,7 +2,7 @@ import React from 'react';
 import { Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useNavigation } from '@react-navigation/native';
-import { Ionicons } from '../components/VIcons';
+import { Ionicons, IonIconName } from '../components/VIcons';
 import { theme, normalize } from '../theme/designSystem';
 import { useApp } from '../contexts/AppContext';
 
@@ -82,7 +82,7 @@ export const UserTabNavigator = () => {
           else if (route.name === 'Explore') iconName = focused ? 'grid'          : 'grid-outline';
           else if (route.name === 'Rewards') iconName = focused ? 'gift'          : 'gift-outline';
           else if (route.name === 'Profile') iconName = focused ? 'person'        : 'person-outline';
-          return <Ionicons name={iconName as any} size={normalize(20)} color={color} />;
+          return <Ionicons name={iconName as IonIconName} size={normalize(20)} color={color} />;
         },
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.textMuted,

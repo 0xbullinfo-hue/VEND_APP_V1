@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, ScrollView, TouchableOpacity, Image, Platform, Alert } from 'react-native';
+import { StyleSheet, View, FlatList, ScrollView, TouchableOpacity, Platform, Alert } from 'react-native';
 import Animated, { FadeInUp, Layout } from 'react-native-reanimated';
 import { theme, normalize } from '../../theme/designSystem';
-import { VText, VButton, VInput, HeaderBar } from '../../components/SharedComponents';
+import { VText, VButton, VInput, HeaderBar, VImage, VCard } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
 import { Ionicons } from '../../components/VIcons';
 
@@ -95,13 +95,16 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
         />
       </View>
 
-      <ScrollView contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false}>
-        {vendor.services.map((item: any, index: number) => (
-          <Animated.View
-            key={item.id}
-            entering={FadeInUp.delay(index * 100).duration(500)}
-            layout={Layout.springify()}
-            style={[styles.productCard, theme.shadows.soft]}
+      <FlatList
+        data={vendor.services}
+        keyExtractor={item => item.id}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        ListFooterComponent={<View style={{ height: normalize(180) }} />}
+        renderItem={({ item, index }) => (
+          <VCard
+            variant="outline"
+            style={styles.productCard}
           >
             {/* Top Badge */}
             <View style={[styles.stockBadge, item.stockStatus === 'SOLD OUT' ? styles.stockSoldOut : styles.stockAvailable]}>
@@ -111,7 +114,7 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
             </View>
 
             <View style={styles.productTopRow}>
-              <Image source={{ uri: item.image || 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=500&q=80' }} style={styles.productImg} />
+              <VImage source={item.image} style={styles.productImg} />
               <View style={styles.productInfo}>
                 <VText variant="h3">{item.title}</VText>
                 <VText variant="caption" color={theme.colors.textMuted} style={{ marginVertical: 2 }}>
@@ -126,25 +129,23 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
             <View style={styles.productDivider} />
             
             <View style={styles.productBottomRow}>
-              <TouchableOpacity style={styles.locateBtn}>
+              <TouchableOpacity style={styles.locateBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                 <Ionicons name="location" size={14} color={theme.colors.textMuted} />
                 <VText variant="caption" color={theme.colors.textMuted} style={{ marginLeft: 4 }}>Locate on Map</VText>
               </TouchableOpacity>
               
               <View style={{ flexDirection: 'row', gap: 12 }}>
-                <TouchableOpacity>
+                <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                   <Ionicons name="pencil-outline" size={20} color={theme.colors.textMain} />
                 </TouchableOpacity>
-                <TouchableOpacity>
+                <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                   <Ionicons name="trash-outline" size={20} color={theme.colors.danger} />
                 </TouchableOpacity>
               </View>
             </View>
-          </Animated.View>
-        ))}
-        
-        <View style={{ height: normalize(180) }} />
-      </ScrollView>
+          </VCard>
+        )}
+      />
 
       <View style={styles.floatingActionBox}>
         <VButton

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { StyleSheet, View, SafeAreaView, TouchableOpacity, ScrollView, Platform, PermissionsAndroid, TextInput } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, ScrollView, Platform, PermissionsAndroid, TextInput } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, VButton } from '../../components/SharedComponents';

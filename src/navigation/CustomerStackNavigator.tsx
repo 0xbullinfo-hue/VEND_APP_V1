@@ -23,6 +23,8 @@ import { QRScannerScreen } from '../screens/customer/QRScannerScreen';
 import { LeaveReviewScreen } from '../screens/customer/LeaveReviewScreen';
 import { ChatScreen } from '../screens/shared/ChatScreen';
 import { PointsHistoryScreen } from '../screens/PointsHistoryScreen';
+import { TermsOfServiceScreen } from '../screens/legal/TermsOfServiceScreen';
+import { PrivacyPolicyScreen } from '../screens/legal/PrivacyPolicyScreen';
 
 import type { CustomerStackParamList } from './types';
 import { useApp } from '../contexts/AppContext';
@@ -136,6 +138,26 @@ const PointsHistoryAdapter = () => {
   );
 };
 
+const TermsOfServiceAdapter = () => {
+  const nav = useNavigation<StackNavigationProp<CustomerStackParamList>>();
+  return (
+    <TermsOfServiceScreen
+      onBack={() => nav.goBack()}
+      hideActions={true}
+    />
+  );
+};
+
+const PrivacyPolicyAdapter = () => {
+  const nav = useNavigation<StackNavigationProp<CustomerStackParamList>>();
+  return (
+    <PrivacyPolicyScreen
+      onBack={() => nav.goBack()}
+      hideActions={true}
+    />
+  );
+};
+
 // ─── Stack Navigator ──────────────────────────────────────────────────────────
 
 export const CustomerStackNavigator = () => {
@@ -154,6 +176,8 @@ export const CustomerStackNavigator = () => {
       <Stack.Screen name="LeaveReview"      component={LeaveReviewAdapter} />
       <Stack.Screen name="Chat"             component={ChatAdapter} />
       <Stack.Screen name="PointsHistory"    component={PointsHistoryAdapter} />
+      <Stack.Screen name="TermsOfService"   component={TermsOfServiceAdapter} />
+      <Stack.Screen name="PrivacyPolicy"    component={PrivacyPolicyAdapter} />
     </Stack.Navigator>
   );
 };

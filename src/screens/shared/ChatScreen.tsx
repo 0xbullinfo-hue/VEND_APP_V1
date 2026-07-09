@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   StyleSheet, 
   View, 
-  ScrollView, 
+  FlatList,
   TouchableOpacity, 
   TextInput, 
   KeyboardAvoidingView, 
@@ -53,8 +53,6 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     { id: '3', text: 'Yes, we are open! We have several materials and colors in stock. You can request directions using the top bar to visit our shop.', sender: 'them', time: '10:06 AM' }
   ]);
 
-  const scrollViewRef = useRef<ScrollView>(null);
-
   const handleSendMessage = () => {
     if (!message.trim()) return;
     
@@ -82,11 +80,6 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     }, 1500);
   };
 
-  useEffect(() => {
-    // Scroll to bottom upon receiving or sending messages
-    scrollViewRef.current?.scrollToEnd({ animated: true });
-  }, [messages]);
-
   return (
     <View style={styles.container}>
       <HeaderBar 
@@ -106,17 +99,15 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
-        {/* Chat message stream */}
-        <ScrollView 
-          ref={scrollViewRef}
-          contentContainerStyle={styles.messageScroll}
-          showsVerticalScrollIndicator={false}
-        >
-          {messages.map((msg) => {
+        {/* Chat message stream using FlatList for virtualization */}
+        <FlatList
+          data={[...messages].reverse()}
+          keyExtractor={item => item.id}
+          inverted
+          renderItem={({ item: msg }) => {
             const isMe = msg.sender === 'me';
             return (
               <View 
-                key={msg.id} 
                 style={[
                   styles.messageRow,
                   isMe ? styles.rowMe : styles.rowThem
@@ -144,8 +135,10 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 </View>
               </View>
             );
-          })}
-        </ScrollView>
+          }}
+          contentContainerStyle={styles.messageScroll}
+          showsVerticalScrollIndicator={false}
+        />
 
         {/* Messaging Text Input Bar */}
         <View style={styles.inputBar}>
@@ -161,6 +154,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
             activeOpacity={0.8}
             onPress={handleSendMessage}
             style={styles.sendBtn}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Ionicons name="send" size={16} color={theme.colors.background} />
           </TouchableOpacity>

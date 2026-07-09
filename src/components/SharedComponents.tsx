@@ -8,9 +8,9 @@ import {
   ActivityIndicator, 
   Platform,
   Image,
-  SafeAreaView
 } from 'react-native';
-import { Ionicons } from './VIcons';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons, IonIconName } from './VIcons';
 import { theme, normalize } from '../theme/designSystem';
 import { useApp } from '../contexts/AppContext';
 
@@ -133,7 +133,7 @@ export const VButton: React.FC<{
         <View style={styles.btnContent}>
           {icon && (
             <Ionicons 
-              name={icon as any} 
+              name={icon as IonIconName}
               size={normalize(18)} 
               color={currentStyles.text} 
               style={{ marginRight: theme.spacing.sm }} 
@@ -182,7 +182,7 @@ export const VInput: React.FC<{
     <View style={[styles.inputContainer, style]}>
       {icon && (
         <Ionicons 
-          name={icon as any} 
+          name={icon as IonIconName}
           size={normalize(20)} 
           color={theme.colors.textMuted} 
           style={styles.inputIcon} 
@@ -249,7 +249,11 @@ export const HeaderBar: React.FC<{
       <View style={styles.headerContainer}>
         <View style={styles.headerLeft}>
           {showBack && onBack ? (
-            <TouchableOpacity onPress={onBack} style={styles.backButton}>
+            <TouchableOpacity
+              onPress={onBack}
+              style={styles.backButton}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
               <Ionicons name="arrow-back" size={normalize(24)} color={theme.colors.textMain} />
             </TouchableOpacity>
           ) : (
@@ -338,17 +342,60 @@ export const VImage: React.FC<{
 }> = ({ source, style, resizeMode = 'cover' }) => {
   const [error, setError] = React.useState(false);
 
+  // Fallback to a local asset if the remote one fails or is missing
+  const imageSource = error || !source
+    ? require('../../assets/images/placeholder-vendor.png')
+    : { uri: source };
+
   return (
     <Image
-      source={{
-        uri: error || !source
-          ? 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=500&q=80' // High-quality food/service placeholder
-          : source
-      }}
+      source={imageSource}
       style={style}
       resizeMode={resizeMode}
       onError={() => setError(true)}
     />
+  );
+};
+
+// Consolidated Card component for UI consistency
+export const VCard: React.FC<{
+  children: React.ReactNode;
+  variant?: 'elevated' | 'outline' | 'flat';
+  style?: any;
+  onPress?: () => void;
+}> = ({ children, variant = 'elevated', style, onPress }) => {
+  const variantStyle = variant === 'elevated'
+    ? theme.shadows.soft
+    : variant === 'outline'
+      ? { borderWidth: 1, borderColor: theme.colors.border }
+      : {};
+
+  if (onPress) {
+    return (
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPress={onPress}
+        style={[
+          styles.cardBase,
+          variantStyle,
+          style
+        ]}
+      >
+        {children}
+      </TouchableOpacity>
+    );
+  }
+
+  return (
+    <View
+      style={[
+        styles.cardBase,
+        variantStyle,
+        style
+      ]}
+    >
+      {children}
+    </View>
   );
 };
 
@@ -425,7 +472,6 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
-    paddingTop: Platform.OS === 'android' ? 25 : 0,
   },
   headerContainer: {
     height: normalize(52),
@@ -477,5 +523,10 @@ const styles = StyleSheet.create({
   toastText: {
     fontSize: normalize(13),
     fontWeight: '700',
+  },
+  cardBase: {
+    backgroundColor: theme.colors.background,
+    borderRadius: normalize(16),
+    padding: theme.spacing.lg,
   }
 });

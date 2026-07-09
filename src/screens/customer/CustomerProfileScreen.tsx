@@ -4,15 +4,15 @@ import {
   View, 
   ScrollView, 
   TouchableOpacity, 
-  Image, 
   Modal,
   Text,
   Alert
 } from 'react-native';
 import { theme, normalize } from '../../theme/designSystem';
-import { VText, VButton, VInput, HeaderBar } from '../../components/SharedComponents';
+import { VText, VButton, VInput, HeaderBar, VImage, VCard } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
 import { Ionicons } from '../../components/VIcons';
+import { useNavigation } from '@react-navigation/native';
 
 interface CustomerProfileScreenProps {
   onBackToHome: () => void;
@@ -37,8 +37,11 @@ export const CustomerProfileScreen: React.FC<CustomerProfileScreenProps> = ({
     addEmergencyContact, 
     deleteEmergencyContact,
     triggerSOS,
-    logout 
+    triggerNotification,
+    logout
   } = useApp();
+
+  const navigation = useNavigation<any>();
 
   const [activeTab, setActiveTab] = useState<'settings' | 'favorites' | 'safety'>('settings');
   const [showAddContact, setShowAddContact] = useState(false);
@@ -131,33 +134,40 @@ export const CustomerProfileScreen: React.FC<CustomerProfileScreenProps> = ({
             
             {/* Account Settings Menu */}
             <View style={styles.menuGroup}>
-              <TouchableOpacity activeOpacity={0.7} style={styles.menuItem} onPress={() => { /* TODO: [FEATURE-001] Edit Profile */ Alert.alert('Edit Profile', 'Profile editor will be available soon.'); }}>
+              <VCard variant="outline" style={styles.menuItem} onPress={() => { triggerNotification('Profile editor will be available soon.'); }}>
                 <View style={styles.menuLeft}>
                   <Ionicons name="person-outline" size={32} color={theme.colors.primary} />
                   <VText variant="h3" align="center" style={{ marginTop: 8 }}>Edit Profile</VText>
                 </View>
-              </TouchableOpacity>
+              </VCard>
 
-              <TouchableOpacity activeOpacity={0.7} style={styles.menuItem} onPress={() => { /* TODO: [FEATURE-002] Notifications Settings */ Alert.alert('Notifications', 'Notification settings will be available soon.'); }}>
+              <VCard variant="outline" style={styles.menuItem} onPress={() => { triggerNotification('Notification settings will be available soon.'); }}>
                 <View style={styles.menuLeft}>
                   <Ionicons name="notifications-outline" size={32} color={theme.colors.primary} />
                   <VText variant="h3" align="center" style={{ marginTop: 8 }}>Notifications</VText>
                 </View>
-              </TouchableOpacity>
+              </VCard>
 
-              <TouchableOpacity activeOpacity={0.7} style={styles.menuItem} onPress={() => { /* TODO: [FEATURE-003] Terms and Conditions */ Alert.alert('Terms', 'Loading Terms & Agreements...'); }}>
+              <VCard variant="outline" style={styles.menuItem} onPress={() => { navigation.navigate('TermsOfService'); }}>
                 <View style={styles.menuLeft}>
                   <Ionicons name="document-text-outline" size={32} color={theme.colors.primary} />
                   <VText variant="h3" align="center" style={{ marginTop: 8 }}>Terms</VText>
                 </View>
-              </TouchableOpacity>
+              </VCard>
 
-              <TouchableOpacity activeOpacity={0.7} style={styles.menuItem} onPress={() => { /* TODO: [FEATURE-004] Support Center */ Alert.alert('Support', 'Contacting support...'); }}>
+              <VCard variant="outline" style={styles.menuItem} onPress={() => { triggerNotification('Contacting support is currently unavailable.'); }}>
                 <View style={styles.menuLeft}>
                   <Ionicons name="help-buoy-outline" size={32} color={theme.colors.primary} />
                   <VText variant="h3" align="center" style={{ marginTop: 8 }}>Support</VText>
                 </View>
-              </TouchableOpacity>
+              </VCard>
+
+              <VCard variant="outline" style={styles.menuItem} onPress={() => { navigation.navigate('PrivacyPolicy'); }}>
+                <View style={styles.menuLeft}>
+                  <Ionicons name="shield-checkmark-outline" size={32} color={theme.colors.primary} />
+                  <VText variant="h3" align="center" style={{ marginTop: 8 }}>Privacy</VText>
+                </View>
+              </VCard>
             </View>
 
             {/* Switch Account Action */}
@@ -207,13 +217,13 @@ export const CustomerProfileScreen: React.FC<CustomerProfileScreenProps> = ({
           <View style={[styles.tabContent, { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }]}>
             {favoriteVendors.length > 0 ? (
               favoriteVendors.map((vendor) => (
-                <TouchableOpacity
+                <VCard
                   key={vendor.id}
-                  activeOpacity={0.8}
+                  variant="outline"
                   onPress={() => onViewVendorProfile(vendor.id)}
-                  style={[styles.vendorCard, theme.shadows.soft]}
+                  style={styles.vendorCard}
                 >
-                  <Image source={{ uri: vendor.image }} style={styles.vendorImg} />
+                  <VImage source={vendor.image} style={styles.vendorImg} />
                   <View style={styles.vendorInfo}>
                     <VText variant="h3" numberOfLines={1}>{vendor.business_name}</VText>
                     <VText variant="caption" color={theme.colors.textMuted} numberOfLines={1}>{vendor.category}</VText>
@@ -223,7 +233,7 @@ export const CustomerProfileScreen: React.FC<CustomerProfileScreenProps> = ({
                       <VText variant="caption" style={{ marginLeft: 4 }}>{vendor.rating}</VText>
                     </View>
                   </View>
-                </TouchableOpacity>
+                </VCard>
               ))
             ) : (
               <View style={styles.emptyContainer}>
@@ -249,7 +259,7 @@ export const CustomerProfileScreen: React.FC<CustomerProfileScreenProps> = ({
                 Instant SOS Beacon
               </VText>
               <VText variant="caption" color="#FFD1D1" align="center" style={{ marginBottom: theme.spacing.lg }}>
-                Tap to immediately dispatch your coordinates to all emergency contacts and local community watch operators.
+                Log your coordinates with security and prepare emergency contacts. Always call local emergency services directly for immediate help.
               </VText>
               
               <TouchableOpacity 
