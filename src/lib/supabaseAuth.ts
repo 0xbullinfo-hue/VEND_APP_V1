@@ -11,6 +11,12 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import { sanitizePhoneNumber } from './inputSanitization';
 
+const getMissingConfigAuthError = (): AuthResult => ({
+  success: false,
+  error: 'Authentication service is unavailable. Please contact support.',
+  errorCode: 'AUTH_CONFIG_MISSING',
+});
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface AuthResult {
@@ -38,10 +44,13 @@ export interface SessionInfo {
  */
 export async function sendPhoneOtp(phone: string): Promise<AuthResult> {
   if (!isSupabaseConfigured()) {
-    // Mock mode — simulate a successful OTP dispatch
-    if (__DEV__) {
-      console.log('[SupabaseAuth] Mock mode: OTP dispatch simulated for', phone);
+    // Fail closed outside development when backend auth is unavailable.
+    if (!__DEV__) {
+      return getMissingConfigAuthError();
     }
+
+    // Mock mode for local development only.
+    console.log('[SupabaseAuth] Mock mode: OTP dispatch simulated for', phone);
     return { success: true };
   }
 
@@ -89,10 +98,13 @@ export async function verifyPhoneOtp(
   token: string
 ): Promise<AuthResult> {
   if (!isSupabaseConfigured()) {
-    // Mock mode — accept any code
-    if (__DEV__) {
-      console.log('[SupabaseAuth] Mock mode: OTP verification simulated');
+    // Fail closed outside development when backend auth is unavailable.
+    if (!__DEV__) {
+      return getMissingConfigAuthError();
     }
+
+    // Mock mode for local development only.
+    console.log('[SupabaseAuth] Mock mode: OTP verification simulated');
     return { success: true, userId: `mock_${Date.now().toString(36)}` };
   }
 
@@ -151,6 +163,9 @@ export async function ensureProfileExists(
   name: string
 ): Promise<AuthResult> {
   if (!isSupabaseConfigured()) {
+    if (!__DEV__) {
+      return getMissingConfigAuthError();
+    }
     return { success: true, userId };
   }
 

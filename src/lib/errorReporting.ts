@@ -60,7 +60,7 @@ class ErrorReporter {
       // For this environment, we'll maintain the local storage as a fallback.
       this.sentryEnabled = !!finalDSN;
       if (this.sentryEnabled) {
-        console.log('[ErrorReporting] Monitoring service standby with DSN:', finalDSN?.substring(0, 10) + '...');
+        console.log('[ErrorReporting] Monitoring service standby.');
       }
     } catch (error) {
       console.error('[ErrorReporting] Failed to initialize monitoring:', error);
