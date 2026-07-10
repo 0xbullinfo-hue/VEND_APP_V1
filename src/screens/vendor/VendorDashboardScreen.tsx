@@ -381,7 +381,7 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
               <VText variant="caption" color={theme.colors.textMuted}>Chat with leads</VText>
             </VCard>
 
-            <VCard variant="outline" style={styles.gridBox} onPress={() => Alert.alert('Reviews', 'Review manager will open here.')}>
+            <VCard variant="outline" style={styles.gridBox} onPress={() => Alert.alert('Reviews', 'Review manager is coming soon in your next update!')}>
               <View style={styles.gridIconCircle}>
                 <Ionicons name="star-half" size={24} color={theme.colors.primary} />
                 <View style={styles.gridBadge}>
@@ -392,7 +392,7 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
               <VText variant="caption" color={theme.colors.textMuted}>Manage feedback</VText>
             </VCard>
 
-            <VCard variant="outline" style={styles.gridBox} onPress={() => { Alert.alert('Redeem', 'Redirecting to Growth Hub...'); onViewGrowth?.(); }}>
+            <VCard variant="outline" style={styles.gridBox} onPress={onViewGrowth}>
               <View style={styles.gridIconCircle}>
                 <Ionicons name="rocket" size={24} color={theme.colors.primary} />
               </View>

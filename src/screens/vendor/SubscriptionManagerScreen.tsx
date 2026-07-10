@@ -97,8 +97,8 @@ export const SubscriptionManagerScreen: React.FC<SubscriptionManagerScreenProps>
           </VText>
 
           <View style={styles.milestoneProgressRow}>
-            <VText variant="h2">{locality?.name || 'Yaba'}: {userCount} / 1,000 Users</VText>
-            <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: '800' }}>
+            <VText variant="h2" style={{ flex: 1 }}>{locality?.name || 'Yaba'}: {userCount} / 1,000 Users</VText>
+            <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: '800', marginLeft: 8 }}>
               {isMilestoneCleared ? '100% Unlocked' : `${Math.floor((userCount / 1000) * 100)}% there`}
             </VText>
           </View>
