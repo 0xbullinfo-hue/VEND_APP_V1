@@ -96,11 +96,15 @@ export const SubscriptionManagerScreen: React.FC<SubscriptionManagerScreenProps>
             Paid plans unlock once your LGA/Ward registers at least 1,000 customers. This ensures advertising value for boosted listings.
           </VText>
 
-          <View style={[styles.milestoneProgressRow, { flexWrap: 'wrap', alignItems: 'center' }]}>
-            <VText variant="h2" style={{ flex: 1, minWidth: '60%' }}>{locality?.name || 'Yaba'}: {userCount} / 1,000 Users</VText>
-            <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: '800' }}>
-              {isMilestoneCleared ? '100% Unlocked' : `${Math.floor((userCount / 1000) * 100)}% there`}
-            </VText>
+          <View style={[styles.milestoneProgressRow, { alignItems: 'center' }]}>
+            <View style={{ flex: 1 }}>
+              <VText variant="h2">{locality?.name || 'Yaba'}: {userCount} / 1,000 Users</VText>
+            </View>
+            <View style={{ backgroundColor: theme.colors.background, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: theme.colors.primaryLight }}>
+              <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: '900' }}>
+                {isMilestoneCleared ? '100% Unlocked' : `${Math.floor((userCount / 1000) * 100)}% there`}
+              </VText>
+            </View>
           </View>
 
           <View style={styles.progressBarBg}>

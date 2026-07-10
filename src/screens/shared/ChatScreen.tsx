@@ -25,24 +25,30 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   onBack,
   onNavigateToDirections
 }) => {
-  const { vendors, addPoints } = useApp();
+  const { vendors, addPoints, user } = useApp();
   
   // Resolve recipient details
+  // If user is a vendor and opening 'general', they are viewing their lead list
+  const isVendorViewingLeads = user?.role === 'vendor' && recipientId === 'general';
   const vendor = vendors.find(v => v.id === recipientId);
 
-  if (!vendor) {
+  if (!vendor && !isVendorViewingLeads) {
     return <VendorProfilePendingState title="Chat Unavailable" onBack={onBack} />;
   }
 
   const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState<Array<{ id: string; text: string; sender: 'me' | 'them'; time: string }>>([
-    { id: '1', text: `Hello! Thanks for reaching out to ${vendor.business_name}. How can we help you today?`, sender: 'them', time: '10:02 AM' },
-  ]);
+  // For 'general' leads, we show a mock list or a single lead for now
+  const chatTitle = isVendorViewingLeads ? 'My Inquiries' : (vendor?.business_name || 'Chat');
+  const initialMessages = isVendorViewingLeads
+    ? [{ id: '1', text: "New lead! Adeolu O. is interested in your services in Yaba.", sender: 'them' as const, time: '10:02 AM' }]
+    : [{ id: '1', text: `Hello! Thanks for reaching out to ${vendor?.business_name}. How can we help you today?`, sender: 'them' as const, time: '10:02 AM' }];
 
-  const faqs = [
-    { q: 'Are you open today?', a: vendor.is_open ? 'Yes, we are open and ready to serve you!' : 'We are currently closed, but we typically open at 9 AM.' },
-    { q: 'Where are you located?', a: `Our shop is located at ${vendor.street_address}. You can request directions via the map!` },
-    { q: 'What services do you offer?', a: `We offer various services in the ${vendor.category} category. Check our profile for the full list!` },
+  const [messages, setMessages] = useState<Array<{ id: string; text: string; sender: 'me' | 'them'; time: string }>>(initialMessages);
+
+  const faqs = isVendorViewingLeads ? [] : [
+    { q: 'Are you open today?', a: vendor?.is_open ? 'Yes, we are open and ready to serve you!' : 'We are currently closed, but we typically open at 9 AM.' },
+    { q: 'Where are you located?', a: `Our shop is located at ${vendor?.street_address}. You can request directions via the map!` },
+    { q: 'What services do you offer?', a: `We offer various services in the ${vendor?.category} category. Check our profile for the full list!` },
   ];
 
   const handleSendMessage = (text?: string) => {
@@ -86,7 +92,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       <HeaderBar 
         showBack={true} 
         onBack={onBack} 
-        title={vendor.business_name} 
+        title={chatTitle}
         rightComponent={
           onNavigateToDirections ? (
             <TouchableOpacity onPress={onNavigateToDirections} style={styles.headerRouteBtn}>
