@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Alert } from 'react-native';
 import Animated, { FadeInUp, FadeInDown, Layout } from 'react-native-reanimated';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, HeaderBar, VCard, VendorProfilePendingState } from '../../components/SharedComponents';
@@ -15,13 +15,39 @@ interface VendorGrowthScreenProps {
 }
 
 export const VendorGrowthScreen: React.FC<VendorGrowthScreenProps> = ({ onBack }) => {
-  const { analyticsEvents, myVendorProfile, vendors, analyticsSyncSource, analyticsPendingCount, lastRemoteSyncAt, networkAvailable, subscribeToRealtimeUpdates, unsubscribeFromRealtimeUpdates, realtimeConnected } = useApp();
+  const {
+    analyticsEvents, myVendorProfile, vendors, analyticsSyncSource,
+    analyticsPendingCount, lastRemoteSyncAt, networkAvailable,
+    subscribeToRealtimeUpdates, unsubscribeFromRealtimeUpdates,
+    realtimeConnected, redeemPointBoost, points
+  } = useApp();
 
   const vendor = myVendorProfile || vendors[0];
 
   if (!vendor) {
     return <VendorProfilePendingState title="Growth Hub" onBack={onBack} />;
   }
+
+  const handleFlashBoost = () => {
+    if (vendor.boost_expiry && vendor.boost_expiry > Date.now()) {
+      Alert.alert('Boost Active', 'Your 1-hour flash boost is already running!');
+      return;
+    }
+    const success = redeemPointBoost(vendor.id, 'flash', 150);
+    if (!success) {
+      Alert.alert('Low Points', 'You need 150 visibility points to trigger a flash boost.');
+    }
+  };
+
+  const handleSearchBoost = () => {
+    const success = redeemPointBoost(vendor.id, 'search', 800);
+    if (!success) Alert.alert('Low Points', 'You need 800 points for top search placement.');
+  };
+
+  const handleMapBoost = () => {
+    const success = redeemPointBoost(vendor.id, 'map', 500);
+    if (!success) Alert.alert('Low Points', 'You need 500 points for map pin highlight.');
+  };
 
   // Subscribe to realtime updates when screen mounts
   useEffect(() => {
@@ -559,13 +585,20 @@ export const VendorGrowthScreen: React.FC<VendorGrowthScreenProps> = ({ onBack }
         <View style={styles.flashCard}>
           <View style={styles.flashHeader}>
             <View style={styles.liveBadge}>
-              <View style={styles.liveDot} />
-              <VText variant="caption" color={theme.colors.danger} style={{ fontWeight: 'bold', fontSize: 10 }}>LIVE</VText>
+              <View style={[styles.liveDot, { backgroundColor: (vendor.boost_expiry && vendor.boost_expiry > Date.now()) ? theme.colors.accent : theme.colors.danger }]} />
+              <VText variant="caption" color={theme.colors.danger} style={{ fontWeight: 'bold', fontSize: 10 }}>
+                {(vendor.boost_expiry && vendor.boost_expiry > Date.now()) ? 'ACTIVE' : 'OFFLINE'}
+              </VText>
             </View>
-            <VText variant="caption" color={theme.colors.textMuted}>ACTIVE BOOST STATUS: <VText variant="caption" color={theme.colors.textMain} style={{ fontWeight: 'bold' }}>42:18</VText> remaining</VText>
+            <VText variant="caption" color={theme.colors.textMuted}>
+              { (vendor.boost_expiry && vendor.boost_expiry > Date.now())
+                ? `BOOST EXPIRES IN: ${Math.round((vendor.boost_expiry - Date.now()) / 60000)} mins`
+                : 'NO ACTIVE BOOST'
+              }
+            </VText>
           </View>
 
-          <TouchableOpacity style={styles.triggerBtn}>
+          <TouchableOpacity style={styles.triggerBtn} onPress={handleFlashBoost}>
             <Ionicons name="flash" size={18} color="#FFF" style={{ marginRight: 6 }} />
             <VText variant="body" color="#FFF" style={{ fontWeight: 'bold' }}>Trigger 1-Hour Flash Boost (150 pts)</VText>
           </TouchableOpacity>
@@ -612,7 +645,7 @@ export const VendorGrowthScreen: React.FC<VendorGrowthScreenProps> = ({ onBack }
               <VText variant="h3" style={{ fontSize: normalize(15) }}>Search Top Placement</VText>
               <VText variant="caption" color={theme.colors.textMuted}>24h priority results</VText>
             </View>
-            <TouchableOpacity style={styles.redeemBtn}>
+            <TouchableOpacity style={styles.redeemBtn} onPress={handleSearchBoost}>
               <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: 'bold' }}>800 pts</VText>
             </TouchableOpacity>
           </View>
@@ -625,7 +658,7 @@ export const VendorGrowthScreen: React.FC<VendorGrowthScreenProps> = ({ onBack }
               <VText variant="h3" style={{ fontSize: normalize(15) }}>Map Pin Highlight</VText>
               <VText variant="caption" color={theme.colors.textMuted}>Custom pin color for 48h</VText>
             </View>
-            <TouchableOpacity style={styles.redeemBtn}>
+            <TouchableOpacity style={styles.redeemBtn} onPress={handleMapBoost}>
               <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: 'bold' }}>500 pts</VText>
             </TouchableOpacity>
           </View>

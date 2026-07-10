@@ -45,6 +45,8 @@ export interface VendorProfile {
   subscription_tier: number;
   image: string;
   street_address: string;
+  business_hours?: string;
+  boost_expiry?: number | null;
   exact_location: { latitude: number; longitude: number };
   services: VendorServiceItem[];
   last_seen_at?: string;

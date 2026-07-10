@@ -72,7 +72,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     setTimeout(() => {
       const responseText = faqMatch
         ? faqMatch.a
-        : !vendor.is_open
+        : (vendor && !vendor.is_open)
           ? `Thanks for your message! ${vendor.business_name} is currently away, but they'll get back to you as soon as they're back online.`
           : "Perfect! We're ready for you. Let us know when you request directions.";
 

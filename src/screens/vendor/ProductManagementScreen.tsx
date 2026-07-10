@@ -13,58 +13,103 @@ interface ProductManagementScreenProps {
 }
 
 export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = ({ onBack, onUpgrade }) => {
-  const { vendors, myVendorProfile, myVendorPlan, addVendorService } = useApp();
+  const { vendors, myVendorProfile, myVendorPlan, addVendorService, updateVendorService, deleteVendorService } = useApp();
   const vendor = myVendorProfile || vendors[0];
 
   const [isAddingListing, setIsAddingListing] = useState(false);
-  
-  // Add Form State
+  const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
+
+  // Form State
   const [title, setTitle] = useState('');
   const [price, setPrice] = useState('');
   const [category, setCategory] = useState('');
   const [desc, setDesc] = useState('');
   const [locationType, setLocationType] = useState<'hq' | 'specific'>('hq');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const atListingLimit = vendor.services.length >= myVendorPlan.maxListings;
+
+  const filteredServices = searchQuery.trim()
+    ? vendor.services.filter(s => s.title.toLowerCase().includes(searchQuery.toLowerCase()) || s.category.toLowerCase().includes(searchQuery.toLowerCase()))
+    : vendor.services;
 
   const handleStartAddListing = () => {
     if (atListingLimit) {
       if (onUpgrade) {
         onUpgrade();
       } else {
-        Alert.alert(`You've reached the ${myVendorPlan.maxListings}-listing limit on the ${myVendorPlan.name} plan. Upgrade your plan to add more.`);
+        Alert.alert('Limit Reached', `You've reached the ${myVendorPlan.maxListings}-listing limit on the ${myVendorPlan.name} plan. Upgrade your plan to add more.`);
       }
       return;
     }
+    setEditingServiceId(null);
+    setTitle('');
+    setPrice('');
+    setCategory('');
+    setDesc('');
     setIsAddingListing(true);
+  };
+
+  const handleStartEdit = (service: any) => {
+    setEditingServiceId(service.id);
+    setTitle(service.title);
+    setPrice(service.price.toString());
+    setCategory(service.category);
+    setDesc(service.description);
+    setIsAddingListing(true);
+  };
+
+  const handleDelete = (serviceId: string) => {
+    Alert.alert(
+      'Delete Item',
+      'Are you sure you want to remove this service from your profile?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: () => deleteVendorService(vendor.id, serviceId) }
+      ]
+    );
+  };
+
+  const handleLocateOnMap = (serviceName: string) => {
+    Alert.alert('Map Location', `Opening navigation to ${serviceName} at ${vendor.business_name}...`);
+    // In production, this would use Linking.openURL with geo coords
   };
 
   const handleSaveItem = (keepAdding: boolean = false) => {
     if (!title) return;
 
-    const added = addVendorService(
-      vendor.id,
-      title,
-      desc || 'No description provided.',
-      category || 'Uncategorized',
-      parseInt(price.replace(/[^0-9]/g, '')) || 0,
-      10, // default stock
-      'AVAILABLE',
-      'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=500&q=80'
-    );
+    if (editingServiceId) {
+      updateVendorService(vendor.id, editingServiceId, {
+        title,
+        description: desc,
+        category,
+        price: parseInt(price.replace(/[^0-9]/g, '')) || 0,
+      });
+      setIsAddingListing(false);
+    } else {
+      const added = addVendorService(
+        vendor.id,
+        title,
+        desc || 'No description provided.',
+        category || 'Uncategorized',
+        parseInt(price.replace(/[^0-9]/g, '')) || 0,
+        10, // default stock
+        'AVAILABLE',
+        'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=500&q=80'
+      );
 
-    if (!added) {
-      // AppContext already raises a "limit reached" notification toast.
+      if (!added) {
+        if (!keepAdding) setIsAddingListing(false);
+        return;
+      }
+
+      // Reset form
+      setTitle('');
+      setPrice('');
+      setCategory('');
+      setDesc('');
       if (!keepAdding) setIsAddingListing(false);
-      return;
     }
-
-    // Reset form
-    setTitle('');
-    setPrice('');
-    setCategory('');
-    setDesc('');
-    if (!keepAdding) setIsAddingListing(false);
   };
 
   const renderManageListings = () => (
@@ -89,19 +134,25 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
       <View style={{ paddingHorizontal: theme.spacing.lg, marginBottom: theme.spacing.md }}>
         <VInput
           placeholder="Search products..."
-          value=""
-          onChangeText={() => {}}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
           icon="search-outline"
         />
       </View>
 
       <FlatList
-        data={vendor.services}
+        data={filteredServices}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         ListFooterComponent={<View style={{ height: normalize(180) }} />}
-        renderItem={({ item, index }) => (
+        ListEmptyComponent={
+          <View style={{ padding: 40, alignItems: 'center' }}>
+            <Ionicons name="search-outline" size={48} color={theme.colors.border} />
+            <VText color={theme.colors.textMuted} style={{ marginTop: 12 }}>No items matching your search</VText>
+          </View>
+        }
+        renderItem={({ item }) => (
           <VCard
             variant="outline"
             style={styles.productCard}
@@ -129,16 +180,20 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
             <View style={styles.productDivider} />
             
             <View style={styles.productBottomRow}>
-              <TouchableOpacity style={styles.locateBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <TouchableOpacity
+                onPress={() => handleLocateOnMap(item.title)}
+                style={styles.locateBtn}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
                 <Ionicons name="location" size={14} color={theme.colors.textMuted} />
                 <VText variant="caption" color={theme.colors.textMuted} style={{ marginLeft: 4 }}>Locate on Map</VText>
               </TouchableOpacity>
               
               <View style={{ flexDirection: 'row', gap: 12 }}>
-                <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <TouchableOpacity onPress={() => handleStartEdit(item)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                   <Ionicons name="pencil-outline" size={20} color={theme.colors.textMain} />
                 </TouchableOpacity>
-                <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <TouchableOpacity onPress={() => handleDelete(item.id)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                   <Ionicons name="trash-outline" size={20} color={theme.colors.danger} />
                 </TouchableOpacity>
               </View>
@@ -163,7 +218,7 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
         <TouchableOpacity onPress={() => setIsAddingListing(false)} style={{ padding: 8 }}>
           <Ionicons name="arrow-back" size={24} color={theme.colors.textMain} />
         </TouchableOpacity>
-        <VText variant="h2" style={{ marginLeft: 8 }}>Add Listings</VText>
+        <VText variant="h2" style={{ marginLeft: 8 }}>{editingServiceId ? 'Edit Listing' : 'Add Listings'}</VText>
       </View>
 
       <ScrollView contentContainerStyle={styles.addContent} showsVerticalScrollIndicator={false}>
@@ -232,14 +287,16 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
         </View>
 
         <View style={styles.addBtnRow}>
-          <VButton title="Save Item" onPress={() => handleSaveItem(false)} style={{ flex: 1 }} />
-          <VButton
-            title="Add Another Item"
-            onPress={() => handleSaveItem(true)}
-            variant="outline"
-            disabled={atListingLimit}
-            style={{ flex: 1, marginLeft: theme.spacing.md }}
-          />
+          <VButton title={editingServiceId ? "Save Changes" : "Save Item"} onPress={() => handleSaveItem(false)} style={{ flex: 1 }} />
+          {!editingServiceId && (
+            <VButton
+              title="Add Another Item"
+              onPress={() => handleSaveItem(true)}
+              variant="outline"
+              disabled={atListingLimit}
+              style={{ flex: 1, marginLeft: theme.spacing.md }}
+            />
+          )}
         </View>
         
         <View style={{ height: normalize(180) }} />
@@ -247,7 +304,7 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
 
       {/* Sticky Bottom Bar */}
       <View style={styles.publishBottomBar}>
-        <VButton title="Publish All Listings" onPress={() => handleSaveItem(false)} style={{ width: '100%' }} />
+        <VButton title={editingServiceId ? "Finish Editing" : "Publish All Listings"} onPress={() => handleSaveItem(false)} style={{ width: '100%' }} />
       </View>
     </View>
   );

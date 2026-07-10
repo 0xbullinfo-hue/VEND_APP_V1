@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MOCK_VENDORS } from '../lib/mockData';
 import { getPlanForTier, clampTier } from '../lib/subscriptionPlans';
 import { useUIStore } from './useUIStore';
-import { UserProfile, VendorProfile, VendorSnapshot } from '../types';
+import { UserProfile, VendorProfile, VendorSnapshot, VendorServiceItem } from '../types';
 import { useLocationStore } from './useLocationStore';
 import { fetchVendorsByLocality, subscribeToVendorRealtime } from '../lib/vendorDataProvider';
 import { rankVendorsForCustomer } from '../lib/vendorRanking';
@@ -44,6 +44,10 @@ interface VendorState {
     image: string
   ) => boolean;
   updateVendorSubscription: (vendorId: string, tier: number) => boolean;
+  updateVendorProfile: (vendorId: string, updates: Partial<VendorProfile>) => void;
+  updateVendorService: (vendorId: string, serviceId: string, updates: Partial<VendorServiceItem>) => void;
+  deleteVendorService: (vendorId: string, serviceId: string) => void;
+  redeemPointBoost: (vendorId: string, boostType: 'flash' | 'search' | 'map', pointsCost: number) => boolean;
   resetSavedVendors: () => void;
 }
 
@@ -255,6 +259,58 @@ export const useVendorStore = create<VendorState>()(
           )
         }));
         useUIStore.getState().triggerNotification(`Subscription activated! ${targetPlan.name} is now active.`);
+        return true;
+      },
+
+      updateVendorProfile: (vendorId, updates) => {
+        set((state) => ({
+          vendors: state.vendors.map((v) => (v.id === vendorId ? { ...v, ...updates } : v)),
+        }));
+        useUIStore.getState().triggerNotification('Business profile updated successfully.');
+      },
+
+      updateVendorService: (vendorId, serviceId, updates) => {
+        set((state) => ({
+          vendors: state.vendors.map((v) => {
+            if (v.id !== vendorId) return v;
+            return {
+              ...v,
+              services: v.services.map((s) => (s.id === serviceId ? { ...s, ...updates } : s)),
+            };
+          }),
+        }));
+        useUIStore.getState().triggerNotification('Service item updated.');
+      },
+
+      deleteVendorService: (vendorId, serviceId) => {
+        set((state) => ({
+          vendors: state.vendors.map((v) => {
+            if (v.id !== vendorId) return v;
+            return {
+              ...v,
+              services: v.services.filter((s) => s.id !== serviceId),
+            };
+          }),
+        }));
+        useUIStore.getState().triggerNotification('Service item deleted.');
+      },
+
+      redeemPointBoost: (vendorId, boostType, pointsCost) => {
+        const currentPoints = useUIStore.getState().points;
+        if (currentPoints < pointsCost) {
+          useUIStore.getState().triggerNotification(`Insufficient points. You need ${pointsCost} PTS.`);
+          return false;
+        }
+
+        const durationMs = boostType === 'flash' ? 3600000 : boostType === 'search' ? 86400000 : 172800000;
+        const expiry = Date.now() + durationMs;
+
+        set((state) => ({
+          vendors: state.vendors.map((v) => (v.id === vendorId ? { ...v, boost_expiry: expiry } : v)),
+        }));
+
+        useUIStore.getState().setPoints(currentPoints - pointsCost);
+        useUIStore.getState().triggerNotification(`${boostType.toUpperCase()} boost activated! -${pointsCost} PTS.`);
         return true;
       },
 

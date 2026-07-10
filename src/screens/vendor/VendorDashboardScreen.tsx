@@ -304,7 +304,7 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
                 <VText variant="h3" style={{ fontSize: normalize(15) }}>Update business hours</VText>
                 <VText variant="caption" color={theme.colors.textMuted}>Boost customer trust by 40%</VText>
               </View>
-              <TouchableOpacity style={styles.taskBtn} onPress={() => Alert.alert('Update Hours', 'Settings modal will open here.')}>
+              <TouchableOpacity style={styles.taskBtn} onPress={onViewProfile}>
                 <VText variant="caption" color="#FFF" style={{ fontWeight: 'bold' }}>Update</VText>
               </TouchableOpacity>
             </View>
