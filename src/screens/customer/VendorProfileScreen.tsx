@@ -12,6 +12,7 @@ import { theme, normalize } from '../../theme/designSystem';
 import { VText, VButton, HeaderBar, VImage, VendorProfilePendingState } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
 import { Ionicons } from '../../components/VIcons';
+import { getClosingUrgency } from '../../lib/timeUtils';
 
 interface VendorProfileScreenProps {
   vendorId: string;
@@ -40,6 +41,15 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({
   const trustScore = Math.min(99, Math.round(vendor.rating * 19));
   const responseLabel = vendor.is_open ? 'Usually replies in under 5 mins' : 'Replies when back online';
   const recentVisits = Math.max(8, Math.round(vendor.rating * 11));
+
+  // Feature 3: Social Proof (Verified Visits)
+  // Mocking a "Local Trust" score based on rating + active usage
+  const totalVerifiedVisits = Math.floor(vendor.rating * 22) + (useApp().verifiedVisitCounts[vendor.id] || 0);
+
+  // Feature 2: Real-time Urgency (Closes Soon)
+  const closingUrgency = vendor.is_open && vendor.business_hours
+    ? getClosingUrgency(vendor.business_hours)
+    : null;
 
   // Check if directions are already unlocked or active
   const hasUnlockedDirections = directionRequests.some(
@@ -108,6 +118,32 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({
                 {responseLabel}
               </VText>
             </View>
+
+            {/* Social Proof Badge */}
+            <View style={[styles.signalChip, styles.signalChipTrust]}>
+              <Ionicons name="people" size={12} color={theme.colors.accent} />
+              <VText variant="caption" color={theme.colors.accent} style={{ marginLeft: 5, fontWeight: '700' }}>
+                Trusted by {totalVerifiedVisits}+ Locals
+              </VText>
+            </View>
+
+            {/* Real-time Urgency Badge */}
+            {closingUrgency && (
+              <View style={[styles.signalChip, closingUrgency.isUrgent ? styles.signalChipUrgent : styles.signalChipWarning]}>
+                <Ionicons
+                  name="alarm-outline"
+                  size={12}
+                  color={closingUrgency.isUrgent ? theme.colors.danger : theme.colors.warning}
+                />
+                <VText
+                  variant="caption"
+                  color={closingUrgency.isUrgent ? theme.colors.danger : theme.colors.warning}
+                  style={{ marginLeft: 5, fontWeight: '800' }}
+                >
+                  {closingUrgency.label.toUpperCase()}
+                </VText>
+              </View>
+            )}
           </View>
 
           <VText variant="body" color={theme.colors.textMuted} style={styles.categoryRow}>
@@ -378,6 +414,18 @@ const styles = StyleSheet.create({
   signalChipBoosted: {
     borderColor: '#F59E0B',
     backgroundColor: '#F59E0B',
+  },
+  signalChipTrust: {
+    borderColor: theme.colors.accent,
+    backgroundColor: `${theme.colors.accent}10`,
+  },
+  signalChipWarning: {
+    borderColor: theme.colors.warning,
+    backgroundColor: `${theme.colors.warning}10`,
+  },
+  signalChipUrgent: {
+    borderColor: theme.colors.danger,
+    backgroundColor: '#FFF5F5',
   },
   categoryRow: {
     marginTop: 2,
