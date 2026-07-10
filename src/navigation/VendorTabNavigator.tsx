@@ -24,14 +24,14 @@ const DashboardAdapter = () => {
   const { logout } = useApp();
   return (
     <VendorDashboardScreen
-      onManageProducts={() => nav.navigate('Services')}
+      onManageProducts={() => nav.jumpTo('Services')}
       onManageSubscription={() => nav.navigate('SubscriptionManager')}
       onLogout={() => logout()}
       onStartChat={(custId) => {
         nav.navigate('Chat', { recipientId: custId });
       }}
-      onViewGrowth={() => nav.navigate('Growth')}
-      onViewProfile={() => nav.navigate('VendorProfile')}
+      onViewGrowth={() => nav.jumpTo('Growth')}
+      onViewProfile={() => nav.jumpTo('VendorProfile')}
     />
   );
 };
@@ -40,7 +40,7 @@ const ServicesAdapter = () => {
   const nav = useNavigation<any>();
   return (
     <ProductManagementScreen
-      onBack={() => nav.navigate('Dashboard')}
+      onBack={() => nav.jumpTo('Dashboard')}
       onUpgrade={() => nav.navigate('SubscriptionManager')}
     />
   );
@@ -50,7 +50,7 @@ const GrowthAdapter = () => {
   const nav = useNavigation<any>();
   return (
     <VendorGrowthScreen
-      onBack={() => nav.navigate('Dashboard')}
+      onBack={() => nav.jumpTo('Dashboard')}
     />
   );
 };
@@ -59,7 +59,7 @@ const VendorProfileAdapter = () => {
   const nav = useNavigation<any>();
   return (
     <VendorProfileScreen
-      onBack={() => nav.navigate('Dashboard')}
+      onBack={() => nav.jumpTo('Dashboard')}
       onTestRegistration={() => nav.navigate('LocationSetup')}
       onLogout={() => { /* logout handled inside VendorProfileScreen via useApp */ }}
     />

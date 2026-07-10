@@ -362,7 +362,7 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
           </View>
 
           <View style={styles.gridContainer}>
-            <VCard variant="outline" style={styles.gridBox} onPress={onManageProducts}>
+            <VCard variant="outline" style={styles.gridBox} onPress={() => { console.log('[VendorDashboard] onManageProducts pressed'); onManageProducts(); }}>
               <View style={styles.gridIconCircle}>
                 <Ionicons name="storefront" size={24} color={theme.colors.primary} />
               </View>
@@ -370,7 +370,7 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
               <VText variant="caption" color={theme.colors.textMuted}>Edit listings</VText>
             </VCard>
 
-            <VCard variant="outline" style={styles.gridBox} onPress={() => onStartChat('general')}>
+            <VCard variant="outline" style={styles.gridBox} onPress={() => { console.log('[VendorDashboard] onStartChat pressed'); onStartChat('general'); }}>
               <View style={styles.gridIconCircle}>
                 <Ionicons name="chatbubbles" size={24} color={theme.colors.primary} />
                 <View style={styles.gridBadge}>
@@ -392,7 +392,7 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
               <VText variant="caption" color={theme.colors.textMuted}>Manage feedback</VText>
             </VCard>
 
-            <VCard variant="outline" style={styles.gridBox} onPress={onViewGrowth}>
+            <VCard variant="outline" style={styles.gridBox} onPress={() => { console.log('[VendorDashboard] onViewGrowth pressed'); onViewGrowth?.(); }}>
               <View style={styles.gridIconCircle}>
                 <Ionicons name="rocket" size={24} color={theme.colors.primary} />
               </View>
