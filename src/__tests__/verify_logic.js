@@ -5,6 +5,24 @@ console.log("=================================================");
 console.log("   VEND V1 CORE LOGIC VERIFICATION SUITE         ");
 console.log("=================================================\n");
 
+// Track any failing assertions (logged as "❌ Error") and fail the process.
+let testFailureCount = 0;
+const originalConsoleError = console.error.bind(console);
+console.error = (...args) => {
+  const first = typeof args[0] === 'string' ? args[0] : '';
+  if (first.startsWith('❌ Error')) {
+    testFailureCount += 1;
+  }
+  originalConsoleError(...args);
+};
+
+process.on('beforeExit', () => {
+  if (testFailureCount > 0) {
+    console.log(`\n❌ Verification suite completed with ${testFailureCount} failure(s).`);
+    process.exitCode = 1;
+  }
+});
+
 // --- MOCK DATABASE AND LOCAL STATE RESIDENTS ---
 const MOCK_LOCALITIES = [
   { id: 1, name: 'Yaba / Mainland', registered_users_count: 942 },
@@ -1535,7 +1553,8 @@ function createAuthSessionModel(storage) {
       exact_location: { latitude: 6.5, longitude: 3.37 },
     };
 
-    const notifBoosted = generateVendorProximityNotification(boostedVendor, customer1, interactions1);
+    const interactionsBoosted = [{ vendor_id: 'v_boosted', customer_id: 'c1', action: 'profile_view' }];
+    const notifBoosted = generateVendorProximityNotification(boostedVendor, customer1, interactionsBoosted);
     if (notifBoosted && notifBoosted.type === 'vendor_customer_nearby' && notifBoosted.recipientId === 'v_boosted') {
       console.log('✅ Success: Vendor notification generated for boosted vendor with previous customer in same locality.');
     } else {
@@ -1898,7 +1917,7 @@ function createAuthSessionModel(storage) {
       { vendorId: 'v1', type: 'profile_view', timestamp: now - days(1), actorUserId: 'u2' },
       { vendorId: 'v1', type: 'chat_start', timestamp: now - days(2), actorUserId: 'u1' },
       { vendorId: 'v1', type: 'directions_request', timestamp: now - days(3), actorUserId: 'u3' },
-      { vendorId: 'v1', type: 'profile_view', timestamp: now - days(10), actorUserId: 'u4' }, // Before 7-day window
+      { vendorId: 'v1', type: 'profile_view', timestamp: now - days(15), actorUserId: 'u4' }, // Before 14-day comparison window
     ];
 
     const growthMetrics = computeGrowthMetrics(growthEvents);
