@@ -168,19 +168,24 @@ export const useAuthStore = create<AuthState>()(
             const session = await getSession();
             if (session) {
               const current = get();
-              if (current.user?.id === session.userId) {
-                set({ isHydrated: true });
-                return;
-              }
+              const isSameUser = current.user?.id === session.userId;
+
+              const resolvedRole: 'customer' | 'vendor' =
+                (isSameUser ? (current.role ?? current.user?.role) : null) ?? 'customer';
+
+              const hydratedUser: UserProfile = {
+                id: session.userId,
+                phone: session.phone || current.user?.phone || '',
+                role: resolvedRole,
+                name: isSameUser ? (current.user?.name || '') : '',
+                localityId: isSameUser ? current.user?.localityId : undefined,
+                referralCode: isSameUser ? current.user?.referralCode : undefined,
+              };
+
               set({
-                user: {
-                  id: session.userId,
-                  phone: session.phone || '',
-                  role: 'customer',
-                  name: '',
-                },
-                role: null,
-                onboardingCompleted: false,
+                user: hydratedUser,
+                role: resolvedRole,
+                onboardingCompleted: isSameUser ? current.onboardingCompleted : false,
                 isHydrated: true,
               });
               return;
