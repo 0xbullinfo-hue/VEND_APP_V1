@@ -14,7 +14,7 @@
     "test:review": "npm run ts:check && npm run test:logic"
   },
   "dependencies": {
-    "@expo/webpack-config": "^19.0.1",
+    "@expo/webpack-config": "0.17.4",
     "@gorhom/bottom-sheet": "^4.6.4",
     "@react-native-async-storage/async-storage": "1.23.1",
     "@react-native-community/netinfo": "11.3.1",

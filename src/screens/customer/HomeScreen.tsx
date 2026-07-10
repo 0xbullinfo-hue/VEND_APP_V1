@@ -139,7 +139,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     }
   };
 
-  const mapRef = useRef<MapView>(null);
+  const mapRef = useRef<any>(null);
   const currentRegion = useRef(initialRegion);
 
   const handleZoomIn = () => {
