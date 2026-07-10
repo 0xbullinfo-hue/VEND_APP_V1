@@ -173,29 +173,58 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return;
     }
 
-    const vendors = useVendorStore.getState().vendors;
-    // TODO: Get customers and their locations from app state once available
-    // For now, this serves as the integration point
-    const customers: any[] = [];
-    const customerLocations = new Map();
+    const runProximityChecks = () => {
+      const { vendors } = useVendorStore.getState();
+      const { user } = useAuthStore.getState();
+      const { locality, currentLocation } = useLocationStore.getState();
+      const { analyticsEvents } = useAnalyticsStore.getState();
+
+      if (!user || user.role !== 'customer' || !locality) {
+        return;
+      }
+
+      const customers = [
+        {
+          id: user.id,
+          phone_number: user.phone ?? '',
+          locality_id: locality.id,
+          locality_name: locality.name,
+        },
+      ];
+
+      const customerLocations = new Map<string, { latitude: number; longitude: number }>();
+      if (currentLocation) {
+        customerLocations.set(user.id, currentLocation);
+      }
+
+      const interactionHistory = analyticsEvents
+        .filter((event) => !!event.actorUserId)
+        .map((event) => ({
+          vendor_id: event.vendorId,
+          customer_id: event.actorUserId as string,
+          action: event.type,
+          timestamp: event.timestamp,
+        }));
+
+      if (vendors.length === 0) {
+        return;
+      }
+
+      checkAllProximityTriggers(vendors, customers, customerLocations, interactionHistory);
+    };
 
     // Proximity check on app foreground
     const subscription = AppState.addEventListener('change', (state: AppStateStatus) => {
       if (state === 'active') {
         devLog('appState:foreground -> checkProximityTriggers');
-        // Trigger proximity checks
-        if (vendors.length > 0 && customers.length > 0) {
-          checkAllProximityTriggers(vendors, customers, customerLocations, []);
-        }
+        runProximityChecks();
       }
     });
 
     // Periodic proximity checks every 30 seconds (less aggressive than analytics)
     const intervalId = setInterval(() => {
       devLog('periodicProximityCheck:30s');
-      if (vendors.length > 0 && customers.length > 0) {
-        checkAllProximityTriggers(vendors, customers, customerLocations, []);
-      }
+      runProximityChecks();
     }, 30 * 1000);
 
     return () => {
