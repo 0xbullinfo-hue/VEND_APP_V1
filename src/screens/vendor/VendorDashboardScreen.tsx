@@ -72,11 +72,11 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
         <View style={styles.headerRight}>
           <TouchableOpacity
             style={styles.bellIcon}
-            onPress={() => Alert.alert('Notifications', 'No new notifications for your business.')}
+            onPress={() => Alert.alert('Notifications', nearbyCustomers.length > 0 ? `You have ${nearbyCustomers.length} active leads in your area.` : 'No new notifications for your business.')}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Ionicons name="notifications-outline" size={24} color={theme.colors.textMain} />
-            <View style={styles.notificationBadge} />
+            {nearbyCustomers.length > 0 && <View style={styles.notificationBadge} />}
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.logoutBtn}

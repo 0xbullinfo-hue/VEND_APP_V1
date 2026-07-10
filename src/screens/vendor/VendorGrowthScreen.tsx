@@ -184,7 +184,10 @@ export const VendorGrowthScreen: React.FC<VendorGrowthScreenProps> = ({ onBack }
         showBack={true}
         onBack={onBack}
         rightComponent={
-          <TouchableOpacity style={{ padding: 4 }}>
+          <TouchableOpacity
+            onPress={() => Alert.alert('About Growth Hub', 'Track your business impact and visibility momentum in real-time.')}
+            style={{ padding: 4 }}
+          >
             <Ionicons name="information-circle-outline" size={24} color={theme.colors.textMain} />
           </TouchableOpacity>
         }
