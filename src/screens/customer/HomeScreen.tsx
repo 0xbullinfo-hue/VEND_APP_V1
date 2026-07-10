@@ -13,6 +13,7 @@ import {
 import Animated, { FadeInUp, FadeInRight, Layout } from 'react-native-reanimated';
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import MapView, { Marker, Circle, PROVIDER_GOOGLE, Heatmap } from '../../components/MapViewCompat';
+import { Region, UserLocationChangeEvent } from 'react-native-maps';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, HeaderBar, VButton, VSkeleton, VImage, VCard, VPulse } from '../../components/SharedComponents';
 import { VibeFeed } from '../../components/VibeFeed';
@@ -317,7 +318,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           clusterColor={theme.colors.primary}
           clusterTextColor="#FFFFFF"
           onPress={() => setSelectedVendorId(null)}
-          onRegionChangeComplete={(region) => {
+          onRegionChangeComplete={(region: Region) => {
             currentRegion.current = region;
             if (Math.abs(region.latitudeDelta - visibleRegion.latitudeDelta) > visibleRegion.latitudeDelta * 0.1 ||
                 Math.abs(region.latitude - visibleRegion.latitude) > visibleRegion.latitudeDelta * 0.1) {
@@ -325,7 +326,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             }
           }}
           showsUserLocation={true}
-          onUserLocationChange={(event) => {
+          onUserLocationChange={(event: UserLocationChangeEvent) => {
             const { latitude, longitude } = event.nativeEvent.coordinate || {};
             if (latitude && longitude) setCurrentLocation(latitude, longitude);
           }}

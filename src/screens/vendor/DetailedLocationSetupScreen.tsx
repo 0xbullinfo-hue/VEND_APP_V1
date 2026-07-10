@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker, PROVIDER_GOOGLE } from '../../components/MapViewCompat';
+import { MapPressEvent, MarkerDragStartEndEvent } from 'react-native-maps';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, VButton, VInput, HeaderBar } from '../../components/SharedComponents';
 import { Ionicons } from '../../components/VIcons';
@@ -117,12 +118,12 @@ export const DetailedLocationSetupScreen: React.FC<DetailedLocationSetupScreenPr
               provider={PROVIDER_GOOGLE}
               customMapStyle={uberMapStyle}
               initialRegion={initialRegion}
-              onPress={(e) => setMarkerLocation(e.nativeEvent.coordinate)}
+              onPress={(e: MapPressEvent) => setMarkerLocation(e.nativeEvent.coordinate)}
             >
               <Marker
                 coordinate={markerLocation}
                 draggable
-                onDragEnd={(e) => setMarkerLocation(e.nativeEvent.coordinate)}
+                onDragEnd={(e: MarkerDragStartEndEvent) => setMarkerLocation(e.nativeEvent.coordinate)}
               >
                 <View style={styles.markerContainer}>
                   <Ionicons name="location" size={40} color={theme.colors.primary} />
