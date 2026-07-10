@@ -7,13 +7,14 @@ import {
   TouchableOpacity,
   TextInput,
   Modal,
+  Alert,
 } from 'react-native';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, HeaderBar, VImage, VCard } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
 import { Ionicons, IonIconName } from '../../components/VIcons';
 import { CATEGORY_CATALOG } from '../../lib/categoryCatalog';
-import { rankVendorsForCustomer } from '../../lib/vendorRanking';
+import { rankVendorsForCustomer, getDistance } from '../../lib/vendorRanking';
 import { getRankingPolicy } from '../../lib/rankingTransparency';
 import { useCustomerEngagementStore } from '../../store/useCustomerEngagementStore';
 
@@ -28,7 +29,7 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
   onViewVendorProfile,
   onViewRewards
 }) => {
-  const { vendors, addPoints, locality, isRealtimeConnected, dataSource, trackProfileView, user } = useApp();
+  const { vendors, addPoints, locality, isRealtimeConnected, dataSource, trackProfileView, user, currentLocation } = useApp();
   const engagementStore = useCustomerEngagementStore();
   const viewStartTimeRef = useRef<number>(0);
   const [activeCategoryIndex, setActiveCategoryIndex] = useState(0);
@@ -37,6 +38,8 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
   const [viewMode, setViewMode] = useState<'split' | 'grid'>('grid');
   const [onlyBoosted, setOnlyBoosted] = useState(false);
   const [onlyOpen, setOnlyOpen] = useState(true);
+  const [onlyHomeBased, setOnlyHomeBased] = useState(false);
+  const [sortBy, setSortBy] = useState<'recommended' | 'rating' | 'distance'>('recommended');
   const [showRankingModal, setShowRankingModal] = useState(false);
 
   const activeCategory = CATEGORY_CATALOG[activeCategoryIndex];
@@ -53,16 +56,33 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
 
         const matchesBoost = !onlyBoosted || v.subscription_tier > 1;
         const matchesOpen = !onlyOpen || v.is_open;
+        const matchesHome = !onlyHomeBased || v.is_home_based;
 
         if (selectedSubcategory) {
-          return v.sub_category === selectedSubcategory && matchesSearch && matchesBoost && matchesOpen;
+          return v.sub_category === selectedSubcategory && matchesSearch && matchesBoost && matchesOpen && matchesHome;
         }
 
-        return v.category === activeCategory.name && matchesSearch && matchesBoost && matchesOpen;
+        return v.category === activeCategory.name && matchesSearch && matchesBoost && matchesOpen && matchesHome;
       });
-      return rankVendorsForCustomer(scoped);
+
+      // Apply Sorting
+      let sorted = [...scoped];
+      if (sortBy === 'rating') {
+        sorted.sort((a, b) => b.rating - a.rating);
+      } else if (sortBy === 'distance' && currentLocation) {
+        sorted.sort((a, b) => {
+          const distA = getDistance(currentLocation.latitude, currentLocation.longitude, a.exact_location.latitude, a.exact_location.longitude);
+          const distB = getDistance(currentLocation.latitude, currentLocation.longitude, b.exact_location.latitude, b.exact_location.longitude);
+          return distA - distB;
+        });
+      } else {
+        // Default: Recommended (Boosted first)
+        return rankVendorsForCustomer(scoped);
+      }
+
+      return sorted;
     },
-    [activeCategory.name, normalizedQuery, onlyBoosted, onlyOpen, selectedSubcategory, vendors]
+    [activeCategory.name, normalizedQuery, onlyBoosted, onlyOpen, onlyHomeBased, sortBy, selectedSubcategory, vendors, currentLocation]
   );
 
   const handleCategoryPress = (index: number) => {
@@ -476,13 +496,46 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
               Open Now
             </VText>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => setOnlyHomeBased((value) => !value)}
+            style={[styles.quickFilterChip, onlyHomeBased ? styles.quickFilterChipActive : styles.quickFilterChipInactive]}
+          >
+            <Ionicons name="home" size={12} color={onlyHomeBased ? '#FFFFFF' : theme.colors.primary} />
+            <VText variant="caption" color={onlyHomeBased ? '#FFFFFF' : theme.colors.primary} style={{ marginLeft: 5 }}>
+              Home-Based
+            </VText>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.priorityLegendCard}>
-          <VText variant="caption" color={theme.colors.textMuted}>RANKING ORDER</VText>
-          <VText variant="caption" color={theme.colors.textMain} style={{ marginTop: 2 }}>
-            Boosted first, then open status, rating, and name.
-          </VText>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <View>
+              <VText variant="caption" color={theme.colors.textMuted}>RANKING & SORT</VText>
+              <VText variant="caption" color={theme.colors.textMain} style={{ marginTop: 2 }}>
+                {sortBy === 'recommended' ? 'Boosted prioritized in your locality' : `Sorted by ${sortBy}`}
+              </VText>
+            </View>
+            <TouchableOpacity
+              onPress={() => {
+                Alert.alert(
+                  'Sort By',
+                  'Change the order of vendors:',
+                  [
+                    { text: sortBy === 'recommended' ? '✓ Recommended' : 'Recommended', onPress: () => setSortBy('recommended') },
+                    { text: sortBy === 'rating' ? '✓ Highest Rating' : 'Highest Rating', onPress: () => setSortBy('rating') },
+                    { text: sortBy === 'distance' ? '✓ Distance' : 'Distance', onPress: () => setSortBy('distance') },
+                    { text: 'Cancel', style: 'cancel' }
+                  ]
+                );
+              }}
+              style={styles.sortTrigger}
+            >
+              <Ionicons name="swap-vertical" size={18} color={theme.colors.primary} />
+              <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: '700', marginLeft: 4 }}>SORT</VText>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.modeSwitchRow}>
@@ -871,6 +924,14 @@ const styles = StyleSheet.create({
   infoBtn: {
     marginLeft: 'auto',
     padding: 4,
+  },
+  sortTrigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.primaryLight,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
   },
   modalOverlay: {
     flex: 1,
