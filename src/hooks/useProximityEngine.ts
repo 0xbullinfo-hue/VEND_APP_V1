@@ -6,9 +6,10 @@ const DWELL_TIME_MS = 3 * 60 * 1000; // 3 minutes
 const PROXIMITY_RADIUS_M = 100;
 
 export const useProximityEngine = () => {
-  const { vendors, currentLocation } = useApp();
+  const { vendors, currentLocation, activeTrip } = useApp();
   const dwellTimers = useRef<Record<string, number>>({});
   const notifiedVendors = useRef<Set<string>>(new Set());
+  const arrivalNotified = useRef<string | null>(null);
 
   const getNotificationsModule = () => {
     try {
@@ -22,6 +23,27 @@ export const useProximityEngine = () => {
   useEffect(() => {
     if (!currentLocation) return;
 
+    // ─── 1. Trip Arrival Logic ────────────────────────────────────────────────
+    if (activeTrip && activeTrip.status === 'en_route') {
+      const tripVendor = vendors.find(v => v.id === activeTrip.vendorId);
+      if (tripVendor && arrivalNotified.current !== activeTrip.vendorId) {
+        const distance = getDistance(
+          currentLocation.latitude,
+          currentLocation.longitude,
+          tripVendor.exact_location.latitude,
+          tripVendor.exact_location.longitude
+        ) * 1000;
+
+        if (distance <= 50) { // Within 50m
+          triggerArrivalNotification(tripVendor.business_name, tripVendor.id);
+          arrivalNotified.current = activeTrip.vendorId;
+        }
+      }
+    } else if (!activeTrip) {
+      arrivalNotified.current = null;
+    }
+
+    // ─── 2. Discovery Logic (Boosted Vendors) ──────────────────────────────────
     const boostedVendors = vendors.filter(v => v.subscription_tier > 1);
 
     boostedVendors.forEach(vendor => {
@@ -71,6 +93,24 @@ export const useProximityEngine = () => {
       });
     } catch (error) {
       console.warn('[ProximityEngine] Failed to schedule local notification. Continuing without notification.', error);
+    }
+  };
+
+  const triggerArrivalNotification = async (vendorName: string, vendorId: string) => {
+    const Notifications = getNotificationsModule();
+    if (!Notifications) return;
+
+    try {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "You've Arrived! 📍",
+          body: `You are at ${vendorName}. Verify your visit to earn 100 VEND points!`,
+          data: { vendorId },
+        },
+        trigger: null,
+      });
+    } catch (error) {
+      // Fail silently
     }
   };
 };

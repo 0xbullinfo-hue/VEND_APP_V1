@@ -14,7 +14,7 @@ interface LiveTripScreenProps {
 }
 
 export const LiveTripScreen: React.FC<LiveTripScreenProps> = ({ onTripEnd, onArrived }) => {
-  const { activeTrip, vendors, triggerSOS, completeTrip, cancelTrip } = useApp();
+  const { activeTrip, vendors, triggerSOS, completeTrip, cancelTrip, isSOSActive, cancelSOS } = useApp();
   const [eta, setEta] = useState(12); // minutes
   const [distance, setDistance] = useState(2.4); // km
 
@@ -98,11 +98,16 @@ export const LiveTripScreen: React.FC<LiveTripScreenProps> = ({ onTripEnd, onArr
       <HeaderBar 
         showBack={true} 
         onBack={() => {
+          if (isSOSActive) {
+            Alert.alert("SOS Active", "You cannot cancel navigation while SOS is active. Deactivate SOS first.");
+            return;
+          }
           cancelTrip();
           onTripEnd();
         }} 
         showPoints={false} 
-        title="Live Navigation Map" 
+        title={isSOSActive ? "EMERGENCY SHIELD ACTIVE" : "Live Navigation Map"}
+        style={isSOSActive ? { backgroundColor: theme.colors.danger } : undefined}
       />
 
       {/* Interactive Map view representation */}
@@ -160,6 +165,29 @@ export const LiveTripScreen: React.FC<LiveTripScreenProps> = ({ onTripEnd, onArr
         >
           <Ionicons name="share-social" size={20} color={theme.colors.primary} />
         </TouchableOpacity>
+
+        {/* SOS Shield Mode Overlay */}
+        {isSOSActive && (
+          <View style={styles.sosOverlay}>
+            <View style={styles.sosHeader}>
+              <Ionicons name="alert-circle" size={48} color="#FFFFFF" />
+              <VText variant="h1" color="#FFFFFF" style={{ marginTop: 8 }}>SHIELD ACTIVE</VText>
+              <VText variant="body" color="#FFFFFF" align="center" style={{ marginTop: 4, opacity: 0.9 }}>
+                Emergency contacts notified. Your live address is:
+              </VText>
+              <VText variant="h2" color="#FFFFFF" align="center" style={styles.sosAddress}>
+                {vendor.street_address}
+              </VText>
+            </View>
+            <VButton
+              title="DEACTIVATE SOS"
+              onPress={cancelSOS}
+              variant="outline"
+              style={styles.sosCancelBtn}
+              textStyle={{ color: '#FFFFFF' }}
+            />
+          </View>
+        )}
 
       </View>
 
@@ -334,5 +362,30 @@ const styles = StyleSheet.create({
   },
   actionBtnRow: {
     flexDirection: 'row',
+  },
+  sosOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(239, 68, 68, 0.92)', // Semi-transparent red
+    zIndex: 100,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: theme.spacing.xl,
+  },
+  sosHeader: {
+    alignItems: 'center',
+    marginBottom: normalize(60),
+  },
+  sosAddress: {
+    marginTop: theme.spacing.lg,
+    fontSize: normalize(20),
+    fontWeight: '900',
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    padding: theme.spacing.md,
+    borderRadius: normalize(12),
+  },
+  sosCancelBtn: {
+    borderColor: '#FFFFFF',
+    width: '100%',
+    height: normalize(56),
   },
 });

@@ -235,18 +235,20 @@ export const HeaderBar: React.FC<{
   showPoints?: boolean;
   onPointsPress?: () => void;
   rightComponent?: React.ReactNode;
+  style?: any;
 }> = ({
   title,
   showBack = false,
   onBack,
   showPoints = true,
   onPointsPress,
-  rightComponent
+  rightComponent,
+  style
 }) => {
   const { locality } = useApp();
 
   return (
-    <SafeAreaView style={styles.headerSafeArea}>
+    <SafeAreaView style={[styles.headerSafeArea, style]}>
       <View style={styles.headerContainer}>
         <View style={styles.headerLeft}>
           {showBack && onBack ? (

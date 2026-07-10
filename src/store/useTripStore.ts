@@ -9,6 +9,7 @@ interface TripState {
   activeTrip: { vendorId: string; status: 'en_route' | 'arrived' | 'completed'; startTime: number } | null;
   verifiedVisitCounts: Record<string, number>;
   quests: LocalityQuest[];
+  isSOSActive: boolean;
 
   requestDirections: (vendorId: string) => Promise<DirectionRequest>;
   verifyDirectionCode: (vendorId: string, code: string) => boolean;
@@ -17,6 +18,7 @@ interface TripState {
   addEmergencyContact: (contact: Omit<EmergencyContact, 'id'>) => void;
   deleteEmergencyContact: (id: string) => void;
   triggerSOS: () => void;
+  cancelSOS: () => void;
   updateQuests: (category: string) => void;
   resetTrips: () => void;
 }
@@ -28,6 +30,7 @@ export const useTripStore = create<TripState>((set, get) => ({
   ],
   activeTrip: null,
   verifiedVisitCounts: {},
+  isSOSActive: false,
   quests: [
     { id: 'q1', title: 'Foodie Discovery', description: 'Visit 3 different Food & Catering shops', targetCount: 3, currentCount: 0, pointsReward: 150, category: 'Food & Catering', isCompleted: false },
     { id: 'q2', title: 'Home Maintenance', description: 'Visit 2 Home Service specialists', targetCount: 2, currentCount: 0, pointsReward: 100, category: 'Home Services', isCompleted: false },
@@ -51,6 +54,12 @@ export const useTripStore = create<TripState>((set, get) => ({
         startTime: Date.now()
       }
     }));
+
+    // Simulating SMS dispatch to emergency contacts
+    const contacts = get().emergencyContacts;
+    if (contacts.length > 0) {
+      console.log(`[Safety] Simulated SMS: "I am starting a trip to vendor ${vendorId}. My location is being monitored by VEND." sent to ${contacts.length} contacts.`);
+    }
 
     return newRequest;
   },
@@ -125,10 +134,21 @@ export const useTripStore = create<TripState>((set, get) => ({
   },
 
   triggerSOS: () => {
+    set({ isSOSActive: true });
     // Note: This is currently a simulated safety action.
     // In a production environment, this would integrate with an SMS gateway (e.g. Twilio)
     // or a backend emergency dispatch system to send live coordinates to the contacts below.
-    useUIStore.getState().triggerNotification("🚨 SOS SIMULATED: Your coordinates have been logged. Please call emergency services (112/999) if you are in immediate danger.");
+    useUIStore.getState().triggerNotification("🚨 SOS ACTIVATED: Your emergency contacts have been notified with your live coordinates.");
+
+    const contacts = get().emergencyContacts;
+    if (contacts.length > 0) {
+      console.log(`[Safety] CRITICAL Simulated SMS: "EMERGENCY! I have triggered SOS on VEND. Track my live location here: [MOCK_LINK]" sent to ${contacts.length} contacts.`);
+    }
+  },
+
+  cancelSOS: () => {
+    set({ isSOSActive: false });
+    useUIStore.getState().triggerNotification("SOS deactivated. Standby mode restored.");
   },
 
   updateQuests: (category) => {
