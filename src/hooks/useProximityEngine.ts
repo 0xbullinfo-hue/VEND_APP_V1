@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react';
-import * as Notifications from 'expo-notifications';
 import { useApp } from '../contexts/AppContext';
 import { getDistance } from '../lib/vendorRanking';
 
@@ -10,6 +9,15 @@ export const useProximityEngine = () => {
   const { vendors, currentLocation } = useApp();
   const dwellTimers = useRef<Record<string, number>>({});
   const notifiedVendors = useRef<Set<string>>(new Set());
+
+  const getNotificationsModule = () => {
+    try {
+      return require('expo-notifications') as typeof import('expo-notifications');
+    } catch (error) {
+      console.warn('[ProximityEngine] Notifications module unavailable. Skipping local notification.', error);
+      return null;
+    }
+  };
 
   useEffect(() => {
     if (!currentLocation) return;
@@ -47,13 +55,22 @@ export const useProximityEngine = () => {
   }, [currentLocation, vendors]);
 
   const triggerDiscoveryNotification = async (vendorName: string, vendorId: string) => {
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: "VEND Discovery! 💎",
-        body: `You've been near ${vendorName} for a while. Tap to see their local specialties!`,
-        data: { vendorId },
-      },
-      trigger: null, // send immediately
-    });
+    const Notifications = getNotificationsModule();
+    if (!Notifications) {
+      return;
+    }
+
+    try {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "VEND Discovery! 💎",
+          body: `You've been near ${vendorName} for a while. Tap to see their local specialties!`,
+          data: { vendorId },
+        },
+        trigger: null, // send immediately
+      });
+    } catch (error) {
+      console.warn('[ProximityEngine] Failed to schedule local notification. Continuing without notification.', error);
+    }
   };
 };

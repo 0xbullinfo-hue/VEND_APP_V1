@@ -1,6 +1,11 @@
 import { Dimensions, Platform, PixelRatio } from 'react-native';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const systemSans = Platform.select({
+  ios: 'System',
+  android: 'sans-serif',
+  default: 'system-ui',
+}) as string;
 
 // Adaptive typography scaling for any screen size
 const scale = SCREEN_WIDTH / 375;
@@ -30,35 +35,41 @@ export const theme = {
     overlay: 'rgba(0, 0, 0, 0.4)',
   },
   typography: {
-    // Brand typeface: Inter
-    fontDisplay: 'Inter-Black',
-    fontSans: 'Inter-Medium',
+    // Use system sans fonts until custom font assets are bundled
+    fontDisplay: systemSans,
+    fontSans: systemSans,
     h1: {
       fontSize: normalize(28),
-      fontFamily: 'Inter-Black',
+      fontFamily: systemSans,
+      fontWeight: '900' as const,
       letterSpacing: -0.5,
     },
     h2: {
       fontSize: normalize(20),
-      fontFamily: 'Inter-ExtraBold',
+      fontFamily: systemSans,
+      fontWeight: '800' as const,
       letterSpacing: -0.3,
     },
     h3: {
       fontSize: normalize(16),
-      fontFamily: 'Inter-Bold',
+      fontFamily: systemSans,
+      fontWeight: '700' as const,
     },
     body: {
       fontSize: normalize(14),
-      fontFamily: 'Inter-Medium',
+      fontFamily: systemSans,
+      fontWeight: '500' as const,
       lineHeight: normalize(20),
     },
     subtext: {
       fontSize: normalize(12),
-      fontFamily: 'Inter-Regular',
+      fontFamily: systemSans,
+      fontWeight: '400' as const,
     },
     caption: {
       fontSize: normalize(10),
-      fontFamily: 'Inter-Bold',
+      fontFamily: systemSans,
+      fontWeight: '700' as const,
       letterSpacing: 0.5,
     },
   },

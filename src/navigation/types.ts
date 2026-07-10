@@ -48,6 +48,7 @@ export type VendorStackParamList = {
   SubscriptionManager: undefined;
   LocationSetup: undefined;
   RegistrationSuccess: undefined;
+  Chat: { recipientId: string };
 };
 
 // ─── Vendor Tab Bar ───────────────────────────────────────────────────────────

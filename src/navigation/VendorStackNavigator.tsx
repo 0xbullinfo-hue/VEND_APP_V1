@@ -5,7 +5,7 @@
  * SubscriptionManager, LocationSetup, RegistrationSuccess.
  */
 import React from 'react';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { createStackNavigatorCompat } from './createStackNavigatorCompat';
 import type { StackNavigationProp } from './createStackNavigatorCompat';
 
@@ -15,8 +15,10 @@ import { VendorTabNavigator } from './VendorTabNavigator';
 import { SubscriptionManagerScreen } from '../screens/vendor/SubscriptionManagerScreen';
 import { DetailedLocationSetupScreen } from '../screens/vendor/DetailedLocationSetupScreen';
 import { RegistrationSuccessScreen } from '../screens/vendor/RegistrationSuccessScreen';
+import { ChatScreen } from '../screens/shared/ChatScreen';
 
 import type { VendorStackParamList } from './types';
+import type { StackScreenProps } from '@react-navigation/stack';
 
 const Stack = createStackNavigatorCompat<VendorStackParamList>();
 
@@ -54,6 +56,17 @@ const RegistrationSuccessAdapter = () => {
   );
 };
 
+const ChatAdapter = () => {
+  const nav = useNavigation<StackNavigationProp<VendorStackParamList>>();
+  const route = useRoute<StackScreenProps<VendorStackParamList, 'Chat'>['route']>();
+  return (
+    <ChatScreen
+      recipientId={route.params.recipientId}
+      onBack={() => nav.goBack()}
+    />
+  );
+};
+
 // ─── Stack Navigator ──────────────────────────────────────────────────────────
 
 export const VendorStackNavigator = () => {
@@ -68,6 +81,7 @@ export const VendorStackNavigator = () => {
       <Stack.Screen name="SubscriptionManager" component={SubscriptionManagerAdapter} />
       <Stack.Screen name="LocationSetup"       component={LocationSetupAdapter} />
       <Stack.Screen name="RegistrationSuccess" component={RegistrationSuccessAdapter} options={{ animation: 'fade' }} />
+      <Stack.Screen name="Chat"                component={ChatAdapter} />
     </Stack.Navigator>
   );
 };

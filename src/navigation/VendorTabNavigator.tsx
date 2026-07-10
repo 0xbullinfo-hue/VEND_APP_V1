@@ -20,46 +20,46 @@ const Tab = createBottomTabNavigator<VendorTabParamList>();
 // ─── Thin adapter wrappers ────────────────────────────────────────────────────
 
 const DashboardAdapter = () => {
-  const nav = useNavigation<StackNavigationProp<VendorStackParamList>>();
+  const nav = useNavigation<any>();
   const { logout } = useApp();
   return (
     <VendorDashboardScreen
-      onManageProducts={() => nav.navigate('VendorTabs')}
+      onManageProducts={() => nav.navigate('Services')}
       onManageSubscription={() => nav.navigate('SubscriptionManager')}
       onLogout={() => logout()}
-      onStartChat={(_custId) => {
-        // TODO: Wire to shared Chat screen when customer→vendor chat is built
+      onStartChat={(custId) => {
+        nav.navigate('Chat', { recipientId: custId });
       }}
-      onViewGrowth={() => nav.navigate('VendorTabs')}
-      onViewProfile={() => nav.navigate('VendorTabs')}
+      onViewGrowth={() => nav.navigate('Growth')}
+      onViewProfile={() => nav.navigate('VendorProfile')}
     />
   );
 };
 
 const ServicesAdapter = () => {
-  const nav = useNavigation<StackNavigationProp<VendorStackParamList>>();
+  const nav = useNavigation<any>();
   return (
     <ProductManagementScreen
-      onBack={() => nav.navigate('VendorTabs')}
+      onBack={() => nav.navigate('Dashboard')}
       onUpgrade={() => nav.navigate('SubscriptionManager')}
     />
   );
 };
 
 const GrowthAdapter = () => {
-  const nav = useNavigation<StackNavigationProp<VendorStackParamList>>();
+  const nav = useNavigation<any>();
   return (
     <VendorGrowthScreen
-      onBack={() => nav.navigate('VendorTabs')}
+      onBack={() => nav.navigate('Dashboard')}
     />
   );
 };
 
 const VendorProfileAdapter = () => {
-  const nav = useNavigation<StackNavigationProp<VendorStackParamList>>();
+  const nav = useNavigation<any>();
   return (
     <VendorProfileScreen
-      onBack={() => nav.navigate('VendorTabs')}
+      onBack={() => nav.navigate('Dashboard')}
       onTestRegistration={() => nav.navigate('LocationSetup')}
       onLogout={() => { /* logout handled inside VendorProfileScreen via useApp */ }}
     />
