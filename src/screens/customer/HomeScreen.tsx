@@ -78,7 +78,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         normalizedQuery === '' ||
         v.business_name.toLowerCase().includes(normalizedQuery) ||
         v.category.toLowerCase().includes(normalizedQuery) ||
-        v.sub_category.toLowerCase().includes(normalizedQuery);
+        v.sub_category.toLowerCase().includes(normalizedQuery) ||
+        v.bio.toLowerCase().includes(normalizedQuery);
 
       const matchesBoost = !onlyBoosted || v.subscription_tier > 1;
       const matchesOpen = !onlyOpen || v.is_open;
@@ -240,7 +241,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               placeholder="Search local services & vendors..."
               placeholderTextColor={theme.colors.textMuted}
               value={searchQuery}
-              onChangeText={setSearchQuery}
+              onChangeText={(text) => {
+                setSearchQuery(text);
+                if (text.length % 5 === 0 && text.length > 0) addPoints(1);
+              }}
               style={[styles.searchRailInput, { fontFamily: theme.typography.fontSans }]}
             />
             {searchQuery ? (
