@@ -98,7 +98,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     });
   }, [selectedCategory, vendors, searchQuery, onlyBoosted, onlyOpen, onlyHomeBased, visibleRegion]);
 
-  const promoVendors = useMemo(() => rankVendorsForCustomer(vendors), [vendors]);
+  const promoVendors = useMemo(() => {
+    const unvisited = vendors.filter(v => (verifiedVisitCounts[v.id] || 0) === 0);
+    return rankVendorsForCustomer(unvisited.length > 0 ? unvisited : vendors).slice(0, 8);
+  }, [vendors, verifiedVisitCounts]);
 
   // Track the active vendor for sheet display
   const [activeVendor, setActiveVendor] = useState<typeof vendors[number] | null>(vendors[0] ?? null);
@@ -505,6 +508,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 >
                   <VCard
                     onPress={() => {
+                      addPoints(20); // Award promised bonus for discovering unvisited gem
                       trackProfileView(v.id, { actorUserId: user?.id, localityId: v.locality_id });
                       engagementStore.recordVendorInteraction(v.id, 'view', 0);
                       engagementStore.addBrowsingEvent({
@@ -609,21 +613,23 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 </View>
               </View>
 
-              <View style={styles.servicesContainer}>
-                <VText variant="caption" color={theme.colors.textMuted} style={{ fontWeight: '700', marginBottom: 6 }}>
-                  POPULAR SERVICES
-                </VText>
-                <View style={styles.servicesRow}>
-                  {activeVendor.services?.slice(0, 2).map((s: any) => (
-                    <View key={s.id} style={styles.serviceTag}>
-                      <Ionicons name="checkmark-circle-outline" size={12} color={theme.colors.primary} style={{ marginRight: 4 }} />
-                      <VText variant="caption" color={theme.colors.primary} numberOfLines={1} style={{ maxWidth: normalize(120) }}>
-                        {s.title}
-                      </VText>
-                    </View>
-                  ))}
+              {activeVendor.services && activeVendor.services.length > 0 && (
+                <View style={styles.servicesContainer}>
+                  <VText variant="caption" color={theme.colors.textMuted} style={{ fontWeight: '700', marginBottom: 6 }}>
+                    POPULAR SERVICES
+                  </VText>
+                  <View style={styles.servicesRow}>
+                    {activeVendor.services?.slice(0, 2).map((s: any) => (
+                      <View key={s.id} style={styles.serviceTag}>
+                        <Ionicons name="checkmark-circle-outline" size={12} color={theme.colors.primary} style={{ marginRight: 4 }} />
+                        <VText variant="caption" color={theme.colors.primary} numberOfLines={1} style={{ maxWidth: normalize(120) }}>
+                          {s.title}
+                        </VText>
+                      </View>
+                    ))}
+                  </View>
                 </View>
-              </View>
+              )}
 
               <View style={styles.sheetActions}>
                 <VButton
