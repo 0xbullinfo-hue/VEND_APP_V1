@@ -32,6 +32,7 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
   const { vendors, addPoints, locality, isRealtimeConnected, dataSource, trackProfileView, user, currentLocation } = useApp();
   const engagementStore = useCustomerEngagementStore();
   const viewStartTimeRef = useRef<number>(0);
+  const prevSearchLengthRef = useRef<number>(0);
   const [activeCategoryIndex, setActiveCategoryIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
@@ -52,6 +53,8 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
         const matchesSearch =
           normalizedQuery === '' ||
           v.business_name.toLowerCase().includes(normalizedQuery) ||
+          v.category.toLowerCase().includes(normalizedQuery) ||
+          v.sub_category.toLowerCase().includes(normalizedQuery) ||
           v.bio.toLowerCase().includes(normalizedQuery);
 
         const matchesBoost = !onlyBoosted || v.subscription_tier > 1;
@@ -442,7 +445,10 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
             value={searchQuery}
             onChangeText={(text) => {
               setSearchQuery(text);
-              if (text.length % 3 === 0 && text.length > 0) addPoints(1);
+              if (text.length > prevSearchLengthRef.current && text.length % 5 === 0) {
+                addPoints(1);
+              }
+              prevSearchLengthRef.current = text.length;
             }}
             style={[styles.searchInput, { fontFamily: theme.typography.fontSans }]}
           />
