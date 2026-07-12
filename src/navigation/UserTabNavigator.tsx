@@ -47,6 +47,8 @@ const RewardsAdapter = () => {
   return (
     <RewardsScreen
       onBackToHome={() => nav.navigate('Vendors')}
+      onNavigateToExplore={() => nav.navigate('Explore')}
+      onNavigateToProfile={() => nav.navigate('Profile')}
     />
   );
 };

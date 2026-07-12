@@ -9,9 +9,15 @@ const { width } = Dimensions.get('window');
 
 interface RewardsScreenProps {
   onBackToHome: () => void;
+  onNavigateToExplore: () => void;
+  onNavigateToProfile: () => void;
 }
 
-export const RewardsScreen: React.FC<RewardsScreenProps> = ({ onBackToHome }) => {
+export const RewardsScreen: React.FC<RewardsScreenProps> = ({
+  onBackToHome,
+  onNavigateToExplore,
+  onNavigateToProfile
+}) => {
   const { points, setPoints, addPoints, quests } = useApp();
   const [selectedReward, setSelectedReward] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
@@ -25,10 +31,10 @@ export const RewardsScreen: React.FC<RewardsScreenProps> = ({ onBackToHome }) =>
   ];
 
   const earnTasks = [
-    { title: 'Verify a Vendor Visit', pts: 100, icon: 'checkmark-circle-outline', desc: 'Scan QR / Enter visit code at physical locations.' },
-    { title: 'Save 3 Local Shops', pts: 15, icon: 'heart-outline', desc: 'Bookmark shops you like to check updates later.' },
-    { title: 'Submit a Review', pts: 30, icon: 'star-outline', desc: 'Write honest review feedback on visited vendors.' },
-    { title: 'Refer a Friend', pts: 50, icon: 'gift-outline', desc: 'Friends get 50 pts, you get 50 pts upon validation.' },
+    { title: 'Verify a Vendor Visit', pts: 100, icon: 'checkmark-circle-outline', desc: 'Scan QR / Enter visit code at physical locations.', action: onBackToHome },
+    { title: 'Save 3 Local Shops', pts: 15, icon: 'heart-outline', desc: 'Bookmark shops you like to check updates later.', action: onNavigateToExplore },
+    { title: 'Submit a Review', pts: 30, icon: 'star-outline', desc: 'Write honest review feedback on visited vendors.', action: onNavigateToExplore },
+    { title: 'Refer a Friend', pts: 50, icon: 'gift-outline', desc: 'Friends get 50 pts, you get 50 pts upon validation.', action: onNavigateToProfile },
   ];
 
   const rewardCoupons = [
@@ -186,7 +192,7 @@ export const RewardsScreen: React.FC<RewardsScreenProps> = ({ onBackToHome }) =>
               </View>
               <TouchableOpacity 
                 activeOpacity={0.8}
-                onPress={() => addPoints(10)} // small reward trigger for clicking/reading task
+                onPress={task.action}
                 style={styles.taskRewardBadge}
               >
                 <VText variant="caption" color={theme.colors.primary}>+{task.pts} PTS</VText>
