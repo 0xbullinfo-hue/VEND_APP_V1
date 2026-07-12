@@ -335,7 +335,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         >
           {showHeatmap && (
             <Heatmap
-              points={vendors.map(v => ({
+              points={filteredVendors.map(v => ({
                 latitude: v.exact_location.latitude,
                 longitude: v.exact_location.longitude,
                 weight: v.subscription_tier * 5, // Boosted vendors weigh more in the heatmap
@@ -372,6 +372,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     coordinate={coordinate}
                     onPress={() => handlePinPress(vendor.id)}
                     anchor={{ x: 0.5, y: 0.5 }}
+                    style={{ zIndex: isSelected ? 10 : 1 }}
                   >
                     <View style={[
                       styles.pinIcon,
@@ -383,6 +384,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                         size={normalize(12)} 
                         color={isSelected ? theme.colors.background : theme.colors.primary} 
                       />
+                      {isMayor && (
+                        <View style={styles.mayorBadge}>
+                          <Ionicons name="medal" size={8} color="#FFFFFF" />
+                        </View>
+                      )}
                     </View>
                   </Marker>
                 </React.Fragment>
