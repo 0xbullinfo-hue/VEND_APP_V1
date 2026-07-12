@@ -278,11 +278,14 @@ export const HeaderBar: React.FC<{
         )}
         
         <View style={styles.headerRight}>
-          {rightComponent ? (
-            rightComponent
-          ) : showPoints ? (
-            <PointWidget onPress={onPointsPress} />
-          ) : null}
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            {showPoints && <PointWidget onPress={onPointsPress} />}
+            {rightComponent && (
+              <View style={{ marginLeft: theme.spacing.xs }}>
+                {rightComponent}
+              </View>
+            )}
+          </View>
         </View>
       </View>
     </SafeAreaView>
