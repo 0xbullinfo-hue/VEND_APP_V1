@@ -18,6 +18,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNext }) => {
         {/* Decorative Brand Section */}
         <Animated.View entering={FadeInDown.duration(800)} style={styles.brandWrapper}>
           <View style={styles.logoCircle}>
+            <Ionicons name="location" size={normalize(32)} color="#F59E0B" style={{ position: 'absolute', top: -normalize(10), zIndex: 10 }} />
             <VText variant="h1" color={theme.colors.background} style={styles.logoText}>
               V
             </VText>
