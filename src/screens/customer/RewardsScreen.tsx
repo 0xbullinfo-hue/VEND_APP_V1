@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: theme.spacing.lg,
     paddingTop: theme.spacing.md,
-    paddingBottom: theme.spacing.xxl,
+    paddingBottom: normalize(120),
   },
   dashboardCard: {
     backgroundColor: theme.colors.background,

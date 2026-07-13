@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { getDistance } from '../lib/vendorRanking';
 
@@ -7,6 +7,7 @@ const PROXIMITY_RADIUS_M = 100;
 
 export const useProximityEngine = () => {
   const { vendors, currentLocation, activeTrip } = useApp();
+  const [lastCheckLocation, setLastCheckLocation] = useState<{lat: number, lng: number} | null>(null);
   const dwellTimers = useRef<Record<string, number>>({});
   const notifiedVendors = useRef<Set<string>>(new Set());
   const arrivalNotified = useRef<string | null>(null);
@@ -22,6 +23,18 @@ export const useProximityEngine = () => {
 
   useEffect(() => {
     if (!currentLocation) return;
+
+    // SCALABILITY OPTIMIZATION: Only run calculations if user moved > 10 meters
+    if (lastCheckLocation) {
+      const distMoved = getDistance(
+        currentLocation.latitude,
+        currentLocation.longitude,
+        lastCheckLocation.lat,
+        lastCheckLocation.lng
+      ) * 1000;
+      if (distMoved < 10) return;
+    }
+    setLastCheckLocation({ lat: currentLocation.latitude, lng: currentLocation.longitude });
 
     // ─── 1. Trip Arrival Logic ────────────────────────────────────────────────
     if (activeTrip && activeTrip.status === 'en_route') {

@@ -26,7 +26,7 @@ import { useCustomerEngagementStore } from '../../store/useCustomerEngagementSto
 import { useThemeStore } from '../../store/useThemeStore';
 import { getThemeColors } from '../../theme/themeConfig';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 interface HomeScreenProps {
   onExploreCategories: () => void;
@@ -78,7 +78,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       ? vendors.filter(v => v.category === selectedCategory)
       : vendors;
 
-    return scoped.filter((v) => {
+    const result = scoped.filter((v) => {
       // 1. Basic Filters
       const matchesSearch =
         normalizedQuery === '' ||
@@ -102,6 +102,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
       return inLat && inLng;
     });
+
+    // PRUNING: Only keep the nearest 100 vendors for map performance
+    return result.slice(0, 100);
   }, [selectedCategory, vendors, searchQuery, onlyBoosted, onlyOpen, onlyHomeBased, visibleRegion]);
 
   const promoVendors = useMemo(() => {
@@ -792,7 +795,7 @@ const styles = StyleSheet.create({
   },
   promoBar: {
     paddingVertical: theme.spacing.sm,
-    paddingBottom: normalize(20),
+    paddingBottom: normalize(110),
     backgroundColor: theme.colors.background,
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
@@ -915,7 +918,7 @@ const styles = StyleSheet.create({
   sheetActions: {
     flexDirection: 'row',
     marginTop: 'auto',
-    marginBottom: theme.spacing.lg,
+    marginBottom: normalize(110),
   },
   zoomControls: {
     position: 'absolute',

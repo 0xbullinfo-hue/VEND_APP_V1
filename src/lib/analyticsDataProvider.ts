@@ -270,9 +270,12 @@ export const loadAnalyticsEvents = async (actorUserId?: string | null): Promise<
       localityId: row.locality_id || undefined,
     }));
 
-    await writeLocalEvents(remoteEvents);
+    // PRUNING: Only keep the last 50 events locally to prevent AsyncStorage bloat
+    const prunedEvents = remoteEvents.slice(-50);
+
+    await writeLocalEvents(prunedEvents);
     return {
-      events: remoteEvents,
+      events: prunedEvents,
       source: 'remote',
       pendingCount: flushResult.pendingCount,
     };
@@ -287,7 +290,10 @@ export const loadAnalyticsEvents = async (actorUserId?: string | null): Promise<
 
 export const persistAnalyticsEvent = async (event: AnalyticsEventRecord): Promise<AnalyticsPersistResult> => {
   const localEvents = await readLocalEvents();
-  await writeLocalEvents([...localEvents, event]);
+
+  // PRUNING: Capping local storage to 100 events before sync
+  const nextLocal = [...localEvents, event].slice(-100);
+  await writeLocalEvents(nextLocal);
 
   if (!isSupabaseConfigured()) {
     const pending = await readPendingEvents();

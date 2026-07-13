@@ -1,15 +1,12 @@
+(node:25508) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+The /android project does not contain any URI schemes. Expo CLI will not be able to use links to launch the project. You can configure a custom URI scheme using the --scheme option.
 Starting project at D:\VEND APP DEV\VEND MOBILE APP\VEND_APP\VEND_APP_V1_clean
 env: load .env
 env: export EXPO_PUBLIC_SUPABASE_URL EXPO_PUBLIC_SUPABASE_ANON_KEY
 [33m[1mWarning: [22mRoot-level [1m"expo"[22m object found. Ignoring extra key in Expo config: "name"
 [90mLearn more: https://expo.fyi/root-expo-object[0m[0m
-(node:42716) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
-(Use `node --trace-deprecation ...` to show where the warning was created)
 Starting Metro Bundler
-The following packages should be updated for best compatibility with the installed expo version:
-  @expo/webpack-config@0.17.4 - expected version: ~19.0.1
-  typescript@5.9.3 - expected version: ~5.3.3
-Your project may not work correctly until you install the expected versions of the packages.
-› Opening exp://127.0.0.1:8081 on Pixel_10_Pro
+› Opening com.vend.app/.MainActivity on Pixel_10_Pro
 Waiting on http://localhost:8081
 Logs for your project will appear below.
