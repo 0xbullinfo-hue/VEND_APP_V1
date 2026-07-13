@@ -10,12 +10,12 @@
     "userInterfaceStyle": "light",
     "description": "VEND - Discover hyper-local vendors and services across Nigeria. Connect with nearby businesses for instant access to products and services.",
     "author": "VEND Team",
-    "primaryColor": "#FF6B00",
+    "primaryColor": "#115C55",
     "icon": "./assets/icon.png",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#FFFFFF"
+      "backgroundColor": "#115C55"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -54,7 +54,7 @@
       "compileSdkVersion": 34,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FFFFFF"
+        "backgroundColor": "#115C55"
       },
       "permissions": [
         "android.permission.INTERNET",
