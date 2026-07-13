@@ -165,30 +165,6 @@ export const LiveTripScreen: React.FC<LiveTripScreenProps> = ({ onTripEnd, onArr
         >
           <Ionicons name="share-social" size={20} color={theme.colors.primary} />
         </TouchableOpacity>
-
-        {/* SOS Shield Mode Overlay */}
-        {isSOSActive && (
-          <View style={styles.sosOverlay}>
-            <View style={styles.sosHeader}>
-              <Ionicons name="alert-circle" size={48} color="#FFFFFF" />
-              <VText variant="h1" color="#FFFFFF" style={{ marginTop: 8 }}>SHIELD ACTIVE</VText>
-              <VText variant="body" color="#FFFFFF" align="center" style={{ marginTop: 4, opacity: 0.9 }}>
-                Emergency contacts notified. Your live address is:
-              </VText>
-              <VText variant="h2" color="#FFFFFF" align="center" style={styles.sosAddress}>
-                {vendor.street_address}
-              </VText>
-            </View>
-            <VButton
-              title="DEACTIVATE SOS"
-              onPress={cancelSOS}
-              variant="outline"
-              style={styles.sosCancelBtn}
-              textStyle={{ color: '#FFFFFF' }}
-            />
-          </View>
-        )}
-
       </View>
 
       {/* Trip Information Bottom Card */}
@@ -230,17 +206,43 @@ export const LiveTripScreen: React.FC<LiveTripScreenProps> = ({ onTripEnd, onArr
             title="Cancel"
             onPress={handleCancel}
             variant="outline"
+            disabled={isSOSActive}
             style={{ flex: 1 }}
           />
           <VButton
             title="Arrived at Vendor"
             onPress={handleArrived}
+            disabled={isSOSActive}
             icon="checkmark-circle"
             style={{ flex: 2, marginLeft: theme.spacing.sm }}
           />
         </View>
 
       </View>
+
+      {/* SOS Shield Mode Overlay - Root Level for Full Coverage */}
+      {isSOSActive && (
+        <View style={styles.sosOverlay}>
+          <View style={styles.sosHeader}>
+            <Ionicons name="alert-circle" size={48} color="#FFFFFF" />
+            <VText variant="h1" color="#FFFFFF" style={{ marginTop: 8 }}>SHIELD ACTIVE</VText>
+            <VText variant="body" color="#FFFFFF" align="center" style={{ marginTop: 4, opacity: 0.9 }}>
+              Emergency contacts notified. Your live address is:
+            </VText>
+            <VText variant="h2" color="#FFFFFF" align="center" style={styles.sosAddress}>
+              {vendor.street_address}
+            </VText>
+          </View>
+          <VButton
+            title="DEACTIVATE SOS"
+            onPress={cancelSOS}
+            variant="outline"
+            style={styles.sosCancelBtn}
+            textStyle={{ color: '#FFFFFF' }}
+          />
+        </View>
+      )}
+
     </SafeAreaView>
   );
 };
