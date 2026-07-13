@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker, PROVIDER_GOOGLE } from '../../components/MapViewCompat';
 import { MapPressEvent, MarkerDragStartEndEvent } from 'react-native-maps';
 import { theme, normalize } from '../../theme/designSystem';
-import { VText, VButton, VInput, HeaderBar } from '../../components/SharedComponents';
+import { VText, VButton, VInput, HeaderBar, VCard } from '../../components/SharedComponents';
 import { Ionicons } from '../../components/VIcons';
 import { useApp } from '../../contexts/AppContext';
 import { uberMapStyle } from '../../theme/mapStyles';
@@ -73,8 +73,8 @@ export const DetailedLocationSetupScreen: React.FC<DetailedLocationSetupScreenPr
         </VText>
 
         <View style={styles.typeCards}>
-          <TouchableOpacity 
-            activeOpacity={0.8} 
+          <VCard
+            variant={businessType === 'home' ? 'elevated' : 'outline'}
             onPress={() => setBusinessType('home')}
             style={[styles.typeCard, businessType === 'home' && styles.typeCardActive]}
           >
@@ -83,10 +83,10 @@ export const DetailedLocationSetupScreen: React.FC<DetailedLocationSetupScreenPr
             </View>
             <VText variant="h3" style={{ marginBottom: 4 }}>Home-Based / Mobile</VText>
             <VText variant="caption" color={theme.colors.textMuted}>I visit customers or work from home. (Fuzzy map pin)</VText>
-          </TouchableOpacity>
+          </VCard>
 
-          <TouchableOpacity 
-            activeOpacity={0.8} 
+          <VCard
+            variant={businessType === 'physical' ? 'elevated' : 'outline'}
             onPress={() => setBusinessType('physical')}
             style={[styles.typeCard, businessType === 'physical' && styles.typeCardActive]}
           >
@@ -95,7 +95,7 @@ export const DetailedLocationSetupScreen: React.FC<DetailedLocationSetupScreenPr
             </View>
             <VText variant="h3" style={{ marginBottom: 4 }}>Physical Storefront</VText>
             <VText variant="caption" color={theme.colors.textMuted}>I have a fixed walk-in location. (Precise map pin)</VText>
-          </TouchableOpacity>
+          </VCard>
         </View>
 
         <VText variant="h3" style={styles.sectionLabel}>Display Address</VText>
@@ -179,7 +179,6 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   pageTitle: {
-    fontSize: normalize(26),
     marginBottom: theme.spacing.sm,
   },
   pageSub: {

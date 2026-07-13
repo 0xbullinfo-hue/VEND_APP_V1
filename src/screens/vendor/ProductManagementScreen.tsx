@@ -113,19 +113,44 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
       setCategory('');
       setDesc('');
       if (!keepAdding) setIsAddingListing(false);
+      else {
+        Alert.alert('Item Added', 'You can now add another product or finish.');
+      }
     }
+  };
+
+  const handleImagePicker = () => {
+    Alert.alert('Photo Upload', 'Photo upload functionality will be integrated with the native image picker in V2.');
+  };
+
+  const handleCategoryPicker = () => {
+    Alert.alert(
+      'Select Category',
+      'Choose a category for this listing:',
+      [
+        { text: 'Food & Catering', onPress: () => setCategory('Food & Catering') },
+        { text: 'Home Services', onPress: () => setCategory('Home Services') },
+        { text: 'Beauty & Care', onPress: () => setCategory('Beauty & Care') },
+        { text: 'Technology', onPress: () => setCategory('Technology') },
+        { text: 'Cancel', style: 'cancel' }
+      ]
+    );
   };
 
   const renderManageListings = () => (
     <View style={styles.viewContainer}>
       <View style={styles.manageHeader}>
-        <VText variant="h2" style={{ fontSize: normalize(22) }}>Manage Listings</VText>
+        <VText variant="h2">Manage Listings</VText>
         <View style={styles.planUsageRow}>
           <VText variant="caption" color={theme.colors.textMuted}>
             {vendor.services.length} / {myVendorPlan.maxListings} listings used · {myVendorPlan.name} plan
           </VText>
           {atListingLimit && (
-            <TouchableOpacity onPress={() => onUpgrade?.()} style={styles.upgradePill}>
+            <TouchableOpacity
+              onPress={() => onUpgrade?.()}
+              style={styles.upgradePill}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
               <Ionicons name="arrow-up-circle" size={14} color={theme.colors.primary} />
               <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 4, fontWeight: '700' }}>
                 Upgrade for more
@@ -228,12 +253,16 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
       <ScrollView contentContainerStyle={styles.addContent} showsVerticalScrollIndicator={false}>
         {/* Photo Upload */}
         <VText variant="h3" style={styles.label}>Photos (0/5)</VText>
-        <View style={styles.photoUploadBox}>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={handleImagePicker}
+          style={styles.photoUploadBox}
+        >
           <Ionicons name="images-outline" size={32} color={theme.colors.primary} />
           <VText variant="caption" color={theme.colors.primary} style={{ marginTop: 8, fontWeight: 'bold' }}>
             + Add Photo
           </VText>
-        </View>
+        </TouchableOpacity>
 
         {/* Inputs */}
         <VText variant="h3" style={styles.label}>Product/Service Title</VText>
@@ -254,13 +283,20 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
         />
 
         <VText variant="h3" style={styles.label}>Category</VText>
-        <VInput
-          placeholder="Select Category"
-          value={category}
-          onChangeText={setCategory}
-          icon="chevron-down"
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={handleCategoryPicker}
           style={{ marginBottom: theme.spacing.md }}
-        />
+        >
+          <View pointerEvents="none">
+            <VInput
+              placeholder="Select Category"
+              value={category}
+              onChangeText={() => {}}
+              icon="chevron-down"
+            />
+          </View>
+        </TouchableOpacity>
 
         <VText variant="h3" style={styles.label}>Description</VText>
         <VInput
@@ -290,18 +326,17 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
           </TouchableOpacity>
         </View>
 
-        <View style={styles.addBtnRow}>
-          <VButton title={editingServiceId ? "Save Changes" : "Save Item"} onPress={() => handleSaveItem(false)} style={{ flex: 1 }} />
-          {!editingServiceId && (
+        {!editingServiceId && (
+          <View style={styles.addBtnRow}>
             <VButton
-              title="Add Another Item"
+              title="Save & Add Another"
               onPress={() => handleSaveItem(true)}
               variant="outline"
               disabled={atListingLimit}
-              style={{ flex: 1, marginLeft: theme.spacing.md }}
+              style={{ flex: 1 }}
             />
-          )}
-        </View>
+          </View>
+        )}
         
         <View style={{ height: normalize(180) }} />
       </ScrollView>
@@ -343,9 +378,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: theme.colors.primaryLight,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 8,
+    minHeight: 32,
   },
   listContent: {
     paddingHorizontal: theme.spacing.lg,
