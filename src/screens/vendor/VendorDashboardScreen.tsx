@@ -38,7 +38,14 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
     type: 'vendor_customer_nearby',
     unreadOnly: false,
   });
-  
+
+  const handleReviewsPress = () => {
+    Alert.alert(
+      'Review Manager',
+      'Manage customer feedback and respond to ratings. This feature is coming in your next service update!'
+    );
+  };
+
   // Use the logged-in vendor's own linked business profile.
   const vendor = myVendorProfile || vendors[0];
 
@@ -382,7 +389,7 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
               <VText variant="caption" color={theme.colors.textMuted}>Chat with leads</VText>
             </VCard>
 
-            <VCard variant="outline" style={styles.gridBox} onPress={() => Alert.alert('Reviews', 'Review manager is coming soon in your next update!')}>
+            <VCard variant="outline" style={styles.gridBox} onPress={handleReviewsPress}>
               <View style={styles.gridIconCircle}>
                 <Ionicons name="star-half" size={24} color={theme.colors.primary} />
                 <View style={styles.gridBadge}>
@@ -649,6 +656,7 @@ const styles = StyleSheet.create({
     width: normalize(140),
     height: normalize(100),
     justifyContent: 'center',
+    marginRight: theme.spacing.sm,
   },
   metricIconRow: {
     flexDirection: 'row',

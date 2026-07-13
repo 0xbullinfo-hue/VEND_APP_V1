@@ -191,10 +191,10 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
               
               <View style={{ flexDirection: 'row', gap: 12 }}>
                 <TouchableOpacity onPress={() => handleStartEdit(item)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                  <Ionicons name="pencil-outline" size={20} color={theme.colors.textMain} />
+                  <Ionicons name="pencil-outline" size={normalize(20)} color={theme.colors.textMain} />
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => handleDelete(item.id)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                  <Ionicons name="trash-outline" size={20} color={theme.colors.danger} />
+                  <Ionicons name="trash-outline" size={normalize(20)} color={theme.colors.danger} />
                 </TouchableOpacity>
               </View>
             </View>
