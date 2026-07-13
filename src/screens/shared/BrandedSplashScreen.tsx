@@ -70,22 +70,23 @@ const styles = StyleSheet.create({
   },
   logoPin: {
     position: 'absolute',
-    top: normalize(15),
-    left: normalize(15),
+    top: normalize(10), // Sitting in the center of the V arms
     zIndex: 10,
   },
   logoV: {
     fontSize: normalize(80),
-    fontWeight: '600',
-    color: '#346A5E', // Muted dark teal from image
+    fontWeight: '700',
+    color: '#346A5E', // Dark Teal
     fontFamily: theme.typography.fontDisplay,
+    lineHeight: normalize(90),
+    textAlign: 'center',
   },
   brandText: {
     fontSize: normalize(44),
     letterSpacing: 2,
-    fontWeight: '700',
+    fontWeight: '800',
     color: '#346A5E',
-    marginLeft: theme.spacing.sm,
+    marginLeft: theme.spacing.md,
   },
   footer: {
     position: 'absolute',
