@@ -29,7 +29,7 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({
   onLeaveReview,
   onStartChat
 }) => {
-  const { vendors, savedVendors, toggleSaveVendor, addPoints, directionRequests, trackDirectionsRequest, trackChatStart, user } = useApp();
+  const { vendors, savedVendors, toggleSaveVendor, addPoints, directionRequests, trackDirectionsRequest, trackChatStart, user, verifiedVisitCounts } = useApp();
 
   const vendor = vendors.find(v => v.id === vendorId);
   if (!vendor) {
@@ -38,13 +38,13 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({
 
   const isSaved = savedVendors.includes(vendor.id);
   const isBoostedVendor = vendor.subscription_tier > 1;
-  const trustScore = Math.min(99, Math.round(vendor.rating * 19));
+  const trustScore = Math.min(99, Math.round(vendor.rating * 19.8)); // Hardened scale for 0-5 rating
   const responseLabel = vendor.is_open ? 'Usually replies in under 5 mins' : 'Replies when back online';
   const recentVisits = Math.max(8, Math.round(vendor.rating * 11));
 
   // Feature 3: Social Proof (Verified Visits)
   // Mocking a "Local Trust" score based on rating + active usage
-  const totalVerifiedVisits = Math.floor(vendor.rating * 22) + (useApp().verifiedVisitCounts[vendor.id] || 0);
+  const totalVerifiedVisits = Math.floor(vendor.rating * 22) + (verifiedVisitCounts[vendor.id] || 0);
 
   // Feature 2: Real-time Urgency (Closes Soon)
   const closingUrgency = vendor.is_open && vendor.business_hours
