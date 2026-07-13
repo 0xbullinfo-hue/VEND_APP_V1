@@ -3,7 +3,6 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { UserProfile } from '../types';
 import { useUIStore } from './useUIStore';
-import { useVendorStore } from './useVendorStore';
 import { useTripStore } from './useTripStore';
 import { useLocationStore } from './useLocationStore';
 import { useAnalyticsStore } from './useAnalyticsStore';
@@ -107,10 +106,6 @@ export const useAuthStore = create<AuthState>()(
           otpError: null,
         });
 
-        if (selectedRole === 'vendor') {
-          useVendorStore.getState().ensureVendorProfile(userProfile);
-        }
-
         return { success: true };
       },
 
@@ -132,10 +127,6 @@ export const useAuthStore = create<AuthState>()(
           role: selectedRole,
           onboardingCompleted: false,
         });
-
-        if (selectedRole === 'vendor') {
-          useVendorStore.getState().ensureVendorProfile(mockUser);
-        }
       },
 
       setOnboardingLocality: async (localityId) => {
@@ -212,7 +203,6 @@ export const useAuthStore = create<AuthState>()(
             const { user } = get();
             if (user) {
               set({ user: null, role: null, onboardingCompleted: false });
-              useVendorStore.getState().resetSavedVendors();
               useTripStore.getState().resetTrips();
               useLocationStore.getState().resetLocality();
               useAnalyticsStore.getState().resetAnalytics();
@@ -224,7 +214,6 @@ export const useAuthStore = create<AuthState>()(
       logout: () => {
         void signOut();
         set({ user: null, role: null, onboardingCompleted: false, isHydrated: true, otpError: null });
-        useVendorStore.getState().resetSavedVendors();
         useTripStore.getState().resetTrips();
         useLocationStore.getState().resetLocality();
         useAnalyticsStore.getState().resetAnalytics();

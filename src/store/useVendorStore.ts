@@ -3,7 +3,6 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MOCK_VENDORS } from '../lib/mockData';
 import { getPlanForTier, clampTier } from '../lib/subscriptionPlans';
-import { useAuthStore } from './useAuthStore';
 import { useUIStore } from './useUIStore';
 import { UserProfile, VendorProfile, VendorSnapshot, VendorServiceItem } from '../types';
 import { useLocationStore } from './useLocationStore';
@@ -159,7 +158,7 @@ export const useVendorStore = create<VendorState>()(
           } else {
             const hasSavedBefore = state.savedHistory.includes(vendorId);
             if (!hasSavedBefore) {
-              useAuthStore.getState().addPoints(5);
+              useUIStore.getState().addPoints(5);
             }
             return {
               savedVendors: [...state.savedVendors, vendorId],
@@ -187,7 +186,7 @@ export const useVendorStore = create<VendorState>()(
           snapshots: [newSnapshot, ...state.snapshots].slice(0, 20) // Keep latest 20
         }));
 
-        useAuthStore.getState().addPoints(50);
+        useUIStore.getState().addPoints(50);
         useUIStore.getState().triggerNotification("Daily Snapshot posted! +50 VEND points earned.");
       },
 
@@ -347,7 +346,7 @@ export const useVendorStore = create<VendorState>()(
         set((state) => {
           if (state.chatHistory.includes(vendorId)) return state;
 
-          useAuthStore.getState().addPoints(5);
+          useUIStore.getState().addPoints(5);
           return { chatHistory: [...state.chatHistory, vendorId] };
         });
       },

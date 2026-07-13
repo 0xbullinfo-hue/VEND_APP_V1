@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { DirectionRequest, EmergencyContact, LocalityQuest } from '../types';
-import { useAuthStore } from './useAuthStore';
 import { useUIStore } from './useUIStore';
 import { useVendorStore } from './useVendorStore';
+import { useAuthStore } from './useAuthStore';
 
 interface TripState {
   directionRequests: DirectionRequest[];

@@ -11,7 +11,6 @@ import {
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, VButton, HeaderBar, VImage, VendorProfilePendingState } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
-import { useAuthStore } from '../../store/useAuthStore';
 import { Ionicons } from '../../components/VIcons';
 import { getClosingUrgency } from '../../lib/timeUtils';
 
@@ -30,7 +29,7 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({
   onLeaveReview,
   onStartChat
 }) => {
-  const { vendors, savedVendors, toggleSaveVendor, addPoints, directionRequests, trackDirectionsRequest, trackChatStart, user, verifiedVisitCounts, recordChatInquiry, triggerNotification } = useApp();
+  const { vendors, savedVendors, toggleSaveVendor, addPoints, deductPoints, directionRequests, trackDirectionsRequest, trackChatStart, user, verifiedVisitCounts, recordChatInquiry, triggerNotification } = useApp();
 
   const vendor = vendors.find(v => v.id === vendorId);
   if (!vendor) {
@@ -80,7 +79,7 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({
         {
           text: 'Redeem Now',
           onPress: () => {
-            useAuthStore.getState().deductPoints(service.pointsDiscountCost);
+            deductPoints(service.pointsDiscountCost);
             // In a real flow, this would mark the direction request as having a pending discount
             triggerNotification(`Discount unlocked! Show the verification code to the vendor to claim your ${service.discountValue} off.`);
           }
