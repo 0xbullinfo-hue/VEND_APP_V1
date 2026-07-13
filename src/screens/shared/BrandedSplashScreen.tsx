@@ -31,8 +31,8 @@ export const BrandedSplashScreen: React.FC = () => {
         <View style={styles.logoCircle}>
           <Ionicons
             name="location"
-            size={normalize(48)}
-            color="#F59E0B"
+            size={normalize(32)}
+            color="#FF7A21" // Specific Orange
             style={styles.logoPin}
           />
           <VText variant="h1" color="#FFFFFF" style={styles.logoV}>V</VText>
@@ -52,18 +52,17 @@ export const BrandedSplashScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#115C55', // VEND Primary Teal
+    backgroundColor: '#FFFFFF', // White background as per shared logo image
     justifyContent: 'center',
     alignItems: 'center',
   },
   logoWrapper: {
     alignItems: 'center',
+    flexDirection: 'row', // Horizontal layout: Icon + Text
   },
   logoCircle: {
-    width: normalize(100),
-    height: normalize(100),
-    borderRadius: normalize(50),
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    width: normalize(120),
+    height: normalize(120),
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
@@ -71,21 +70,22 @@ const styles = StyleSheet.create({
   },
   logoPin: {
     position: 'absolute',
-    top: -normalize(15),
+    top: normalize(15),
+    left: normalize(15),
     zIndex: 10,
-    textShadowColor: 'rgba(0, 0, 0, 0.2)',
-    textShadowOffset: { width: 0, height: 4 },
-    textShadowRadius: 10,
   },
   logoV: {
-    fontSize: normalize(56),
-    fontWeight: '900',
-    marginTop: normalize(5),
+    fontSize: normalize(80),
+    fontWeight: '600',
+    color: '#346A5E', // Muted dark teal from image
+    fontFamily: theme.typography.fontDisplay,
   },
   brandText: {
-    fontSize: normalize(42),
-    letterSpacing: 4,
-    fontWeight: '900',
+    fontSize: normalize(44),
+    letterSpacing: 2,
+    fontWeight: '700',
+    color: '#346A5E',
+    marginLeft: theme.spacing.sm,
   },
   footer: {
     position: 'absolute',
