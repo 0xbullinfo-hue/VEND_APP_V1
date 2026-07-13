@@ -2,6 +2,7 @@ import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 import { Platform } from 'react-native';
+import { fetchWithPinning } from './sslPinning';
 
 // ─── Environment Validation ───────────────────────────────────────────────────
 
@@ -40,7 +41,9 @@ const secureFetch: typeof fetch = (input, init) => {
   headers.set('X-App-Version', appVersion);
   headers.set('X-App-Platform', Platform.OS);
   headers.set('X-App-Env', appEnv);
-  return fetch(input, { ...init, headers });
+
+  // Professional: Attach SSL Pinning and Certificate Validation to every Supabase call
+  return fetchWithPinning(input as string, { ...init, headers });
 };
 
 // ─── Supabase Client ──────────────────────────────────────────────────────────

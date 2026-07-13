@@ -158,14 +158,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Subscribe to network changes
   useEffect(() => {
     const unsubscribe = subscribeToNetworkChanges((networkState) => {
-      devLog('networkMonitoring:changed', { isConnected: networkState.isConnected, type: networkState.type });
-      useAnalyticsStore.getState().setNetworkAvailable(networkState.isConnected);
+      const { networkAvailable } = useAnalyticsStore.getState();
+      const wasOffline = !networkAvailable;
+      const isOnline = networkState.isConnected;
+
+      devLog('networkMonitoring:changed', { isConnected: isOnline, type: networkState.type });
+      useAnalyticsStore.getState().setNetworkAvailable(isOnline);
+
+      // Professional: Trigger immediate sync when network is restored
+      if (wasOffline && isOnline) {
+        devLog('networkMonitoring:recovery -> flushPendingEvents');
+        void flushPendingEvents();
+      }
     });
 
     return () => {
       unsubscribe();
     };
-  }, []);
+  }, [flushPendingEvents]);
 
   // Periodic proximity checks (every 30 seconds when app is active)
   useEffect(() => {
