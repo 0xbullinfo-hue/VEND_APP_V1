@@ -18,7 +18,7 @@ export const RewardsScreen: React.FC<RewardsScreenProps> = ({
   onNavigateToExplore,
   onNavigateToProfile
 }) => {
-  const { points, setPoints, addPoints, quests } = useApp();
+  const { points, deductPoints, addPoints, quests } = useApp();
   const [selectedReward, setSelectedReward] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [successCode, setSuccessCode] = useState<string | null>(null);
@@ -58,10 +58,11 @@ export const RewardsScreen: React.FC<RewardsScreenProps> = ({
   };
 
   const handleConfirmRedeem = () => {
+    if (!selectedReward) return;
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      setPoints(points - selectedReward.cost);
+      deductPoints(selectedReward.cost);
       setSuccessCode(selectedReward.code);
     }, 1500);
   };
@@ -120,12 +121,10 @@ export const RewardsScreen: React.FC<RewardsScreenProps> = ({
             )}
           </View>
 
-          {/* Progress bar */}
-          {nextMilestone && (
-            <View style={styles.progressBarBg}>
-              <View style={[styles.progressBarFill, { width: `${Math.min(100, Math.max(5, progressPercent))}%` }]} />
-            </View>
-          )}
+          {/* Progress bar - Stay visible at 100% when maxed */}
+          <View style={styles.progressBarBg}>
+            <View style={[styles.progressBarFill, { width: `${Math.min(100, Math.max(5, progressPercent))}%` }]} />
+          </View>
         </View>
 
         {/* Locality Quests Section */}

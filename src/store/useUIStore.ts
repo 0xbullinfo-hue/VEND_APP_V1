@@ -5,6 +5,7 @@ interface UIState {
   notification: string | null;
   addPoints: (amount: number) => void;
   setPoints: (points: number) => void;
+  deductPoints: (amount: number) => void;
   triggerNotification: (message: string) => void;
   dismissNotification: () => void;
 }
@@ -16,10 +17,17 @@ export const useUIStore = create<UIState>((set) => ({
     const newPoints = state.points + amount;
     return { 
       points: newPoints,
-      notification: `Points Earned! +${amount} VEND pts (Total: ${newPoints})`
+      notification: amount > 0 ? `Points Earned! +${amount} VEND pts (Total: ${newPoints})` : null
     };
   }),
   setPoints: (points) => set({ points }),
+  deductPoints: (amount: number) => set((state) => {
+    const newPoints = Math.max(0, state.points - amount);
+    return {
+      points: newPoints,
+      notification: `Reward Unlocked! -${amount} VEND pts (Total: ${newPoints})`
+    };
+  }),
   triggerNotification: (message) => set({ notification: message }),
   dismissNotification: () => set({ notification: null }),
 }));
