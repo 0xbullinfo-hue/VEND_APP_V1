@@ -465,7 +465,10 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
             style={[styles.searchInput, { fontFamily: theme.typography.fontSans }]}
           />
           {searchQuery !== '' && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
+            <TouchableOpacity
+              onPress={() => setSearchQuery('')}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
               <Ionicons name="close-circle" size={18} color={theme.colors.textMuted} />
             </TouchableOpacity>
           )}
@@ -487,6 +490,7 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
           <TouchableOpacity
             style={styles.infoBtn}
             onPress={() => setShowRankingModal(true)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Ionicons name="information-circle-outline" size={18} color={theme.colors.primary} />
           </TouchableOpacity>
@@ -549,6 +553,7 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
                 );
               }}
               style={styles.sortTrigger}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <Ionicons name="swap-vertical" size={18} color={theme.colors.primary} />
               <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: '700', marginLeft: 4 }}>SORT</VText>

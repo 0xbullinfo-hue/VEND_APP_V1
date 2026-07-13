@@ -22,15 +22,15 @@ export interface RankingPolicyExplainer {
 
 const RANKING_POLICY: RankingPolicyExplainer = {
   title: 'How Vendors Appear Here',
-  summary: 'Vendors are ranked to help you find the best match. Here\'s how we order them:',
+  summary: 'Discovery results are ordered to help you find the most relevant local services. Here\'s the hierarchy:',
   factors: [
-    '1. Premium Boosted vendors rank above Standard vendors (when they opt-in to paid visibility)',
-    '2. Open stores rank above closed ones',
-    '3. Higher-rated vendors rank above lower-rated ones',
-    '4. Alphabetical order breaks remaining ties',
+    '1. Premium Boosted vendors rank first to honor visibility upgrades',
+    '2. Availability (Open Now) vendors rank next for immediate service',
+    '3. Rating Quality (Trust signals) prioritizes highly-rated shops',
+    '4. Business Consistency (Name/Profile details) breaks remaining ties',
   ],
   boostInfo:
-    'Vendors can upgrade to Premium Boosted (via in-app, in NGN) to rank higher for a set period. This helps small businesses compete fairly.',
+    'Vendors can upgrade to Premium Boosted (via in-app NGN payment) to rank higher. This helps small businesses attract hyper-local attention fairly.',
 };
 
 /**

@@ -167,6 +167,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     mapRef.current?.animateToRegion(next, 300);
   };
 
+  const handleViewVendorProfileInternal = (vendorId: string, trackEngagement: boolean = true) => {
+    if (trackEngagement) {
+      const vendor = vendors.find(v => v.id === vendorId);
+      trackProfileView(vendorId, { actorUserId: user?.id, localityId: vendor?.locality_id });
+      engagementStore.recordVendorInteraction(vendorId, 'view', 0);
+      if (vendor) {
+        engagementStore.addBrowsingEvent({
+          vendorId,
+          vendorName: vendor.business_name,
+          category: vendor.category,
+          durationSeconds: 15,
+          interactionType: 'view',
+        });
+      }
+    }
+    onViewVendorProfile(vendorId);
+  };
+
   return (
     <View style={styles.container}>
       {/* Top Header */}
@@ -206,10 +224,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             onPress={() =>
               Alert.alert(
                 'Ranking Policy',
-                'Boosted vendors are shown first, then open status, rating, and business name consistency.'
+                'Discovery results are ordered by boosted tier first, then availability (Open Now), rating quality, and business consistency. This keeps browsing fair while honoring premium visibility upgrades.'
               )
             }
             style={styles.rankingPolicyPill}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Ionicons name="information-circle-outline" size={12} color={theme.colors.primary} />
             <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 4 }}>
@@ -233,7 +252,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         </View>
       </View>
 
-      <VibeFeed snapshots={snapshots} onViewVendor={onViewVendorProfile} />
+      <VibeFeed snapshots={snapshots} onViewVendor={(vId) => handleViewVendorProfileInternal(vId)} />
 
       {/* Interactive Map Viewport */}
       <View style={styles.mapContainer}>
@@ -255,7 +274,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               style={[styles.searchRailInput, { fontFamily: theme.typography.fontSans }]}
             />
             {searchQuery ? (
-              <TouchableOpacity activeOpacity={0.8} onPress={() => setSearchQuery('')}>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => setSearchQuery('')}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
                 <Ionicons name="close-circle" size={18} color={theme.colors.textMuted} />
               </TouchableOpacity>
             ) : null}
@@ -276,6 +299,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 );
               }}
               style={styles.filterTrigger}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <Ionicons name="options-outline" size={20} color={theme.colors.primary} />
             </TouchableOpacity>
@@ -513,16 +537,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   <VCard
                     onPress={() => {
                       addPoints(20); // Award promised bonus for discovering unvisited gem
-                      trackProfileView(v.id, { actorUserId: user?.id, localityId: v.locality_id });
-                      engagementStore.recordVendorInteraction(v.id, 'view', 0);
-                      engagementStore.addBrowsingEvent({
-                        vendorId: v.id,
-                        vendorName: v.business_name,
-                        category: v.category,
-                        durationSeconds: 15,
-                        interactionType: 'view',
-                      });
-                      onViewVendorProfile(v.id);
+                      handleViewVendorProfileInternal(v.id);
                     }}
                     style={styles.promoCard}
                   >
@@ -638,18 +653,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               <View style={styles.sheetActions}>
                 <VButton
                   title="View Vendor Profile"
-                  onPress={() => {
-                    trackProfileView(activeVendor.id, { actorUserId: user?.id, localityId: activeVendor.locality_id });
-                    engagementStore.recordVendorInteraction(activeVendor.id, 'view', 0);
-                    engagementStore.addBrowsingEvent({
-                      vendorId: activeVendor.id,
-                      vendorName: activeVendor.business_name,
-                      category: activeVendor.category,
-                      durationSeconds: 20,
-                      interactionType: 'view',
-                    });
-                    onViewVendorProfile(activeVendor.id);
-                  }}
+                  onPress={() => handleViewVendorProfileInternal(activeVendor.id)}
                   style={{ flex: 1 }}
                 />
               </View>

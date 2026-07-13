@@ -72,7 +72,11 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({
         showBack={true} 
         onBack={onBack}
         rightComponent={
-          <TouchableOpacity onPress={handleSaveToggle} style={styles.saveHeaderBtn}>
+          <TouchableOpacity
+            onPress={handleSaveToggle}
+            style={styles.saveHeaderBtn}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
             <Ionicons 
               name={isSaved ? "heart" : "heart-outline"} 
               size={normalize(22)} 
@@ -199,8 +203,9 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({
           </VText>
           <TouchableOpacity
             activeOpacity={0.85}
-            onPress={() => Alert.alert('Ranking Policy', 'Vendors are ordered by boosted tier first, then open status, customer rating, and business name consistency. This keeps discovery fair while honoring paid visibility upgrades.')}
+            onPress={() => Alert.alert('Ranking Policy', 'Discovery results are ordered by boosted tier first, then availability (Open Now), rating quality, and business consistency. This keeps browsing fair while honoring premium visibility upgrades.')}
             style={styles.policyBtn}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Ionicons name="help-circle-outline" size={14} color={theme.colors.primary} />
             <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 6, fontWeight: '700' }}>
