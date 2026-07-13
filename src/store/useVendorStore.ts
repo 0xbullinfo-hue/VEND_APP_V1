@@ -12,6 +12,7 @@ import { rankVendorsForCustomer } from '../lib/vendorRanking';
 interface VendorState {
   vendors: VendorProfile[];
   savedVendors: string[];
+  savedHistory: string[]; // Track vendors ever saved to prevent point-farming
   snapshots: VendorSnapshot[];
   dataSource: 'mock' | 'supabase';
   isRealtimeConnected: boolean;
@@ -56,6 +57,7 @@ export const useVendorStore = create<VendorState>()(
     (set, get) => ({
       vendors: MOCK_VENDORS,
       savedVendors: [],
+      savedHistory: [],
       snapshots: [
         {
           id: 'sn1',
@@ -148,8 +150,14 @@ export const useVendorStore = create<VendorState>()(
           if (state.savedVendors.includes(vendorId)) {
             return { savedVendors: state.savedVendors.filter(id => id !== vendorId) };
           } else {
-            useUIStore.getState().addPoints(5);
-            return { savedVendors: [...state.savedVendors, vendorId] };
+            const hasSavedBefore = state.savedHistory.includes(vendorId);
+            if (!hasSavedBefore) {
+              useUIStore.getState().addPoints(5);
+            }
+            return {
+              savedVendors: [...state.savedVendors, vendorId],
+              savedHistory: hasSavedBefore ? state.savedHistory : [...state.savedHistory, vendorId]
+            };
           }
         });
       },
@@ -319,7 +327,10 @@ export const useVendorStore = create<VendorState>()(
     {
       name: 'vend.vendor.v1',
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({ savedVendors: state.savedVendors }), // Only persist saved vendors, fetch real profiles
+      partialize: (state) => ({
+        savedVendors: state.savedVendors,
+        savedHistory: state.savedHistory
+      }), // Persist both current saves and history
     }
   )
 );
