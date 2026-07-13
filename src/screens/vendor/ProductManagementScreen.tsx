@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { StyleSheet, View, FlatList, ScrollView, TouchableOpacity, Platform, Alert } from 'react-native';
 import Animated, { FadeInUp, Layout } from 'react-native-reanimated';
 import { theme, normalize } from '../../theme/designSystem';
-import { VText, VButton, VInput, HeaderBar, VImage, VCard } from '../../components/SharedComponents';
+import { VText, VButton, VInput, HeaderBar, VImage, VCard, VendorProfilePendingState } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
 import { Ionicons } from '../../components/VIcons';
 
@@ -26,6 +26,10 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
   const [desc, setDesc] = useState('');
   const [locationType, setLocationType] = useState<'hq' | 'specific'>('hq');
   const [searchQuery, setSearchQuery] = useState('');
+
+  if (!vendor) {
+    return <VendorProfilePendingState title="My Services" onBack={onBack} />;
+  }
 
   const atListingLimit = vendor.services.length >= myVendorPlan.maxListings;
 

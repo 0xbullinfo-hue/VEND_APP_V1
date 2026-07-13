@@ -84,16 +84,22 @@ const asyncStorageSupport: PersistStorage<PromoStore> = {
       const parsed = JSON.parse(data);
       return {
         ...parsed,
-        promos: new Map(parsed.promos || []),
+        state: {
+          ...parsed.state,
+          promos: new Map(parsed.state?.promos || []),
+        },
       };
     }
     return null;
   },
   setItem: async (name: string, value) => {
-    const store = value as unknown as PromoStore;
+    const castValue = value as unknown as { state: PromoStore; version: number };
     const toStore = {
-      ...store,
-      promos: Array.from(store.promos.entries()),
+      ...castValue,
+      state: {
+        ...castValue.state,
+        promos: Array.from(castValue.state.promos.entries()),
+      },
     };
     await AsyncStorage.setItem(name, JSON.stringify(toStore));
   },

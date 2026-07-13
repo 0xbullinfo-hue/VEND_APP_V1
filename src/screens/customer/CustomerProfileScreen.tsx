@@ -39,7 +39,8 @@ export const CustomerProfileScreen: React.FC<CustomerProfileScreenProps> = ({
     deleteEmergencyContact,
     triggerSOS,
     triggerNotification,
-    logout
+    logout,
+    addPoints
   } = useApp();
   const { isDarkMode, toggleDarkMode } = useThemeStore();
 
@@ -155,6 +156,13 @@ export const CustomerProfileScreen: React.FC<CustomerProfileScreenProps> = ({
                 <View style={styles.menuLeft}>
                   <Ionicons name={isDarkMode ? "moon" : "sunny-outline"} size={32} color={theme.colors.primary} />
                   <VText variant="h3" align="center" style={{ marginTop: 8 }}>{isDarkMode ? 'Dark Mode' : 'Light Mode'}</VText>
+                </View>
+              </VCard>
+
+              <VCard variant="outline" style={styles.menuItem} onPress={() => { navigation.navigate('GDPRSettings'); }}>
+                <View style={styles.menuLeft}>
+                  <Ionicons name="shield-checkmark-outline" size={32} color={theme.colors.primary} />
+                  <VText variant="h3" align="center" style={{ marginTop: 8 }}>Privacy & GDPR</VText>
                 </View>
               </VCard>
 

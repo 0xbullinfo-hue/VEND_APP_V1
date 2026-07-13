@@ -32,6 +32,7 @@ export type CustomerStackParamList = {
   PointsHistory: undefined;
   TermsOfService: undefined;
   PrivacyPolicy: undefined;
+  GDPRSettings: undefined;
 };
 
 // ─── Customer Tab Bar ─────────────────────────────────────────────────────────

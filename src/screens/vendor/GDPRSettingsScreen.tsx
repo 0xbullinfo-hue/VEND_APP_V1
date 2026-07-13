@@ -29,11 +29,12 @@ import {
   cancelDeletion,
 } from '../../lib/gdprAccountDeletion';
 import { useAuthStore } from '../../store/useAuthStore';
+import { HeaderBar } from '../../components/SharedComponents';
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
 interface GDPRSettingsScreenProps {
-  navigation: any;
+  onBack: () => void;
 }
 
 type ExportFormat = 'json' | 'csv';
@@ -42,7 +43,7 @@ type ScreenState = 'menu' | 'exporting' | 'deleting' | 'confirming_deletion';
 // ─── Component ────────────────────────────────────────────────────────────
 
 export const GDPRSettingsScreen: React.FC<GDPRSettingsScreenProps> = ({
-  navigation,
+  onBack,
 }) => {
   const insets = useSafeAreaInsets();
   const { trackError, trackAction } = useErrorTracking({
@@ -191,10 +192,7 @@ export const GDPRSettingsScreen: React.FC<GDPRSettingsScreenProps> = ({
             onPress: () => {
               // Logout and navigate to login
               useAuthStore.getState().logout();
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'Welcome' }],
-              });
+              onBack();
             },
           },
         ]
@@ -235,6 +233,7 @@ export const GDPRSettingsScreen: React.FC<GDPRSettingsScreenProps> = ({
           { paddingTop: insets.top, paddingBottom: insets.bottom },
         ]}
       >
+        <HeaderBar title="Privacy & GDPR" showBack={true} onBack={onBack} showPoints={false} />
         <ScrollView contentContainerStyle={styles.content}>
           {/* Header */}
           <VText style={styles.title}>Privacy & Data</VText>

@@ -25,6 +25,7 @@ import { ChatScreen } from '../screens/shared/ChatScreen';
 import { PointsHistoryScreen } from '../screens/PointsHistoryScreen';
 import { TermsOfServiceScreen } from '../screens/legal/TermsOfServiceScreen';
 import { PrivacyPolicyScreen } from '../screens/legal/PrivacyPolicyScreen';
+import { GDPRSettingsScreen } from '../screens/vendor/GDPRSettingsScreen';
 
 import type { CustomerStackParamList } from './types';
 import { useApp } from '../contexts/AppContext';
@@ -158,6 +159,15 @@ const PrivacyPolicyAdapter = () => {
   );
 };
 
+const GDPRSettingsAdapter = () => {
+  const nav = useNavigation<StackNavigationProp<CustomerStackParamList>>();
+  return (
+    <GDPRSettingsScreen
+      onBack={() => nav.goBack()}
+    />
+  );
+};
+
 // ─── Stack Navigator ──────────────────────────────────────────────────────────
 
 export const CustomerStackNavigator = () => {
@@ -178,6 +188,7 @@ export const CustomerStackNavigator = () => {
       <Stack.Screen name="PointsHistory"    component={PointsHistoryAdapter} />
       <Stack.Screen name="TermsOfService"   component={TermsOfServiceAdapter} />
       <Stack.Screen name="PrivacyPolicy"    component={PrivacyPolicyAdapter} />
+      <Stack.Screen name="GDPRSettings"     component={GDPRSettingsAdapter} />
     </Stack.Navigator>
   );
 };
