@@ -39,6 +39,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 }) => {
   const { vendors, addPoints, locality, dataSource, isRealtimeConnected, isLoadingVendors, trackProfileView, user, snapshots, setCurrentLocation, verifiedVisitCounts } = useApp();
   const engagementStore = useCustomerEngagementStore();
+  const prevSearchLengthRef = useRef<number>(0);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedVendorId, setSelectedVendorId] = useState<string | null>(null); // Starts with no selection, showing promo bar
   const [searchQuery, setSearchQuery] = useState('');
@@ -246,7 +247,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               value={searchQuery}
               onChangeText={(text) => {
                 setSearchQuery(text);
-                if (text.length % 5 === 0 && text.length > 0) addPoints(1);
+                if (text.length > prevSearchLengthRef.current && text.length % 5 === 0) {
+                  addPoints(1);
+                }
+                prevSearchLengthRef.current = text.length;
               }}
               style={[styles.searchRailInput, { fontFamily: theme.typography.fontSans }]}
             />

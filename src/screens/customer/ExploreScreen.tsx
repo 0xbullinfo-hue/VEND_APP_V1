@@ -45,6 +45,18 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
 
   const activeCategory = CATEGORY_CATALOG[activeCategoryIndex];
 
+  const handleSortChange = (newSort: 'recommended' | 'rating' | 'distance') => {
+    if (sortBy === newSort) return;
+
+    if (newSort === 'distance' && !currentLocation) {
+      Alert.alert('Location Required', 'VEND needs your current coordinates to calculate distances. Please enable location services.');
+      return;
+    }
+
+    setSortBy(newSort);
+    addPoints(2);
+  };
+
   const normalizedQuery = searchQuery.trim().toLowerCase();
 
   const filteredVendors = useMemo(
@@ -529,9 +541,9 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
                   'Sort By',
                   'Change the order of vendors:',
                   [
-                    { text: sortBy === 'recommended' ? '✓ Recommended' : 'Recommended', onPress: () => setSortBy('recommended') },
-                    { text: sortBy === 'rating' ? '✓ Highest Rating' : 'Highest Rating', onPress: () => setSortBy('rating') },
-                    { text: sortBy === 'distance' ? '✓ Distance' : 'Distance', onPress: () => setSortBy('distance') },
+                    { text: sortBy === 'recommended' ? '✓ Recommended' : 'Recommended', onPress: () => handleSortChange('recommended') },
+                    { text: sortBy === 'rating' ? '✓ Highest Rating' : 'Highest Rating', onPress: () => handleSortChange('rating') },
+                    { text: sortBy === 'distance' ? '✓ Distance' : 'Distance', onPress: () => handleSortChange('distance') },
                     { text: 'Cancel', style: 'cancel' }
                   ]
                 );
