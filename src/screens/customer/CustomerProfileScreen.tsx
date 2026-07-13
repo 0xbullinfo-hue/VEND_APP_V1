@@ -54,15 +54,30 @@ export const CustomerProfileScreen: React.FC<CustomerProfileScreenProps> = ({
   const handleAddEmergency = () => {
     if (contactName.trim() && contactPhone.trim()) {
       addEmergencyContact({
-        name: contactName,
-        phone: contactPhone,
-        relationship: contactRelation || 'Family'
+        name: contactName.trim(),
+        phone: contactPhone.trim(),
+        relationship: contactRelation.trim() || 'Family'
       });
+      addPoints(10); // Reward for securing the account with a contact!
       setContactName('');
       setContactPhone('');
       setContactRelation('');
       setShowAddContact(false);
+      triggerNotification('Emergency contact added successfully! +10 PTS');
+    } else {
+      Alert.alert('Missing Info', 'Please provide at least a Name and Phone Number.');
     }
+  };
+
+  const handleDeleteContactLocal = (id: string, name: string) => {
+    Alert.alert(
+      'Remove Contact',
+      `Are you sure you want to remove ${name} from your emergency circle?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Remove', style: 'destructive', onPress: () => deleteEmergencyContact(id) }
+      ]
+    );
   };
 
   const handleTriggerSOSLocal = () => {
@@ -297,7 +312,7 @@ export const CustomerProfileScreen: React.FC<CustomerProfileScreenProps> = ({
                   </View>
                   
                   {contact.id !== '1' && ( // Allow deleting custom ones, keep official
-                    <TouchableOpacity onPress={() => deleteEmergencyContact(contact.id)}>
+                    <TouchableOpacity onPress={() => handleDeleteContactLocal(contact.id, contact.name)}>
                       <Ionicons name="trash-outline" size={18} color={theme.colors.danger} />
                     </TouchableOpacity>
                   )}
