@@ -8,6 +8,8 @@ import { useApp } from '../../contexts/AppContext';
 import { Ionicons } from '../../components/VIcons';
 import { uberMapStyle } from '../../theme/mapStyles';
 
+import { runGPSArrivalSimulation } from '../../lib/GPSSimulator';
+
 interface LiveTripScreenProps {
   onTripEnd: () => void;
   onArrived: () => void;
@@ -75,6 +77,17 @@ export const LiveTripScreen: React.FC<LiveTripScreenProps> = ({ onTripEnd, onArr
 
   const handleArrived = () => {
     onArrived();
+  };
+
+  const handleRunStressTest = () => {
+    Alert.alert(
+      "Run GPS Stress Test?",
+      "This will simulate physical movement towards the vendor to test arrival notifications and proximity logic.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Start Simulation", onPress: () => runGPSArrivalSimulation(destination.latitude, destination.longitude) }
+      ]
+    );
   };
 
   const handleCancel = () => {
@@ -165,6 +178,17 @@ export const LiveTripScreen: React.FC<LiveTripScreenProps> = ({ onTripEnd, onArr
         >
           <Ionicons name="share-social" size={20} color={theme.colors.primary} />
         </TouchableOpacity>
+
+        {/* Debug Stress Test Button (Hidden in Prod) */}
+        {__DEV__ && (
+          <TouchableOpacity
+            onPress={handleRunStressTest}
+            style={styles.debugStressBtn}
+          >
+            <Ionicons name="speedometer" size={20} color="#FFFFFF" />
+            <VText variant="caption" color="#FFFFFF" style={{ marginLeft: 6 }}>STRESS TEST</VText>
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Trip Information Bottom Card */}
@@ -322,6 +346,19 @@ const styles = StyleSheet.create({
     borderRadius: normalize(22),
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  debugStressBtn: {
+    position: 'absolute',
+    bottom: theme.spacing.md,
+    left: theme.spacing.lg,
+    backgroundColor: '#6366F1', // Indigo for debug
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    zIndex: 10,
+    ...theme.shadows.soft,
   },
   
   // Trip Info Card

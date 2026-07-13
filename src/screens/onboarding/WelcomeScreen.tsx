@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, FadeInDown, FadeIn } from 'react-native-reanimated';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, VButton } from '../../components/SharedComponents';
+import { Ionicons } from '../../components/VIcons';
 
 const { width } = Dimensions.get('window');
 
