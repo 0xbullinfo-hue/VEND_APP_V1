@@ -59,7 +59,6 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
     }
 
     setSortBy(newSort);
-    addPoints(2);
   };
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -108,8 +107,7 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
   const handleCategoryPress = (index: number) => {
     setActiveCategoryIndex(index);
     setSelectedSubcategory(null);
-    addPoints(2); // Earn points for browsing
-    
+
     // Track engagement: category browsing
     const categoryName = CATEGORY_CATALOG[index].name;
     engagementStore.addBrowsingEvent({
@@ -123,7 +121,6 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
 
   const handleSubcategoryPress = (subName: string) => {
     setSelectedSubcategory(subName === selectedSubcategory ? null : subName);
-    addPoints(2); // Earn points for narrowing down
   };
 
 
@@ -215,7 +212,6 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
             <VCard
               variant={isPremium ? 'elevated' : 'outline'}
               onPress={() => {
-                addPoints(2); // Consistent reward for vendor discovery from list
                 trackProfileView(vendor.id, { actorUserId: user?.id, localityId: vendor.locality_id });
 
                 // Track engagement: vendor view
@@ -372,7 +368,6 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
                 <VCard
                   variant={isPremium ? 'elevated' : 'outline'}
                   onPress={() => {
-                    addPoints(2); // Consistent reward for vendor discovery from list
                     trackProfileView(vendor.id, { actorUserId: user?.id, localityId: vendor.locality_id });
 
                     // Track engagement: vendor view

@@ -134,8 +134,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
   const handlePinPress = (id: string) => {
     setSelectedVendorId(id);
-    addPoints(2);
-    
+
     const vendor = vendors.find(v => v.id === id);
     if (vendor) {
       engagementStore.recordVendorInteraction(id, 'view', 0);
@@ -271,9 +270,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               value={searchQuery}
               onChangeText={(text) => {
                 setSearchQuery(text);
-                if (text.length > prevSearchLengthRef.current && text.length % 5 === 0) {
-                  addPoints(1);
-                }
+                // Points removed from passive typing to prevent farming
                 prevSearchLengthRef.current = text.length;
               }}
               style={[styles.searchRailInput, { color: colors.textMain, fontFamily: theme.typography.fontSans }]}
