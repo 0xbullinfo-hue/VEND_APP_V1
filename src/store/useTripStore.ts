@@ -159,7 +159,7 @@ export const useTripStore = create<TripState>((set, get) => ({
           const isCompleted = newCount >= q.targetCount;
           if (isCompleted) {
             useUIStore.getState().addPoints(q.pointsReward);
-            useUIStore.getState().triggerNotification(`Quest Completed! +${q.pointsReward} bonus points earned.`);
+            useUIStore.getState().triggerNotification(`🎖️ Quest Completed: ${q.title}! +${q.pointsReward} bonus points earned.`);
           }
           return { ...q, currentCount: newCount, isCompleted };
         }

@@ -130,49 +130,61 @@ export const RewardsScreen: React.FC<RewardsScreenProps> = ({
         {/* Locality Quests Section */}
         <View style={styles.section}>
           <VText variant="h2" style={styles.sectionTitle}>Active Locality Quests</VText>
-          {quests.map((quest) => (
-            <VCard
-              key={quest.id}
-              variant="outline"
-              style={[styles.questCard, quest.isCompleted && styles.questCompleted]}
-            >
-              <View style={styles.questHeader}>
-                <View style={{ flex: 1 }}>
-                  <VText variant="h3" color={quest.isCompleted ? theme.colors.accent : theme.colors.textMain}>
-                    {quest.title} {quest.isCompleted && '✓'}
-                  </VText>
-                  <VText variant="caption" color={theme.colors.textMuted}>{quest.description}</VText>
-                </View>
-                <View style={styles.questReward}>
-                  <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: '900' }}>
-                    +{quest.pointsReward} PTS
-                  </VText>
-                </View>
-              </View>
+          {quests.length > 0 ? (
+            quests.map((quest) => {
+              const progress = quest.targetCount > 0 ? Math.round((quest.currentCount / quest.targetCount) * 100) : 0;
+              return (
+                <VCard
+                  key={quest.id}
+                  variant="outline"
+                  style={[styles.questCard, quest.isCompleted && styles.questCompleted]}
+                >
+                  <View style={styles.questHeader}>
+                    <View style={{ flex: 1 }}>
+                      <VText variant="h3" color={quest.isCompleted ? theme.colors.accent : theme.colors.textMain}>
+                        {quest.title} {quest.isCompleted && '✓'}
+                      </VText>
+                      <VText variant="caption" color={theme.colors.textMuted}>{quest.description}</VText>
+                    </View>
+                    <View style={styles.questReward}>
+                      <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: '900' }}>
+                        +{quest.pointsReward} PTS
+                      </VText>
+                    </View>
+                  </View>
 
-              <View style={styles.questProgressBox}>
-                <View style={styles.questProgressRow}>
-                  <VText variant="caption" color={theme.colors.textMuted}>
-                    Progress: {quest.currentCount}/{quest.targetCount}
-                  </VText>
-                  <VText variant="caption" color={theme.colors.textMuted}>
-                    {Math.round((quest.currentCount / quest.targetCount) * 100)}%
-                  </VText>
-                </View>
-                <View style={styles.questBarBg}>
-                  <View
-                    style={[
-                      styles.questBarFill,
-                      {
-                        width: `${Math.min(100, (quest.currentCount / quest.targetCount) * 100)}%`,
-                        backgroundColor: quest.isCompleted ? theme.colors.accent : theme.colors.primary
-                      }
-                    ]}
-                  />
-                </View>
-              </View>
-            </VCard>
-          ))}
+                  <View style={styles.questProgressBox}>
+                    <View style={styles.questProgressRow}>
+                      <VText variant="caption" color={theme.colors.textMuted}>
+                        Progress: {quest.currentCount}/{quest.targetCount}
+                      </VText>
+                      <VText variant="caption" color={theme.colors.textMuted}>
+                        {progress}%
+                      </VText>
+                    </View>
+                    <View style={styles.questBarBg}>
+                      <View
+                        style={[
+                          styles.questBarFill,
+                          {
+                            width: `${Math.min(100, progress)}%`,
+                            backgroundColor: quest.isCompleted ? theme.colors.accent : theme.colors.primary
+                          }
+                        ]}
+                      />
+                    </View>
+                  </View>
+                </VCard>
+              );
+            })
+          ) : (
+            <View style={styles.emptyQuestBox}>
+              <Ionicons name="map-outline" size={32} color={theme.colors.border} />
+              <VText variant="caption" color={theme.colors.textMuted} align="center" style={{ marginTop: 8 }}>
+                Check back later for new locality quests in your area.
+              </VText>
+            </View>
+          )}
         </View>
 
         {/* Earning Opportunities */}
@@ -543,5 +555,14 @@ const styles = StyleSheet.create({
   questBarFill: {
     height: '100%',
     borderRadius: 3,
+  },
+  emptyQuestBox: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: normalize(12),
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    padding: theme.spacing.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
