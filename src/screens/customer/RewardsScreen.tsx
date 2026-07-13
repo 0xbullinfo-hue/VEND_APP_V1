@@ -191,7 +191,12 @@ export const RewardsScreen: React.FC<RewardsScreenProps> = ({
         <View style={styles.section}>
           <VText variant="h2" style={styles.sectionTitle}>Earn More Points</VText>
           {earnTasks.map((task, idx) => (
-            <View key={idx} style={styles.taskCard}>
+            <TouchableOpacity
+              key={idx}
+              activeOpacity={0.7}
+              onPress={task.action}
+              style={styles.taskCard}
+            >
               <View style={styles.taskLeft}>
                 <View style={styles.taskIconCircle}>
                   <Ionicons name={task.icon as any} size={20} color={theme.colors.primary} />
@@ -201,14 +206,10 @@ export const RewardsScreen: React.FC<RewardsScreenProps> = ({
                   <VText variant="caption" color={theme.colors.textMuted}>{task.desc}</VText>
                 </View>
               </View>
-              <TouchableOpacity 
-                activeOpacity={0.8}
-                onPress={task.action}
-                style={styles.taskRewardBadge}
-              >
+              <View style={styles.taskRewardBadge}>
                 <VText variant="caption" color={theme.colors.primary}>+{task.pts} PTS</VText>
-              </TouchableOpacity>
-            </View>
+              </View>
+            </TouchableOpacity>
           ))}
         </View>
 
