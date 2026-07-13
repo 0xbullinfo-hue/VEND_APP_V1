@@ -413,9 +413,10 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: theme.spacing.md,
     alignItems: 'center',
+    borderBottomWidth: 2.5,
+    borderBottomColor: 'transparent',
   },
   tabItemActive: {
-    borderBottomWidth: 2.5,
     borderBottomColor: theme.colors.primary,
   },
   scrollContent: {
