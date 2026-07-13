@@ -289,6 +289,7 @@ export const RewardsScreen: React.FC<RewardsScreenProps> = ({
                     title="Unlock Now"
                     onPress={handleConfirmRedeem}
                     loading={loading}
+                    disabled={loading}
                     style={{ flex: 1, marginLeft: theme.spacing.sm }}
                   />
                 </View>
