@@ -1,25 +1,22 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, View, Animated, Dimensions } from 'react-native';
+import { StyleSheet, View, Animated, Image } from 'react-native';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText } from '../../components/SharedComponents';
-import { Ionicons } from '../../components/VIcons';
-
-const { width } = Dimensions.get('window');
 
 export const BrandedSplashScreen: React.FC = () => {
   const fadeAnim = new Animated.Value(0);
-  const scaleAnim = new Animated.Value(0.9);
+  const scaleAnim = new Animated.Value(0.95);
 
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 1000,
+        duration: 800,
         useNativeDriver: true,
       }),
       Animated.spring(scaleAnim, {
         toValue: 1,
-        friction: 4,
+        friction: 6,
         useNativeDriver: true,
       }),
     ]).start();
@@ -28,20 +25,15 @@ export const BrandedSplashScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <Animated.View style={[styles.logoWrapper, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
-        <View style={styles.logoCircle}>
-          <Ionicons
-            name="location"
-            size={normalize(32)}
-            color="#FF7A21" // Specific Orange
-            style={styles.logoPin}
-          />
-          <VText variant="h1" color="#FFFFFF" style={styles.logoV}>V</VText>
-        </View>
-        <VText variant="h1" color="#FFFFFF" style={styles.brandText}>VEND</VText>
+        <Image
+          source={require('../../../assets/branding/vend_logo_final.png')}
+          style={styles.logoImage}
+          resizeMode="contain"
+        />
       </Animated.View>
 
       <View style={styles.footer}>
-        <VText variant="caption" color="rgba(255,255,255,0.6)" style={styles.tagline}>
+        <VText variant="caption" color="#346A5E" style={styles.tagline}>
           HYPERLOCAL • SECURE • FAST
         </VText>
       </View>
@@ -52,41 +44,17 @@ export const BrandedSplashScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF', // White background as per shared logo image
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
   },
   logoWrapper: {
     alignItems: 'center',
-    flexDirection: 'row', // Horizontal layout: Icon + Text
-  },
-  logoCircle: {
-    width: normalize(120),
-    height: normalize(120),
     justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-    marginBottom: theme.spacing.lg,
   },
-  logoPin: {
-    position: 'absolute',
-    top: normalize(10), // Sitting in the center of the V arms
-    zIndex: 10,
-  },
-  logoV: {
-    fontSize: normalize(80),
-    fontWeight: '700',
-    color: '#346A5E', // Dark Teal
-    fontFamily: theme.typography.fontDisplay,
-    lineHeight: normalize(90),
-    textAlign: 'center',
-  },
-  brandText: {
-    fontSize: normalize(44),
-    letterSpacing: 2,
-    fontWeight: '800',
-    color: '#346A5E',
-    marginLeft: theme.spacing.md,
+  logoImage: {
+    width: normalize(280),
+    height: normalize(120),
   },
   footer: {
     position: 'absolute',
@@ -94,5 +62,7 @@ const styles = StyleSheet.create({
   },
   tagline: {
     letterSpacing: 2,
+    fontWeight: '700',
+    opacity: 0.8,
   },
 });

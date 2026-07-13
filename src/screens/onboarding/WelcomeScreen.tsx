@@ -18,15 +18,11 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNext }) => {
       <View style={styles.content}>
         {/* Decorative Brand Section */}
         <Animated.View entering={FadeInDown.duration(800)} style={styles.brandWrapper}>
-          <View style={styles.logoCircle}>
-            <Ionicons name="location" size={normalize(26)} color="#FF7A21" style={{ position: 'absolute', top: normalize(5), zIndex: 10 }} />
-            <VText variant="h1" color="#346A5E" style={[styles.logoText, { fontSize: normalize(52), fontWeight: '700' }]}>
-              V
-            </VText>
-          </View>
-          <VText variant="h1" color="#346A5E" style={[styles.brandTitle, { fontWeight: '800' }]}>
-            VEND
-          </VText>
+          <Image
+            source={require('../../../assets/branding/vend_logo_final.png')}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
           <VText variant="caption" color={theme.colors.textMuted} style={styles.tagline}>
             HYPERLOCAL DISCOVERY • REAL-TIME CONNECTION
           </VText>
@@ -84,23 +80,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: normalize(20),
   },
-  logoCircle: {
-    width: normalize(56),
-    height: normalize(56),
-    borderRadius: normalize(28),
-    backgroundColor: theme.colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  logoText: {
-    fontSize: normalize(28),
-    fontWeight: '900',
-  },
-  brandTitle: {
-    fontSize: normalize(24),
-    fontWeight: '900',
-    marginTop: theme.spacing.sm,
-    letterSpacing: 2,
+  logoImage: {
+    width: normalize(220),
+    height: normalize(80),
   },
   tagline: {
     marginTop: theme.spacing.xs,
