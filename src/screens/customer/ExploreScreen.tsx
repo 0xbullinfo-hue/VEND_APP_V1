@@ -210,6 +210,7 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
             <VCard
               variant={isPremium ? 'elevated' : 'outline'}
               onPress={() => {
+                addPoints(2); // Consistent reward for vendor discovery from list
                 trackProfileView(vendor.id, { actorUserId: user?.id, localityId: vendor.locality_id });
 
                 // Track engagement: vendor view
@@ -218,7 +219,7 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
                   vendorId: vendor.id,
                   vendorName: vendor.business_name,
                   category: vendor.category,
-                  durationSeconds: 15, // Estimate for profile view
+                  durationSeconds: 15,
                   interactionType: 'view',
                 });
 
@@ -229,7 +230,7 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
                 isPremium ? styles.cardPremium : styles.cardNormal,
               ]}
             >
-              <VImage source={vendor.image} style={styles.vendorCardImg} />
+              <VImage source={vendor?.image || ''} style={styles.vendorCardImg} />
               <View style={styles.vendorCardInfo}>
                 <View style={styles.vendorTitleRow}>
                   <VText variant="h3" numberOfLines={1} style={{ maxWidth: '70%' }}>
@@ -237,8 +238,8 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
                   </VText>
                   {isPremium && (
                     <View style={styles.premiumBadge}>
-                      <Ionicons name="sparkles" size={10} color="#FFFFFF" style={{ marginRight: 2 }} />
-                      <VText variant="caption" color="#FFFFFF">BOOSTED</VText>
+                      <Ionicons name="sparkles" size={normalize(8)} color="#FFFFFF" style={{ marginRight: 2 }} />
+                      <VText variant="caption" color="#FFFFFF" style={{ fontSize: normalize(8), fontWeight: '800' }}>BOOSTED</VText>
                     </View>
                   )}
                 </View>
@@ -366,6 +367,7 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
                 <VCard
                   variant={isPremium ? 'elevated' : 'outline'}
                   onPress={() => {
+                    addPoints(2); // Consistent reward for vendor discovery from list
                     trackProfileView(vendor.id, { actorUserId: user?.id, localityId: vendor.locality_id });
 
                     // Track engagement: vendor view
@@ -374,7 +376,7 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
                       vendorId: vendor.id,
                       vendorName: vendor.business_name,
                       category: vendor.category,
-                      durationSeconds: 15, // Estimate for profile view
+                      durationSeconds: 15,
                       interactionType: 'view',
                     });
 
@@ -393,10 +395,8 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
                       </VText>
                       {isPremium && (
                         <View style={styles.premiumBadge}>
-                          <Ionicons name="sparkles" size={8} color="#FFFFFF" style={{ marginRight: 2 }} />
-                          <VText variant="caption" color="#FFFFFF" style={{ fontSize: normalize(8) }}>
-                            BOOSTED
-                          </VText>
+                          <Ionicons name="sparkles" size={normalize(8)} color="#FFFFFF" style={{ marginRight: 2 }} />
+                          <VText variant="caption" color="#FFFFFF" style={{ fontSize: normalize(8), fontWeight: '800' }}>BOOSTED</VText>
                         </View>
                       )}
                     </View>
