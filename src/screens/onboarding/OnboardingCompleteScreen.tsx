@@ -11,7 +11,8 @@ interface OnboardingCompleteScreenProps {
 }
 
 export const OnboardingCompleteScreen: React.FC<OnboardingCompleteScreenProps> = ({ onEnterApp }) => {
-  const { user, points, locality } = useApp();
+  const { user, locality } = useApp();
+  const points = user?.points || 0;
 
   return (
     <SafeAreaView style={styles.container}>

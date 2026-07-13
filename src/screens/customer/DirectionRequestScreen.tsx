@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, VButton, VInput, HeaderBar, VendorProfilePendingState } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
+import { useVendorStore } from '../../store/useVendorStore';
 import { Ionicons } from '../../components/VIcons';
 
 interface DirectionRequestScreenProps {
@@ -68,6 +69,9 @@ export const DirectionRequestScreen: React.FC<DirectionRequestScreenProps> = ({
       setLoading(false);
       const isOk = verifyDirectionCode(vendor.id, handshakeCode.trim());
       if (isOk) {
+        // Economy: Transfer points from customer to vendor during handshake
+        // if user had unlocked a discount. For now, we simulate a standard point increase for vendor.
+        useVendorStore.getState().receivePointsFromCustomer(vendor.id, 5);
         setSuccess(true);
       } else {
         setErrorMsg('Invalid verification handshake code. Try again.');

@@ -23,6 +23,8 @@ import { uberMapStyle } from '../../theme/mapStyles';
 import { CATEGORY_CATALOG, getCategoryMeta } from '../../lib/categoryCatalog';
 import { rankVendorsForCustomer } from '../../lib/vendorRanking';
 import { useCustomerEngagementStore } from '../../store/useCustomerEngagementStore';
+import { useThemeStore } from '../../store/useThemeStore';
+import { getThemeColors } from '../../theme/themeConfig';
 
 const { width } = Dimensions.get('window');
 
@@ -38,6 +40,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onViewRewards
 }) => {
   const { vendors, addPoints, locality, dataSource, isRealtimeConnected, isLoadingVendors, trackProfileView, user, snapshots, setCurrentLocation, verifiedVisitCounts } = useApp();
+  const { isDarkMode } = useThemeStore();
+  const colors = getThemeColors(isDarkMode);
+
   const engagementStore = useCustomerEngagementStore();
   const prevSearchLengthRef = useRef<number>(0);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -186,7 +191,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Top Header */}
       <HeaderBar
         onPointsPress={onViewRewards}
@@ -197,7 +202,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         }
       />
 
-      <View style={styles.dataStatusBar}>
+      <View style={[styles.dataStatusBar, { backgroundColor: colors.background, borderColor: colors.border }]}>
         <View style={styles.dataStatusLeft}>
           <View
             style={[
@@ -258,11 +263,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       <View style={styles.mapContainer}>
         <Animated.View entering={FadeInUp.delay(300).duration(600)} style={styles.discoveryRail}>
           {/* Top Search Bar */}
-          <View style={styles.searchRailBox}>
-            <Ionicons name="search" size={18} color={theme.colors.textMuted} style={{ marginRight: 8 }} />
+          <View style={[styles.searchRailBox, { backgroundColor: isDarkMode ? colors.surface : 'rgba(255,255,255,0.98)', borderColor: colors.border }]}>
+            <Ionicons name="search" size={18} color={colors.textMuted} style={{ marginRight: 8 }} />
             <TextInput
               placeholder="Search local services & vendors..."
-              placeholderTextColor={theme.colors.textMuted}
+              placeholderTextColor={colors.textMuted}
               value={searchQuery}
               onChangeText={(text) => {
                 setSearchQuery(text);
@@ -271,7 +276,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 }
                 prevSearchLengthRef.current = text.length;
               }}
-              style={[styles.searchRailInput, { fontFamily: theme.typography.fontSans }]}
+              style={[styles.searchRailInput, { color: colors.textMain, fontFamily: theme.typography.fontSans }]}
             />
             {searchQuery ? (
               <TouchableOpacity
@@ -279,10 +284,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 onPress={() => setSearchQuery('')}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Ionicons name="close-circle" size={18} color={theme.colors.textMuted} />
+                <Ionicons name="close-circle" size={18} color={colors.textMuted} />
               </TouchableOpacity>
             ) : null}
-            <View style={styles.vDivider} />
+            <View style={[styles.vDivider, { backgroundColor: colors.border }]} />
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={() => {
@@ -301,7 +306,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               style={styles.filterTrigger}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Ionicons name="options-outline" size={20} color={theme.colors.primary} />
+              <Ionicons name="options-outline" size={20} color={colors.primary} />
             </TouchableOpacity>
           </View>
 
@@ -320,18 +325,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                       onPress={() => setSelectedCategory(cat.name === 'All' ? null : cat.name)}
                       style={[
                         styles.categoryTag,
-                        isSelected ? styles.tagActive : styles.tagInactive
+                        isSelected ? styles.tagActive : [styles.tagInactive, { backgroundColor: isDarkMode ? colors.surface : 'rgba(255,255,255,0.9)', borderColor: colors.primaryLight }]
                       ]}
                     >
                       <Ionicons
                         name={cat.icon as IonIconName}
                         size={normalize(13)}
-                        color={isSelected ? theme.colors.background : theme.colors.primary}
+                        color={isSelected ? '#FFFFFF' : colors.primary}
                         style={{ marginRight: 4 }}
                       />
                       <VText
                         variant="caption"
-                        color={isSelected ? theme.colors.background : theme.colors.primary}
+                        color={isSelected ? '#FFFFFF' : colors.primary}
                         style={{ fontSize: normalize(11) }}
                       >
                         {cat.name}
@@ -493,28 +498,28 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </TouchableOpacity>
         </View>
 
-        <View style={styles.tierLegendCard}>
+        <View style={[styles.tierLegendCard, { backgroundColor: isDarkMode ? colors.surface : 'rgba(255,255,255,0.9)', borderColor: colors.border }]}>
           <View style={styles.legendRow}>
             <View style={[styles.legendDot, { backgroundColor: '#F59E0B' }]} />
-            <VText variant="caption" color={theme.colors.textMain}>Boosted</VText>
+            <VText variant="caption" color={colors.textMain}>Boosted</VText>
           </View>
           <View style={styles.legendRow}>
             <View style={[styles.legendDot, { backgroundColor: '#2563EB' }]} />
-            <VText variant="caption" color={theme.colors.textMain}>Verified</VText>
+            <VText variant="caption" color={colors.textMain}>Verified</VText>
           </View>
           <View style={styles.legendRow}>
             <View style={[styles.legendDot, { backgroundColor: '#6B7280' }]} />
-            <VText variant="caption" color={theme.colors.textMain}>Home-Based</VText>
+            <VText variant="caption" color={colors.textMain}>Home-Based</VText>
           </View>
         </View>
       </View>
 
       {/* Suggested Unvisited Gems Bar (Promo) - Only visible when no vendor is selected */}
       {!selectedVendorId && (
-        <View style={styles.promoBar}>
+        <View style={[styles.promoBar, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
           <View style={styles.promoHeader}>
-            <VText variant="h3">Unvisited Gems Nearby</VText>
-            <VText variant="caption" color={theme.colors.primary}>BOOST FIRST • EARN +20 PTS</VText>
+            <VText variant="h3" color={colors.textMain}>Unvisited Gems Nearby</VText>
+            <VText variant="caption" color={colors.primary}>BOOST FIRST • EARN +20 PTS</VText>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.promoScroll}>
             {isLoadingVendors ? (
@@ -574,13 +579,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         enablePanDownToClose={true}
         onChange={handleSheetChanges}
         backgroundStyle={{
-          backgroundColor: theme.colors.background,
+          backgroundColor: colors.background,
           borderTopLeftRadius: normalize(24),
           borderTopRightRadius: normalize(24),
           borderTopWidth: 1.5,
-          borderTopColor: theme.colors.primaryLight,
+          borderTopColor: colors.primaryLight,
         }}
-        handleIndicatorStyle={styles.sheetHandle}
+        handleIndicatorStyle={[styles.sheetHandle, { backgroundColor: colors.border }]}
       >
         {activeVendor && (
           <BottomSheetView style={styles.sheetContentWrapper}>

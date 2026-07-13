@@ -11,6 +11,7 @@ import {
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, VButton, HeaderBar, VImage, VendorProfilePendingState } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
+import { useAuthStore } from '../../store/useAuthStore';
 import { Ionicons } from '../../components/VIcons';
 import { getClosingUrgency } from '../../lib/timeUtils';
 
@@ -29,7 +30,7 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({
   onLeaveReview,
   onStartChat
 }) => {
-  const { vendors, savedVendors, toggleSaveVendor, addPoints, directionRequests, trackDirectionsRequest, trackChatStart, user, verifiedVisitCounts, recordChatInquiry } = useApp();
+  const { vendors, savedVendors, toggleSaveVendor, addPoints, directionRequests, trackDirectionsRequest, trackChatStart, user, verifiedVisitCounts, recordChatInquiry, triggerNotification } = useApp();
 
   const vendor = vendors.find(v => v.id === vendorId);
   if (!vendor) {
@@ -63,6 +64,29 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({
   const handleDirectionsPress = () => {
     trackDirectionsRequest(vendor.id, { actorUserId: user?.id, localityId: vendor.locality_id });
     onRequestDirections(vendor.id);
+  };
+
+  const handleRedeemDiscount = (service: any) => {
+    if ((user?.points || 0) < service.pointsDiscountCost) {
+      Alert.alert('Low Points', `You need ${service.pointsDiscountCost} PTS to unlock this ${service.discountValue} discount.`);
+      return;
+    }
+
+    Alert.alert(
+      'Redeem Discount?',
+      `Spend ${service.pointsDiscountCost} VEND points to unlock ${service.discountValue} off ${service.title}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Redeem Now',
+          onPress: () => {
+            useAuthStore.getState().deductPoints(service.pointsDiscountCost);
+            // In a real flow, this would mark the direction request as having a pending discount
+            triggerNotification(`Discount unlocked! Show the verification code to the vendor to claim your ${service.discountValue} off.`);
+          }
+        }
+      ]
+    );
   };
 
   return (
@@ -274,15 +298,35 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({
             vendor.services.map((service: any) => (
               <View key={service.id} style={styles.serviceItem}>
                 <View style={{ flex: 1 }}>
-                  <VText variant="h3">{service.title}</VText>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <VText variant="h3">{service.title}</VText>
+                    {service.allowPointDiscount && (
+                      <View style={styles.discountBadge}>
+                        <VText variant="caption" color="#FFFFFF" style={{ fontSize: 9 }}>{service.discountValue}</VText>
+                      </View>
+                    )}
+                  </View>
                   <VText variant="caption" color={theme.colors.textMuted} style={{ marginTop: 2 }}>
                     {service.description}
                   </VText>
-                  {service.price > 0 && (
-                    <VText variant="caption" color={theme.colors.primary} style={{ marginTop: 3, fontWeight: '700' }}>
-                      NGN {service.price.toLocaleString()}
-                    </VText>
-                  )}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                    {service.price > 0 && (
+                      <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: '700' }}>
+                        NGN {service.price.toLocaleString()}
+                      </VText>
+                    )}
+                    {service.allowPointDiscount && (
+                      <TouchableOpacity
+                        onPress={() => handleRedeemDiscount(service)}
+                        style={styles.redeemDiscountBtn}
+                      >
+                        <Ionicons name="gift" size={10} color={theme.colors.primary} />
+                        <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 4 }}>
+                          Redeem for {service.pointsDiscountCost} PTS
+                        </VText>
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 </View>
                 <TouchableOpacity 
                   activeOpacity={0.8}
@@ -553,6 +597,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: theme.spacing.md,
+  },
+  discountBadge: {
+    backgroundColor: theme.colors.accent,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginLeft: 8,
+  },
+  redeemDiscountBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.primaryLight,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    marginLeft: 12,
   },
   emptyCard: {
     backgroundColor: theme.colors.surface,

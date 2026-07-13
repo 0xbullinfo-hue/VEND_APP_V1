@@ -1,6 +1,7 @@
 // Central mock data store — the single source of truth for all static/seed data.
 // Replace this file's exports with Supabase queries when doing the backend integration.
 import { CATEGORY_CATALOG } from './categoryCatalog';
+import { VendorProfile } from '../types';
 
 export const MOCK_CATEGORIES = CATEGORY_CATALOG;
 
@@ -42,7 +43,7 @@ export const MOCK_LOCALITIES = [
   },
 ];
 
-export const MOCK_VENDORS = [
+export const MOCK_VENDORS: VendorProfile[] = [
   {
     id: 'v1',
     business_name: "Mama Titi's Kitchen",
@@ -57,6 +58,7 @@ export const MOCK_VENDORS = [
     business_hours: '08:00 AM - 09:00 PM',
     image: 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=500&q=80',
     street_address: 'Alagomeji Street, Yaba, Lagos',
+    point_wallet: 150,
     exact_location: { latitude: 6.5050, longitude: 3.3750 },
     services: [
       {
@@ -68,6 +70,9 @@ export const MOCK_VENDORS = [
         stock: 20,
         stockStatus: 'in_stock',
         image: 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=300&q=80',
+        allowPointDiscount: true,
+        pointsDiscountCost: 50,
+        discountValue: '10%'
       },
       {
         id: 's2',
@@ -95,6 +100,7 @@ export const MOCK_VENDORS = [
     business_hours: '09:00 AM - 05:00 PM',
     image: 'https://images.unsplash.com/photo-1607400201515-c2c41c07d307?w=500&q=80',
     street_address: 'Toyin Street, Ikeja, Lagos',
+    point_wallet: 45,
     exact_location: { latitude: 6.5985, longitude: 3.3512 },
     services: [
       {
@@ -123,6 +129,7 @@ export const MOCK_VENDORS = [
     business_hours: '10:00 AM - 08:00 PM',
     image: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=500&q=80',
     street_address: 'Herbert Macaulay Way, Yaba',
+    point_wallet: 320,
     exact_location: { latitude: 6.5101, longitude: 3.3640 },
     services: [
       {
@@ -134,6 +141,9 @@ export const MOCK_VENDORS = [
         stock: 3,
         stockStatus: 'in_stock',
         image: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=300&q=80',
+        allowPointDiscount: true,
+        pointsDiscountCost: 100,
+        discountValue: 'N2,000 Off'
       },
       {
         id: 's5',
@@ -161,6 +171,7 @@ export const MOCK_VENDORS = [
     business_hours: '09:00 AM - 06:00 PM',
     image: 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?w=500&q=80',
     street_address: 'Admiralty Way, Lekki Phase 1',
+    point_wallet: 10,
     exact_location: { latitude: 6.4401, longitude: 3.4714 },
     services: [
       {

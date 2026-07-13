@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MOCK_VENDORS } from '../lib/mockData';
 import { getPlanForTier, clampTier } from '../lib/subscriptionPlans';
+import { useAuthStore } from './useAuthStore';
 import { useUIStore } from './useUIStore';
 import { UserProfile, VendorProfile, VendorSnapshot, VendorServiceItem } from '../types';
 import { useLocationStore } from './useLocationStore';
@@ -50,6 +51,8 @@ interface VendorState {
   updateVendorService: (vendorId: string, serviceId: string, updates: Partial<VendorServiceItem>) => void;
   deleteVendorService: (vendorId: string, serviceId: string) => void;
   redeemPointBoost: (vendorId: string, boostType: 'flash' | 'search' | 'map', pointsCost: number) => boolean;
+  receivePointsFromCustomer: (vendorId: string, amount: number) => void;
+  convertCurrencyToPoints: (vendorId: string, amountNGN: number) => void;
   recordChatInquiry: (vendorId: string) => void;
   resetSavedVendors: () => void;
 }
@@ -142,6 +145,7 @@ export const useVendorStore = create<VendorState>()(
             image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500&q=80',
             services: [],
             street_address: '',
+            point_wallet: 50, // Welcome points for vendors
             exact_location: locality?.center_location || { latitude: 6.5165, longitude: 3.3792 }
           };
           return { vendors: rankVendorsForCustomer([newVendorProfile, ...state.vendors]) };
@@ -155,7 +159,7 @@ export const useVendorStore = create<VendorState>()(
           } else {
             const hasSavedBefore = state.savedHistory.includes(vendorId);
             if (!hasSavedBefore) {
-              useUIStore.getState().addPoints(5);
+              useAuthStore.getState().addPoints(5);
             }
             return {
               savedVendors: [...state.savedVendors, vendorId],
@@ -183,7 +187,7 @@ export const useVendorStore = create<VendorState>()(
           snapshots: [newSnapshot, ...state.snapshots].slice(0, 20) // Keep latest 20
         }));
 
-        useUIStore.getState().addPoints(50);
+        useAuthStore.getState().addPoints(50);
         useUIStore.getState().triggerNotification("Daily Snapshot posted! +50 VEND points earned.");
       },
 
@@ -215,6 +219,7 @@ export const useVendorStore = create<VendorState>()(
             rating: 5.0,
             is_open: true,
             subscription_tier: 1,
+            point_wallet: 50,
             image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500&q=80',
             services: [],
           };
@@ -307,8 +312,8 @@ export const useVendorStore = create<VendorState>()(
       },
 
       redeemPointBoost: (vendorId, boostType, pointsCost) => {
-        const currentPoints = useUIStore.getState().points;
-        if (currentPoints < pointsCost) {
+        const vendor = get().vendors.find(v => v.id === vendorId);
+        if (!vendor || vendor.point_wallet < pointsCost) {
           useUIStore.getState().triggerNotification(`Insufficient points. You need ${pointsCost} PTS.`);
           return false;
         }
@@ -317,19 +322,32 @@ export const useVendorStore = create<VendorState>()(
         const expiry = Date.now() + durationMs;
 
         set((state) => ({
-          vendors: state.vendors.map((v) => (v.id === vendorId ? { ...v, boost_expiry: expiry } : v)),
+          vendors: state.vendors.map((v) => (v.id === vendorId ? { ...v, boost_expiry: expiry, point_wallet: v.point_wallet - pointsCost } : v)),
         }));
 
-        useUIStore.getState().setPoints(currentPoints - pointsCost);
         useUIStore.getState().triggerNotification(`${boostType.toUpperCase()} boost activated! -${pointsCost} PTS.`);
         return true;
+      },
+
+      receivePointsFromCustomer: (vendorId, amount) => {
+        set((state) => ({
+          vendors: state.vendors.map(v => v.id === vendorId ? { ...v, point_wallet: v.point_wallet + amount } : v)
+        }));
+      },
+
+      convertCurrencyToPoints: (vendorId, amountNGN) => {
+        const pointsToAdd = Math.floor(amountNGN / 10); // Example: 1000 NGN = 100 PTS
+        set((state) => ({
+          vendors: state.vendors.map(v => v.id === vendorId ? { ...v, point_wallet: v.point_wallet + pointsToAdd } : v)
+        }));
+        useUIStore.getState().triggerNotification(`Payment successful! +${pointsToAdd} PTS added to your wallet.`);
       },
 
       recordChatInquiry: (vendorId) => {
         set((state) => {
           if (state.chatHistory.includes(vendorId)) return state;
 
-          useUIStore.getState().addPoints(5);
+          useAuthStore.getState().addPoints(5);
           return { chatHistory: [...state.chatHistory, vendorId] };
         });
       },

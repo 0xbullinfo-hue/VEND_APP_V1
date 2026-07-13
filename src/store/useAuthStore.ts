@@ -34,6 +34,8 @@ interface AuthState {
   login: (phone: string, role: 'customer' | 'vendor', name: string) => Promise<void>;
   setOnboardingLocality: (localityId: number) => Promise<void>;
   setReferralCode: (code: string) => Promise<void>;
+  addPoints: (amount: number) => void;
+  deductPoints: (amount: number) => void;
   completeOnboarding: () => Promise<void>;
   hydrateAuthSession: () => Promise<void>;
   initAuthListener: () => () => void;
@@ -94,6 +96,7 @@ export const useAuthStore = create<AuthState>()(
           phone,
           role: selectedRole,
           name: sanitizedName || (selectedRole === 'vendor' ? 'Premium Vendor' : 'Valued Customer'),
+          points: 100, // Initial welcome points
         };
 
         set({
@@ -103,10 +106,6 @@ export const useAuthStore = create<AuthState>()(
           otpSending: false,
           otpError: null,
         });
-
-        if (selectedRole === 'customer') {
-          useUIStore.getState().setPoints(0);
-        }
 
         if (selectedRole === 'vendor') {
           useVendorStore.getState().ensureVendorProfile(userProfile);
@@ -125,6 +124,7 @@ export const useAuthStore = create<AuthState>()(
           phone,
           role: selectedRole,
           name: sanitizedName || (selectedRole === 'vendor' ? 'Premium Vendor' : 'Valued Customer'),
+          points: 100,
         };
 
         set({
@@ -132,10 +132,6 @@ export const useAuthStore = create<AuthState>()(
           role: selectedRole,
           onboardingCompleted: false,
         });
-
-        if (selectedRole === 'customer') {
-          useUIStore.getState().setPoints(0);
-        }
 
         if (selectedRole === 'vendor') {
           useVendorStore.getState().ensureVendorProfile(mockUser);
@@ -153,6 +149,18 @@ export const useAuthStore = create<AuthState>()(
         if (!user) return;
         const normalizedCode = code.trim();
         set({ user: { ...user, referralCode: normalizedCode || undefined } });
+      },
+
+      addPoints: (amount) => {
+        const { user } = get();
+        if (!user) return;
+        set({ user: { ...user, points: user.points + amount } });
+      },
+
+      deductPoints: (amount) => {
+        const { user } = get();
+        if (!user) return;
+        set({ user: { ...user, points: Math.max(0, user.points - amount) } });
       },
 
       completeOnboarding: async () => {
@@ -178,6 +186,7 @@ export const useAuthStore = create<AuthState>()(
                 phone: session.phone || current.user?.phone || '',
                 role: resolvedRole,
                 name: isSameUser ? (current.user?.name || '') : '',
+                points: isSameUser ? (current.user?.points || 0) : 0,
                 localityId: isSameUser ? current.user?.localityId : undefined,
                 referralCode: isSameUser ? current.user?.referralCode : undefined,
               };
@@ -203,7 +212,6 @@ export const useAuthStore = create<AuthState>()(
             const { user } = get();
             if (user) {
               set({ user: null, role: null, onboardingCompleted: false });
-              useUIStore.getState().setPoints(0);
               useVendorStore.getState().resetSavedVendors();
               useTripStore.getState().resetTrips();
               useLocationStore.getState().resetLocality();
@@ -216,7 +224,6 @@ export const useAuthStore = create<AuthState>()(
       logout: () => {
         void signOut();
         set({ user: null, role: null, onboardingCompleted: false, isHydrated: true, otpError: null });
-        useUIStore.getState().setPoints(0);
         useVendorStore.getState().resetSavedVendors();
         useTripStore.getState().resetTrips();
         useLocationStore.getState().resetLocality();

@@ -17,6 +17,8 @@ import { CATEGORY_CATALOG } from '../../lib/categoryCatalog';
 import { rankVendorsForCustomer, getDistance } from '../../lib/vendorRanking';
 import { getRankingPolicy } from '../../lib/rankingTransparency';
 import { useCustomerEngagementStore } from '../../store/useCustomerEngagementStore';
+import { useThemeStore } from '../../store/useThemeStore';
+import { getThemeColors } from '../../theme/themeConfig';
 
 interface ExploreScreenProps {
   onBackToHome: () => void;
@@ -30,6 +32,9 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
   onViewRewards
 }) => {
   const { vendors, addPoints, locality, isRealtimeConnected, dataSource, trackProfileView, user, currentLocation } = useApp();
+  const { isDarkMode } = useThemeStore();
+  const colors = getThemeColors(isDarkMode);
+
   const engagementStore = useCustomerEngagementStore();
   const viewStartTimeRef = useRef<number>(0);
   const prevSearchLengthRef = useRef<number>(0);
@@ -440,7 +445,7 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <HeaderBar 
         title="Explore" 
         showBack={true} 
@@ -448,12 +453,12 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
         onPointsPress={onViewRewards} 
       />
 
-      <View style={styles.searchContainer}>
-        <View style={styles.searchFieldBox}>
-          <Ionicons name="search" size={20} color={theme.colors.textMuted} style={{ marginRight: 8 }} />
+      <View style={[styles.searchContainer, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
+        <View style={[styles.searchFieldBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Ionicons name="search" size={20} color={colors.textMuted} style={{ marginRight: 8 }} />
           <TextInput
             placeholder="Search tailored services, plumbing, foods..."
-            placeholderTextColor={theme.colors.textMuted}
+            placeholderTextColor={colors.textMuted}
             value={searchQuery}
             onChangeText={(text) => {
               setSearchQuery(text);
@@ -462,7 +467,7 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
               }
               prevSearchLengthRef.current = text.length;
             }}
-            style={[styles.searchInput, { fontFamily: theme.typography.fontSans }]}
+            style={[styles.searchInput, { color: colors.textMain, fontFamily: theme.typography.fontSans }]}
           />
           {searchQuery !== '' && (
             <TouchableOpacity
@@ -475,15 +480,15 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
         </View>
 
         <View style={styles.discoveryMetaRow}>
-          <View style={styles.metaPill}>
-            <Ionicons name="location" size={12} color={theme.colors.primary} />
-            <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 5 }}>
+          <View style={[styles.metaPill, { backgroundColor: isDarkMode ? colors.surface : '#F8FAFC', borderColor: colors.border }]}>
+            <Ionicons name="location" size={12} color={colors.primary} />
+            <VText variant="caption" color={colors.primary} style={{ marginLeft: 5 }}>
               {locality?.name || 'Yaba / Mainland'}
             </VText>
           </View>
-          <View style={styles.metaPill}>
-            <View style={[styles.feedDot, { backgroundColor: isRealtimeConnected ? theme.colors.accent : theme.colors.warning }]} />
-            <VText variant="caption" color={theme.colors.textMain}>
+          <View style={[styles.metaPill, { backgroundColor: isDarkMode ? colors.surface : '#F8FAFC', borderColor: colors.border }]}>
+            <View style={[styles.feedDot, { backgroundColor: isRealtimeConnected ? colors.accent : colors.warning }]} />
+            <VText variant="caption" color={colors.textMain}>
               {dataSource === 'supabase' && isRealtimeConnected ? 'Live Feed' : 'Demo Feed'}
             </VText>
           </View>
@@ -531,11 +536,11 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
           </TouchableOpacity>
         </View>
 
-        <View style={styles.priorityLegendCard}>
+        <View style={[styles.priorityLegendCard, { backgroundColor: isDarkMode ? colors.surface : '#F8FAFC', borderColor: 'rgba(17, 92, 85, 0.12)' }]}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <View>
-              <VText variant="caption" color={theme.colors.textMuted}>RANKING & SORT</VText>
-              <VText variant="caption" color={theme.colors.textMain} style={{ marginTop: 2 }}>
+              <VText variant="caption" color={colors.textMuted}>RANKING & SORT</VText>
+              <VText variant="caption" color={colors.textMain} style={{ marginTop: 2 }}>
                 {sortBy === 'recommended' ? 'Boosted prioritized in your locality' : `Sorted by ${sortBy}`}
               </VText>
             </View>

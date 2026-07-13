@@ -14,6 +14,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, IonIconName } from './VIcons';
 import { theme, normalize } from '../theme/designSystem';
 import { useApp } from '../contexts/AppContext';
+import { useThemeStore } from '../store/useThemeStore';
+import { getThemeColors } from '../theme/themeConfig';
 
 // VText component
 export const VText: React.FC<{
@@ -31,10 +33,13 @@ export const VText: React.FC<{
   children,
   numberOfLines 
 }) => {
+  const { isDarkMode } = useThemeStore();
+  const colors = getThemeColors(isDarkMode);
+
   const textStyle = theme.typography[variant];
   const defaultColor = variant === 'caption' || variant === 'subtext' 
-    ? theme.colors.textMuted 
-    : theme.colors.textMain;
+    ? colors.textMuted
+    : colors.textMain;
 
   return (
     <Text 
@@ -76,31 +81,34 @@ export const VButton: React.FC<{
   style,
   textStyle 
 }) => {
+  const { isDarkMode } = useThemeStore();
+  const colors = getThemeColors(isDarkMode);
+
   const getStyles = () => {
     switch (variant) {
       case 'primary':
         return {
-          bg: theme.colors.primary,
-          border: theme.colors.primary,
-          text: theme.colors.background,
+          bg: colors.primary,
+          border: colors.primary,
+          text: isDarkMode ? '#000000' : colors.background,
         };
       case 'secondary':
         return {
-          bg: theme.colors.primaryLight,
-          border: theme.colors.primaryLight,
-          text: theme.colors.primary,
+          bg: colors.primaryLight,
+          border: colors.primaryLight,
+          text: colors.primary,
         };
       case 'outline':
         return {
           bg: 'transparent',
-          border: theme.colors.primary,
-          text: theme.colors.primary,
+          border: colors.primary,
+          text: colors.primary,
         };
       case 'danger':
         return {
-          bg: theme.colors.danger,
-          border: theme.colors.danger,
-          text: theme.colors.background,
+          bg: colors.danger,
+          border: colors.danger,
+          text: isDarkMode ? '#000000' : colors.background,
         };
     }
   };
@@ -179,25 +187,28 @@ export const VInput: React.FC<{
   style,
   maxLength
 }) => {
+  const { isDarkMode } = useThemeStore();
+  const colors = getThemeColors(isDarkMode);
+
   return (
-    <View style={[styles.inputContainer, style]}>
+    <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderColor: colors.border }, style]}>
       {icon && (
         <Ionicons 
           name={icon as IonIconName}
           size={normalize(20)} 
-          color={theme.colors.textMuted} 
+          color={colors.textMuted}
           style={styles.inputIcon} 
         />
       )}
       <TextInput
         placeholder={placeholder}
-        placeholderTextColor={theme.colors.textMuted}
+        placeholderTextColor={colors.textMuted}
         value={value}
         onChangeText={onChangeText}
         keyboardType={keyboardType}
         secureTextEntry={secureTextEntry}
         maxLength={maxLength}
-        style={[styles.input, { fontFamily: theme.typography.fontSans }]}
+        style={[styles.input, { color: colors.textMain, fontFamily: theme.typography.fontSans }]}
       />
     </View>
   );
@@ -205,7 +216,9 @@ export const VInput: React.FC<{
 
 // Header Point Widget
 export const PointWidget: React.FC<{ onPress?: () => void }> = ({ onPress }) => {
-  const { points } = useApp();
+  const { user } = useApp();
+  const { isDarkMode } = useThemeStore();
+  const colors = getThemeColors(isDarkMode);
 
   const handlePress = () => {
     if (onPress) {
@@ -217,11 +230,11 @@ export const PointWidget: React.FC<{ onPress?: () => void }> = ({ onPress }) => 
     <TouchableOpacity 
       activeOpacity={0.8}
       onPress={handlePress}
-      style={styles.pointsBadge}
+      style={[styles.pointsBadge, { backgroundColor: colors.primaryLight, borderColor: 'rgba(17, 92, 85, 0.1)' }]}
     >
       <Ionicons name="star" size={normalize(14)} color="#F59E0B" style={{ marginRight: 4 }} />
-      <VText variant="caption" color={theme.colors.primary}>
-        {points} PTS
+      <VText variant="caption" color={colors.primary}>
+        {user?.points || 0} PTS
       </VText>
     </TouchableOpacity>
   );
@@ -246,9 +259,11 @@ export const HeaderBar: React.FC<{
   style
 }) => {
   const { locality } = useApp();
+  const { isDarkMode } = useThemeStore();
+  const colors = getThemeColors(isDarkMode);
 
   return (
-    <SafeAreaView style={[styles.headerSafeArea, style]}>
+    <SafeAreaView style={[styles.headerSafeArea, { backgroundColor: colors.background, borderBottomColor: colors.border }, style]}>
       <View style={styles.headerContainer}>
         <View style={styles.headerLeft}>
           {showBack && onBack ? (
@@ -257,11 +272,11 @@ export const HeaderBar: React.FC<{
               style={styles.backButton}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Ionicons name="arrow-back" size={normalize(24)} color={theme.colors.textMain} />
+              <Ionicons name="arrow-back" size={normalize(24)} color={colors.textMain} />
             </TouchableOpacity>
           ) : (
             <View style={styles.localityContainer}>
-              <Ionicons name="location" size={normalize(16)} color={theme.colors.primary} />
+              <Ionicons name="location" size={normalize(16)} color={colors.primary} />
               <VText variant="subtext" style={{ marginLeft: 4 }}>
                 {locality ? locality.name : 'Select Locality'}
               </VText>
@@ -295,6 +310,8 @@ export const HeaderBar: React.FC<{
 // Toast notification for Points and general alerts
 export const NotificationToast: React.FC = () => {
   const { notification, dismissNotification } = useApp();
+  const { isDarkMode } = useThemeStore();
+  const colors = getThemeColors(isDarkMode);
 
   useEffect(() => {
     if (notification) {
@@ -312,19 +329,19 @@ export const NotificationToast: React.FC = () => {
   return (
     <View style={[
       styles.toastContainer, 
-      isSOS ? styles.sosToast : styles.normalToast,
+      isSOS ? styles.sosToast : { backgroundColor: colors.background, borderColor: colors.primaryLight },
       theme.shadows.premium
     ]}>
       <Ionicons 
         name={isSOS ? "alert-circle" : "sparkles"} 
         size={normalize(20)} 
-        color={isSOS ? theme.colors.background : theme.colors.primary} 
+        color={isSOS ? colors.background : colors.primary}
         style={{ marginRight: 10 }}
       />
       <View style={{ flex: 1 }}>
         <Text style={[
           styles.toastText,
-          { color: isSOS ? theme.colors.background : theme.colors.textMain }
+          { color: isSOS ? colors.background : colors.textMain }
         ]}>
           {notification}
         </Text>
@@ -333,7 +350,7 @@ export const NotificationToast: React.FC = () => {
         <Ionicons 
           name="close" 
           size={normalize(18)} 
-          color={isSOS ? theme.colors.background : theme.colors.textMuted} 
+          color={isSOS ? colors.background : colors.textMuted}
         />
       </TouchableOpacity>
     </View>
@@ -376,10 +393,13 @@ export const VCard: React.FC<{
   style?: any;
   onPress?: () => void;
 }> = ({ children, variant = 'elevated', style, onPress }) => {
+  const { isDarkMode } = useThemeStore();
+  const colors = getThemeColors(isDarkMode);
+
   const variantStyle = variant === 'elevated'
-    ? theme.shadows.soft
+    ? isDarkMode ? { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border } : theme.shadows.soft
     : variant === 'outline'
-      ? { borderWidth: 1, borderColor: theme.colors.border }
+      ? { borderWidth: 1, borderColor: colors.border }
       : {};
 
   if (onPress) {
@@ -389,6 +409,7 @@ export const VCard: React.FC<{
         onPress={onPress}
         style={[
           styles.cardBase,
+          { backgroundColor: colors.background },
           variantStyle,
           style
         ]}
@@ -402,6 +423,7 @@ export const VCard: React.FC<{
     <View
       style={[
         styles.cardBase,
+        { backgroundColor: colors.background },
         variantStyle,
         style
       ]}

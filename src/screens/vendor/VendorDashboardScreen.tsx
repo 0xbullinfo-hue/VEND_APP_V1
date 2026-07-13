@@ -400,7 +400,7 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
               <VText variant="caption" color={theme.colors.textMuted}>Manage feedback</VText>
             </VCard>
 
-            <VCard variant="outline" style={styles.gridBox} onPress={() => { console.log('[VendorDashboard] onViewGrowth pressed'); onViewGrowth?.(); }}>
+            <VCard variant="outline" style={styles.gridBox} onPress={() => Alert.alert('Point Wallet', `Balance: ${vendor.point_wallet} PTS\n\nCustomers spend points at your shop via handshakes. You use points to trigger Boosts.`)}>
               <View style={styles.gridIconCircle}>
                 <Ionicons name="rocket" size={24} color={theme.colors.primary} />
               </View>

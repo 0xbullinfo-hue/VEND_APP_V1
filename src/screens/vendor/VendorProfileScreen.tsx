@@ -5,6 +5,7 @@ import { theme, normalize } from '../../theme/designSystem';
 import { VText, HeaderBar, VButton, VInput, VImage } from '../../components/SharedComponents';
 import { Ionicons } from '../../components/VIcons';
 import { useApp } from '../../contexts/AppContext';
+import { useThemeStore } from '../../store/useThemeStore';
 
 interface VendorProfileScreenProps {
   onBack?: () => void;
@@ -14,6 +15,7 @@ interface VendorProfileScreenProps {
 
 export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({ onBack, onTestRegistration, onLogout }) => {
   const { logout, user, vendors, myVendorProfile, updateVendorProfile } = useApp();
+  const { isDarkMode, toggleDarkMode } = useThemeStore();
   const vendor = myVendorProfile || vendors.find(v => v.id === user?.id);
 
   const [showEdit, setShowEdit] = useState(false);
@@ -60,6 +62,7 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({ onBack
 
         <View style={styles.menuList}>
           {[
+            { icon: isDarkMode ? 'sunny-outline' : 'moon-outline', label: isDarkMode ? 'Light Mode' : 'Dark Mode', onPress: toggleDarkMode },
             { icon: 'storefront-outline', label: 'Edit Store Info', onPress: () => setShowEdit(true) },
             { icon: 'eye-outline', label: 'Preview Public Profile', onPress: () => {
               if (vendor) {

@@ -13,6 +13,7 @@ import { VText, VButton, VInput, HeaderBar, VImage, VCard } from '../../componen
 import { useApp } from '../../contexts/AppContext';
 import { Ionicons } from '../../components/VIcons';
 import { useNavigation } from '@react-navigation/native';
+import { useThemeStore } from '../../store/useThemeStore';
 
 interface CustomerProfileScreenProps {
   onBackToHome: () => void;
@@ -40,6 +41,7 @@ export const CustomerProfileScreen: React.FC<CustomerProfileScreenProps> = ({
     triggerNotification,
     logout
   } = useApp();
+  const { isDarkMode, toggleDarkMode } = useThemeStore();
 
   const navigation = useNavigation<any>();
 
@@ -149,10 +151,10 @@ export const CustomerProfileScreen: React.FC<CustomerProfileScreenProps> = ({
             
             {/* Account Settings Menu */}
             <View style={styles.menuGroup}>
-              <VCard variant="outline" style={styles.menuItem} onPress={() => { triggerNotification('Profile editor will be available soon.'); }}>
+              <VCard variant="outline" style={styles.menuItem} onPress={toggleDarkMode}>
                 <View style={styles.menuLeft}>
-                  <Ionicons name="person-outline" size={32} color={theme.colors.primary} />
-                  <VText variant="h3" align="center" style={{ marginTop: 8 }}>Edit Profile</VText>
+                  <Ionicons name={isDarkMode ? "moon" : "sunny-outline"} size={32} color={theme.colors.primary} />
+                  <VText variant="h3" align="center" style={{ marginTop: 8 }}>{isDarkMode ? 'Dark Mode' : 'Light Mode'}</VText>
                 </View>
               </VCard>
 

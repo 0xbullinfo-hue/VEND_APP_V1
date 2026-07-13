@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { DirectionRequest, EmergencyContact, LocalityQuest } from '../types';
+import { useAuthStore } from './useAuthStore';
 import { useUIStore } from './useUIStore';
 import { useVendorStore } from './useVendorStore';
 
@@ -94,7 +95,7 @@ export const useTripStore = create<TripState>((set, get) => ({
         get().updateQuests(vendor.category);
       }
 
-      useUIStore.getState().addPoints(100);
+      useAuthStore.getState().addPoints(100);
       useUIStore.getState().triggerNotification("Visit verified successfully! +100 VEND points earned.");
       return true;
     }
@@ -158,7 +159,7 @@ export const useTripStore = create<TripState>((set, get) => ({
           const newCount = q.currentCount + 1;
           const isCompleted = newCount >= q.targetCount;
           if (isCompleted) {
-            useUIStore.getState().addPoints(q.pointsReward);
+            useAuthStore.getState().addPoints(q.pointsReward);
             useUIStore.getState().triggerNotification(`🎖️ Quest Completed: ${q.title}! +${q.pointsReward} bonus points earned.`);
           }
           return { ...q, currentCount: newCount, isCompleted };

@@ -19,10 +19,11 @@ export const VendorGrowthScreen: React.FC<VendorGrowthScreenProps> = ({ onBack }
     analyticsEvents, myVendorProfile, vendors, analyticsSyncSource,
     analyticsPendingCount, lastRemoteSyncAt, networkAvailable,
     subscribeToRealtimeUpdates, unsubscribeFromRealtimeUpdates,
-    realtimeConnected, redeemPointBoost, points
+    realtimeConnected, redeemPointBoost, user
   } = useApp();
 
   const vendor = myVendorProfile || vendors[0];
+  const points = user?.points || 0;
 
   if (!vendor) {
     return <VendorProfilePendingState title="Growth Hub" onBack={onBack} />;
@@ -534,12 +535,12 @@ export const VendorGrowthScreen: React.FC<VendorGrowthScreenProps> = ({ onBack }
 
         {/* HERO CARD - POINTS */}
         <View style={[styles.heroCard, theme.shadows.soft]}>
-          <VText variant="caption" color="#FFF" style={{ opacity: 0.8, letterSpacing: 1 }}>TOTAL VISIBILITY POINTS</VText>
-          <VText variant="h1" color="#FFF" style={{ fontSize: normalize(42), marginVertical: 8 }}>2,450</VText>
+          <VText variant="caption" color="#FFF" style={{ opacity: 0.8, letterSpacing: 1 }}>POINT WALLET BALANCE</VText>
+          <VText variant="h1" color="#FFF" style={{ fontSize: normalize(42), marginVertical: 8 }}>{vendor.point_wallet}</VText>
           
           <View style={styles.heroBtnRow}>
-            <TouchableOpacity style={styles.boostBtn}>
-              <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: 'bold' }}>Boost Rank</VText>
+            <TouchableOpacity style={styles.boostBtn} onPress={() => Alert.alert('Add Points', 'Convert NGN to Points via Paystack to trigger more boosts!')}>
+              <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: 'bold' }}>Top-up Points</VText>
             </TouchableOpacity>
             <TouchableOpacity style={styles.historyBtn}>
               <VText variant="caption" color="#FFF" style={{ fontWeight: 'bold' }}>Point History</VText>

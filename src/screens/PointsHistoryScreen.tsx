@@ -11,7 +11,8 @@ interface PointsHistoryScreenProps {
 }
 
 export const PointsHistoryScreen: React.FC<PointsHistoryScreenProps> = ({ onBack }) => {
-  const { points } = useApp();
+  const { user } = useApp();
+  const points = user?.points || 0;
 
   // Mock Ledger Data
   const historyData = [

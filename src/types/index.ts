@@ -3,6 +3,7 @@ export interface UserProfile {
   phone: string;
   role: 'customer' | 'vendor';
   name: string;
+  points: number; // Global point balance
   localityId?: number;
   referralCode?: string;
 }
@@ -30,6 +31,9 @@ export interface VendorServiceItem {
   stock: number;
   stockStatus: string;
   image: string;
+  allowPointDiscount?: boolean;
+  pointsDiscountCost?: number;
+  discountValue?: string;
 }
 
 export interface VendorProfile {
@@ -45,6 +49,7 @@ export interface VendorProfile {
   subscription_tier: number;
   image: string;
   street_address: string;
+  point_wallet: number; // Vendor's points for boosting
   business_hours?: string;
   boost_expiry?: number | null;
   exact_location: { latitude: number; longitude: number };

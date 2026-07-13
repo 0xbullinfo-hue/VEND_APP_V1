@@ -18,10 +18,12 @@ export const RewardsScreen: React.FC<RewardsScreenProps> = ({
   onNavigateToExplore,
   onNavigateToProfile
 }) => {
-  const { points, deductPoints, addPoints, quests } = useApp();
+  const { user, deductPoints, addPoints, quests } = useApp();
   const [selectedReward, setSelectedReward] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [successCode, setSuccessCode] = useState<string | null>(null);
+
+  const points = user?.points || 0;
 
   const milestones = [
     { name: 'Bronze Explorer', threshold: 0, icon: 'shield-outline', color: '#CD7F32' },
