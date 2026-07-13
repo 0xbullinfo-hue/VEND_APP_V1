@@ -13,6 +13,8 @@ import { RootNavigator } from './src/navigation/RootNavigator';
 import { NotificationToast } from './src/components/SharedComponents';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
 import { theme } from './src/theme/designSystem';
+import { useThemeStore } from './src/store/useThemeStore';
+import { getThemeColors } from './src/theme/themeConfig';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -27,20 +29,13 @@ Notifications.setNotificationHandler({
 
 export default function App() {
   const [appIsReady, setAppIsReady] = useState(false);
+  const { isDarkMode } = useThemeStore();
+  const colors = getThemeColors(isDarkMode);
 
   useEffect(() => {
     async function prepare() {
       try {
         // Pre-load fonts if they exist
-        /*
-        await Font.loadAsync({
-          'Inter-Regular': require('./assets/fonts/Inter-Regular.ttf'),
-          'Inter-Medium': require('./assets/fonts/Inter-Medium.ttf'),
-          'Inter-Bold': require('./assets/fonts/Inter-Bold.ttf'),
-          'Inter-ExtraBold': require('./assets/fonts/Inter-ExtraBold.ttf'),
-          'Inter-Black': require('./assets/fonts/Inter-Black.ttf'),
-        });
-        */
       } catch (e) {
         console.warn('Font loading failed:', e);
       } finally {
@@ -54,8 +49,6 @@ export default function App() {
 
   const onLayoutRootView = useCallback(async () => {
     if (appIsReady) {
-      // This tells the splash screen to hide immediately! If we need this to
-      // stay longer, we can hide it elsewhere.
       await SplashScreen.hideAsync();
     }
   }, [appIsReady]);
@@ -70,8 +63,11 @@ export default function App() {
         <SafeAreaProvider>
           <BottomSheetModalProvider>
             <AppProvider>
-              <View style={styles.container}>
-                <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+              <View style={[styles.container, { backgroundColor: colors.background }]}>
+                <StatusBar
+                  barStyle={isDarkMode ? "light-content" : "dark-content"}
+                  backgroundColor={colors.background}
+                />
 
                 {/* React Navigation root — handles all routing */}
                 <RootNavigator />
@@ -90,11 +86,9 @@ export default function App() {
 const styles = StyleSheet.create({
   splash: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
     ...theme.layout.webContainer, // Adds responsive bounding borders on wide web layouts
   },
 });

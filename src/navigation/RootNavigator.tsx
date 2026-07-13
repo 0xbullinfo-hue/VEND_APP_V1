@@ -23,6 +23,7 @@ import { useApp } from '../contexts/AppContext';
 import { OnboardingNavigator } from './OnboardingNavigator';
 import { CustomerStackNavigator } from './CustomerStackNavigator';
 import { VendorStackNavigator } from './VendorStackNavigator';
+import { BrandedSplashScreen } from '../screens/shared/BrandedSplashScreen';
 import { theme } from '../theme/designSystem';
 
 import type { RootStackParamList } from './types';
@@ -42,6 +43,17 @@ const devLog = (message: string, payload?: unknown) => {
 
 export const RootNavigator = () => {
   const { user, role, onboardingCompleted, isHydrated } = useApp();
+  const [showSplash, setShowSplash] = React.useState(true);
+
+  React.useEffect(() => {
+    if (isHydrated) {
+      // Keep branded splash visible for at least 2.5s for professional brand impression
+      const timer = setTimeout(() => {
+        setShowSplash(false);
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [isHydrated]);
 
   React.useEffect(() => {
     let route: 'HydrationLoading' | 'Onboarding' | 'VendorApp' | 'CustomerApp';
@@ -63,19 +75,8 @@ export const RootNavigator = () => {
     });
   }, [isHydrated, user, role, onboardingCompleted]);
 
-  if (!isHydrated) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: theme.colors.background,
-        }}
-      >
-        <ActivityIndicator size="large" color={theme.colors.primary} />
-      </View>
-    );
+  if (!isHydrated || showSplash) {
+    return <BrandedSplashScreen />;
   }
 
   return (

@@ -3,13 +3,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 import { Platform } from 'react-native';
 import { fetchWithPinning } from './sslPinning';
+import { supabaseUrl, supabaseAnonKey, appVersion, appEnv } from './supabaseConfig';
 
 // ─── Environment Validation ───────────────────────────────────────────────────
-
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
-const appVersion = process.env.EXPO_PUBLIC_APP_VERSION || '1.0.0';
-const appEnv = process.env.EXPO_PUBLIC_APP_ENV || (__DEV__ ? 'development' : 'production');
 
 const hasRealSupabaseConfig =
   !!supabaseUrl &&
@@ -67,16 +63,3 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 // ─── Exports ──────────────────────────────────────────────────────────────────
 
 export const isSupabaseConfigured = () => hasRealSupabaseConfig;
-
-/**
- * Extract the Supabase project domain for SSL pinning configuration.
- * Returns the hostname portion of the Supabase URL.
- */
-export const getSupabaseDomain = (): string | null => {
-  if (!hasRealSupabaseConfig) return null;
-  try {
-    return new URL(supabaseUrl).hostname;
-  } catch {
-    return null;
-  }
-};

@@ -1,4 +1,17 @@
-import { getSupabaseDomain } from './supabase';
+import { supabaseUrl } from './supabaseConfig';
+
+/**
+ * Extract the Supabase project domain for SSL pinning configuration.
+ * Returns the hostname portion of the Supabase URL.
+ */
+const getSupabaseDomain = (): string | null => {
+  if (!supabaseUrl || supabaseUrl === 'https://placeholder.supabase.co') return null;
+  try {
+    return new URL(supabaseUrl).hostname;
+  } catch {
+    return null;
+  }
+};
 
 /**
  * SSL Pinning Configuration
