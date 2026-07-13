@@ -44,6 +44,9 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     : [{ id: '1', text: `Hello! Thanks for reaching out to ${vendor?.business_name}. How can we help you today?`, sender: 'them' as const, time: '10:02 AM' }];
 
   const [messages, setMessages] = useState<Array<{ id: string; text: string; sender: 'me' | 'them'; time: string }>>(initialMessages);
+  const [isTyping, setIsTyping] = useState(false);
+  const chatPointsEarnedRef = useRef<number>(0);
+  const MAX_CHAT_POINTS = 5; // Professional cap: Only first 5 messages earn points per session
 
   const faqs = isVendorViewingLeads ? [] : [
     { q: 'Are you open today?', a: vendor?.is_open ? 'Yes, we are open and ready to serve you!' : 'We are currently closed, but we typically open at 9 AM.' },
@@ -64,12 +67,19 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     
     setMessages(prev => [newMsg, ...prev]);
     if (!text) setMessage('');
-    addPoints(1);
+
+    // Professional: Cap points to prevent farming
+    if (chatPointsEarnedRef.current < MAX_CHAT_POINTS) {
+      addPoints(1);
+      chatPointsEarnedRef.current += 1;
+    }
 
     // Handle FAQ responses
     const faqMatch = faqs.find(f => f.q === messageToSend);
 
+    setIsTyping(true);
     setTimeout(() => {
+      setIsTyping(false);
       const responseText = faqMatch
         ? faqMatch.a
         : (vendor && !vendor.is_open)
@@ -83,7 +93,6 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages(prev => [mockResponse, ...prev]);
-      addPoints(1);
     }, 1500);
   };
 
@@ -146,6 +155,15 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           contentContainerStyle={styles.messageScroll}
           showsVerticalScrollIndicator={false}
         />
+
+        {/* Typing Indicator */}
+        {isTyping && (
+          <View style={styles.typingContainer}>
+            <View style={styles.bubbleThem}>
+              <VText variant="caption" color={theme.colors.textMuted}>Vendor is typing...</VText>
+            </View>
+          </View>
+        )}
 
         {/* FAQ Quick Buttons */}
         {messages.length < 5 && (
@@ -213,6 +231,11 @@ const styles = StyleSheet.create({
   },
   rowThem: {
     justifyContent: 'flex-start',
+  },
+  typingContainer: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.xs,
+    alignItems: 'flex-start',
   },
   bubble: {
     maxWidth: '75%',
