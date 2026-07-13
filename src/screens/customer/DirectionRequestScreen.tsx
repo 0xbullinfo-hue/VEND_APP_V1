@@ -17,7 +17,7 @@ export const DirectionRequestScreen: React.FC<DirectionRequestScreenProps> = ({
   onBack,
   onStartTrip
 }) => {
-  const { vendors, requestDirections, verifyDirectionCode, addPoints } = useApp();
+  const { vendors, requestDirections, verifyDirectionCode, addPoints, directionRequests } = useApp();
   const vendor = vendors.find(v => v.id === vendorId);
 
   if (!vendor) {
@@ -31,15 +31,28 @@ export const DirectionRequestScreen: React.FC<DirectionRequestScreenProps> = ({
   const [errorMsg, setErrorMsg] = useState('');
   const [success, setSuccess] = useState(false);
 
+  // Restore state if a pending request already exists
+  useEffect(() => {
+    const existing = directionRequests.find(r => r.vendorId === vendorId && r.status === 'pending');
+    if (existing) {
+      setGeneratedCode(existing.code);
+      setIsRequested(true);
+    }
+  }, [directionRequests, vendorId]);
+
   // Initialize request sequence
   const handleInitiateRequest = async () => {
     setLoading(true);
     setTimeout(async () => {
+      const hasPreviousRequest = directionRequests.some(r => r.vendorId === vendor.id);
       const requestObj = await requestDirections(vendor.id);
       setGeneratedCode(requestObj.code);
       setIsRequested(true);
       setLoading(false);
-      addPoints(10); // Reward for initiating a route!
+
+      if (!hasPreviousRequest) {
+        addPoints(10); // Reward for first-time route initiation!
+      }
     }, 1200);
   };
 

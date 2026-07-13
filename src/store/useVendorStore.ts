@@ -13,6 +13,7 @@ interface VendorState {
   vendors: VendorProfile[];
   savedVendors: string[];
   savedHistory: string[]; // Track vendors ever saved to prevent point-farming
+  chatHistory: string[]; // Track vendors ever chatted with to prevent point-farming
   snapshots: VendorSnapshot[];
   dataSource: 'mock' | 'supabase';
   isRealtimeConnected: boolean;
@@ -49,6 +50,7 @@ interface VendorState {
   updateVendorService: (vendorId: string, serviceId: string, updates: Partial<VendorServiceItem>) => void;
   deleteVendorService: (vendorId: string, serviceId: string) => void;
   redeemPointBoost: (vendorId: string, boostType: 'flash' | 'search' | 'map', pointsCost: number) => boolean;
+  recordChatInquiry: (vendorId: string) => void;
   resetSavedVendors: () => void;
 }
 
@@ -58,6 +60,7 @@ export const useVendorStore = create<VendorState>()(
       vendors: MOCK_VENDORS,
       savedVendors: [],
       savedHistory: [],
+      chatHistory: [],
       snapshots: [
         {
           id: 'sn1',
@@ -322,6 +325,15 @@ export const useVendorStore = create<VendorState>()(
         return true;
       },
 
+      recordChatInquiry: (vendorId) => {
+        set((state) => {
+          if (state.chatHistory.includes(vendorId)) return state;
+
+          useUIStore.getState().addPoints(5);
+          return { chatHistory: [...state.chatHistory, vendorId] };
+        });
+      },
+
       resetSavedVendors: () => set({ savedVendors: [] }),
     }),
     {
@@ -329,8 +341,9 @@ export const useVendorStore = create<VendorState>()(
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         savedVendors: state.savedVendors,
-        savedHistory: state.savedHistory
-      }), // Persist both current saves and history
+        savedHistory: state.savedHistory,
+        chatHistory: state.chatHistory
+      }), // Persist current saves, save history, and chat history
     }
   )
 );
