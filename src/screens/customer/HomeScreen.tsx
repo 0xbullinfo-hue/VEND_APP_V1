@@ -270,7 +270,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         </View>
       </View>
 
-      <VibeFeed snapshots={snapshots} onViewVendor={(vId) => handleViewVendorProfileInternal(vId)} />
+      {/* Vibe Feed removed to maximize Map Real Estate (Phase 3) */}
 
       {/* V2 MASTER PLAN: High Trust "Top Picks" Rail */}
       {topTrustVendors.length > 0 && (
@@ -599,12 +599,36 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           <BottomSheetView style={styles.promoSheetContent}>
             <View style={styles.promoSheetHeader}>
               <View>
-                <VText variant="h3" color={colors.textMain}>Unvisited Gems Nearby</VText>
-                <VText variant="caption" color={colors.primary}>BOOST FIRST • EARN +20 PTS</VText>
+                <VText variant="h3" color={colors.textMain}>Categories For You</VText>
+                <VText variant="caption" color={colors.primary}>FAST DISCOVERY • 1-TAP FILTER</VText>
               </View>
               <View style={styles.sheetHandleIndicator}>
                 <Ionicons name="remove" size={32} color={colors.border} style={{ marginTop: -10 }} />
               </View>
+            </View>
+
+            <View style={{ marginBottom: theme.spacing.md }}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
+                {[
+                  { name: 'Food', icon: 'fast-food' },
+                  { name: 'Home', icon: 'construct' },
+                  { name: 'Beauty', icon: 'color-palette' },
+                  { name: 'Tech', icon: 'laptop' },
+                  { name: 'Fashion', icon: 'shirt' },
+                  { name: 'Gifts', icon: 'gift' }
+                ].map((cat, i) => (
+                  <TouchableOpacity key={i} style={styles.iconicCategory}>
+                    <View style={styles.categoryIconBg}>
+                      <Ionicons name={cat.icon as any} size={24} color={theme.colors.primary} />
+                    </View>
+                    <VText variant="caption" style={{ marginTop: 4, fontWeight: '700' }}>{cat.name}</VText>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+
+            <View style={{ marginBottom: theme.spacing.sm }}>
+              <VText variant="caption" color={theme.colors.textMuted} style={{ fontWeight: '900', letterSpacing: 1 }}>UNVISITED GEMS NEARBY</VText>
             </View>
 
             <ScrollView
@@ -908,6 +932,20 @@ const styles = StyleSheet.create({
   sheetHandleIndicator: {
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  iconicCategory: {
+    alignItems: 'center',
+    width: normalize(60),
+  },
+  categoryIconBg: {
+    width: normalize(48),
+    height: normalize(48),
+    borderRadius: 12,
+    backgroundColor: theme.colors.primaryLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(17, 92, 85, 0.1)',
   },
   promoBar: {
     paddingVertical: theme.spacing.sm,

@@ -2,7 +2,8 @@ import { VendorProfile } from '../types';
 
 // Deterministic ranking so boosted vendors get locality priority while still
 // balancing quality and availability signals.
-// V2: Implements Weighted Relevance Scoring (AI v1)
+// V2+: Implements Refined Weighted Relevance Scoring (AI v2)
+// Logic: 40% Proximity | 30% Reputation | 20% Response Speed | 10% Boost Weight
 export const rankVendorsForCustomer = (
   vendors: VendorProfile[],
   userLocation?: { latitude: number; longitude: number }
@@ -10,36 +11,37 @@ export const rankVendorsForCustomer = (
   const calculateScore = (v: VendorProfile): number => {
     let score = 0;
 
-    // 1. Proximity (25%)
+    // 1. Proximity (40%) - Max 40 points
     if (userLocation) {
       const dist = getDistance(userLocation.latitude, userLocation.longitude, v.exact_location.latitude, v.exact_location.longitude);
-      if (dist <= 1) score += 25;
-      else if (dist <= 3) score += 15;
-      else if (dist <= 7) score += 5;
+      if (dist <= 0.5) score += 40;
+      else if (dist <= 1.5) score += 30;
+      else if (dist <= 4) score += 20;
+      else if (dist <= 8) score += 10;
     } else {
-      score += 15;
+      score += 20; // Default baseline
     }
 
-    // 2. Rating Quality (20%)
-    score += (v.rating / 5) * 20;
+    // 2. Reputation Score (30%) - Max 30 points
+    // Based on Verified Visit (Handshake) count and Rating
+    const completionScore = Math.min(1, v.handshake_count / 100) * 15;
+    const ratingScore = (v.rating / 5) * 15;
+    score += (completionScore + ratingScore);
 
-    // 3. Job Completion / Handshakes (25%)
-    if (v.handshake_count >= 100) score += 25;
-    else if (v.handshake_count >= 50) score += 15;
-    else if (v.handshake_count >= 10) score += 5;
-
-    // 4. Response Speed (15%)
+    // 3. Response Speed (20%) - Max 20 points
     if (v.avg_response_mins > 0) {
-      if (v.avg_response_mins <= 5) score += 15;
-      else if (v.avg_response_mins <= 15) score += 10;
+      if (v.avg_response_mins <= 3) score += 20;
+      else if (v.avg_response_mins <= 10) score += 15;
+      else if (v.avg_response_mins <= 30) score += 10;
       else if (v.avg_response_mins <= 60) score += 5;
     }
 
-    // 5. Boost Intensity (15%)
-    if (v.subscription_tier > 1) score += 15;
+    // 4. Boost Weight (10%) - Max 10 points
+    // V2+: Boosted vendors get the full 10 point injection
+    if (v.is_boosted) score += 10;
 
-    // Availability Bonus (Multiplier)
-    if (v.is_open) score += 10;
+    // Availability Filter (Hard Multiplier)
+    if (!v.is_open) score *= 0.5;
 
     return score;
   };

@@ -109,14 +109,42 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
             <View style={styles.businessInfo}>
               <VText variant="h2" style={{ marginBottom: 4 }}>{vendor?.business_name}</VText>
               <View style={styles.statusRow}>
-                <View style={styles.statusDot} />
-                <VText variant="caption" color={theme.colors.primary}>
-                  Store is visible to customers
+                <View style={[styles.statusDot, { backgroundColor: vendor.is_open ? theme.colors.primary : theme.colors.textMuted }]} />
+                <VText variant="caption" color={vendor.is_open ? theme.colors.primary : theme.colors.textMuted}>
+                  {vendor.is_open ? 'You are Online' : 'You are Offline'}
                 </VText>
               </View>
             </View>
           </VCard>
         </Animated.View>
+
+        {/* V2+ THE FOUR HORSEMEN: Conversion Action Rail */}
+        <View style={styles.actionRail}>
+          <TouchableOpacity
+            style={[styles.railBox, vendor.is_open && styles.railBoxActive]}
+            onPress={() => updateVendorProfile(vendor.id, { is_open: !vendor.is_open })}
+          >
+            <Ionicons name="power" size={20} color={vendor.is_open ? '#FFF' : theme.colors.primary} />
+            <VText variant="caption" color={vendor.is_open ? '#FFF' : theme.colors.primary} style={styles.railLabel}>
+              {vendor.is_open ? 'Go Offline' : 'Go Online'}
+            </VText>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.railBox} onPress={onManageSubscription}>
+            <Ionicons name="rocket" size={20} color={theme.colors.primary} />
+            <VText variant="caption" color={theme.colors.primary} style={styles.railLabel}>Boost</VText>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.railBox} onPress={onViewGrowth}>
+            <Ionicons name="bar-chart" size={20} color={theme.colors.primary} />
+            <VText variant="caption" color={theme.colors.primary} style={styles.railLabel}>Earnings</VText>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.railBox} onPress={() => Alert.alert('Wallet', `NGN Balance: ₦${(vendor.point_wallet * 10).toLocaleString()}\nPoint Balance: ${vendor.point_wallet} PTS`)}>
+            <Ionicons name="wallet" size={20} color={theme.colors.primary} />
+            <VText variant="caption" color={theme.colors.primary} style={styles.railLabel}>Wallet</VText>
+          </TouchableOpacity>
+        </View>
 
         <Animated.View entering={FadeInUp.delay(100).duration(600)}>
           <View style={[styles.sectionHeader, { marginTop: theme.spacing.xs }]}>
@@ -478,7 +506,32 @@ const styles = StyleSheet.create({
     borderRadius: normalize(16),
     borderWidth: 1,
     borderColor: theme.colors.border,
+    marginBottom: theme.spacing.md,
+  },
+  actionRail: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: theme.spacing.lg,
     marginBottom: theme.spacing.lg,
+    gap: theme.spacing.xs,
+  },
+  railBox: {
+    flex: 1,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  railBoxActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  railLabel: {
+    marginTop: 4,
+    fontWeight: '700',
   },
   businessLogo: {
     width: normalize(56),
