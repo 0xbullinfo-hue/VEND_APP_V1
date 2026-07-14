@@ -115,7 +115,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   // Track the active vendor for sheet display
   const [activeVendor, setActiveVendor] = useState<typeof vendors[number] | null>(vendors[0] ?? null);
   const bottomSheetRef = useRef<BottomSheet>(null);
-  const snapPoints = useMemo(() => ['30%', '45%'], []);
+  const snapPoints = useMemo(() => ['30%', '60%'], []);
 
   useEffect(() => {
     if (selectedVendorId) {
@@ -811,7 +811,7 @@ const styles = StyleSheet.create({
     gap: theme.spacing.md,
   },
   promoCard: {
-    width: normalize(160),
+    width: normalize(130),
     backgroundColor: theme.colors.background,
     borderRadius: normalize(16),
     overflow: 'hidden',
@@ -821,7 +821,7 @@ const styles = StyleSheet.create({
   },
   promoCardImage: {
     width: '100%',
-    height: normalize(80),
+    height: normalize(60),
     backgroundColor: theme.colors.surface,
   },
   promoCardContent: {

@@ -1,0 +1,37 @@
+Starting project at D:\VEND APP DEV\VEND MOBILE APP\VEND_APP\VEND_APP_V1_clean
+env: load .env
+env: export EXPO_PUBLIC_SUPABASE_URL EXPO_PUBLIC_SUPABASE_ANON_KEY
+[33m[1mWarning: [22mRoot-level [1m"expo"[22m object found. Ignoring extra key in Expo config: "name"
+[90mLearn more: https://expo.fyi/root-expo-object[0m[0m
+(node:19448) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Starting Metro Bundler
+The following packages should be updated for best compatibility with the installed expo version:
+  @expo/webpack-config@0.17.4 - expected version: ~19.0.1
+  typescript@5.9.3 - expected version: ~5.3.3
+Your project may not work correctly until you install the expected versions of the packages.
+› Opening exp://127.0.0.1:8081 on Pixel_10
+Waiting on http://localhost:8081
+Logs for your project will appear below.
+Android Bundled 2839ms D:\VEND APP DEV\VEND MOBILE APP\VEND_APP\VEND_APP_V1_clean\index.js (1931 modules)
+ LOG  [SSLPinning] Loaded 1 certificate pins
+ WARN  Require cycle: src\store\useAuthStore.ts -> src\store\useTripStore.ts -> src\store\useAuthStore.ts
+
+Require cycles are allowed, but can result in uninitialized values. Consider refactoring to remove the need for a cycle.
+ WARN  Require cycle: src\contexts\AppContext.tsx -> src\hooks\useProximityEngine.ts -> src\contexts\AppContext.tsx
+
+Require cycles are allowed, but can result in uninitialized values. Consider refactoring to remove the need for a cycle.
+ LOG  [VEND][RootNavigator] routeDecision {"hasUser": true, "isHydrated": true, "onboardingCompleted": true, "role": "customer", "route": "CustomerApp"}
+ LOG  [VEND][AppContext] hydrateAuthSession:start
+ LOG  [VEND][AppContext] sslPinning:initialize
+ LOG  [SSLPinning] Loaded 1 certificate pins
+ WARN  [SSLPinning] Certificate pinning disabled in development mode
+ LOG  [VEND][AppContext] hydrateAuthSession:done {"onboardingLocalityId": 3, "role": "customer", "userId": "mock_mrkc0f4p"}
+ LOG  [VEND][AppContext] vendors:refreshForLocality {"localityId": 3}
+ LOG  [VEND][AppContext] vendors:realtime:connect {"localityId": 3}
+ LOG  [VEND][AppContext] networkMonitoring:initialize
+ LOG  [VEND][AppContext] errorReporting:initialize
+ LOG  [ErrorReporting] Initialized in development mode
+ LOG  [VEND][AppContext] networkMonitoring:changed {"isConnected": true, "type": "wifi"}
+ LOG  [VEND][AppContext] networkMonitoring:recovery -> flushPendingEvents
+ LOG  [VEND][AppContext] periodicProximityCheck:30s

@@ -122,12 +122,12 @@ const styles = StyleSheet.create({
   },
   storyItem: {
     alignItems: 'center',
-    width: normalize(70),
+    width: normalize(56),
   },
   avatarRing: {
-    width: normalize(60),
-    height: normalize(60),
-    borderRadius: normalize(30),
+    width: normalize(48),
+    height: normalize(48),
+    borderRadius: normalize(24),
     borderWidth: 2,
     borderColor: theme.colors.primary,
     padding: 2,
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
   avatar: {
     width: '100%',
     height: '100%',
-    borderRadius: normalize(28),
+    borderRadius: normalize(22),
   },
   vendorName: {
     marginTop: 4,
