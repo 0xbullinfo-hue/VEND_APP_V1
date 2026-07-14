@@ -145,6 +145,9 @@ export const useVendorStore = create<VendorState>()(
             services: [],
             street_address: '',
             point_wallet: 50, // Welcome points for vendors
+            is_boosted: false,
+            boost_expiry: null,
+            subscription_status: 'free',
             handshake_count: 0,
             avg_response_mins: 0,
             portfolio_urls: [],

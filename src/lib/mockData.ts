@@ -59,6 +59,9 @@ export const MOCK_VENDORS: VendorProfile[] = [
     image: 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=500&q=80',
     street_address: 'Alagomeji Street, Yaba, Lagos',
     point_wallet: 150,
+    is_boosted: true,
+    boost_expiry: Date.now() + 86400000,
+    subscription_status: 'pro',
     handshake_count: 124,
     avg_response_mins: 8,
     portfolio_urls: [
@@ -107,6 +110,9 @@ export const MOCK_VENDORS: VendorProfile[] = [
     image: 'https://images.unsplash.com/photo-1607400201515-c2c41c07d307?w=500&q=80',
     street_address: 'Toyin Street, Ikeja, Lagos',
     point_wallet: 45,
+    is_boosted: false,
+    boost_expiry: null,
+    subscription_status: 'free',
     handshake_count: 56,
     avg_response_mins: 15,
     portfolio_urls: [
@@ -141,6 +147,9 @@ export const MOCK_VENDORS: VendorProfile[] = [
     image: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=500&q=80',
     street_address: 'Herbert Macaulay Way, Yaba',
     point_wallet: 320,
+    is_boosted: true,
+    boost_expiry: Date.now() + 172800000,
+    subscription_status: 'elite',
     handshake_count: 210,
     avg_response_mins: 4,
     portfolio_urls: [
@@ -189,6 +198,9 @@ export const MOCK_VENDORS: VendorProfile[] = [
     image: 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?w=500&q=80',
     street_address: 'Admiralty Way, Lekki Phase 1',
     point_wallet: 10,
+    is_boosted: false,
+    boost_expiry: null,
+    subscription_status: 'free',
     handshake_count: 32,
     avg_response_mins: 25,
     portfolio_urls: [
