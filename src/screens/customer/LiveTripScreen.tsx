@@ -16,7 +16,7 @@ interface LiveTripScreenProps {
 }
 
 export const LiveTripScreen: React.FC<LiveTripScreenProps> = ({ onTripEnd, onArrived }) => {
-  const { activeTrip, vendors, triggerSOS, completeTrip, cancelTrip, isSOSActive, cancelSOS } = useApp();
+  const { activeTrip, vendors, triggerSOS, completeTrip, cancelTrip, isSOSActive, cancelSOS, currentLocation } = useApp();
   const [eta, setEta] = useState(12); // minutes
   const [distance, setDistance] = useState(2.4); // km
 
@@ -251,10 +251,12 @@ export const LiveTripScreen: React.FC<LiveTripScreenProps> = ({ onTripEnd, onArr
             <Ionicons name="alert-circle" size={48} color="#FFFFFF" />
             <VText variant="h1" color="#FFFFFF" style={{ marginTop: 8 }}>SHIELD ACTIVE</VText>
             <VText variant="body" color="#FFFFFF" align="center" style={{ marginTop: 4, opacity: 0.9 }}>
-              Emergency contacts notified. Your live address is:
+              Emergency contacts notified. Your live coordinates:
             </VText>
             <VText variant="h2" color="#FFFFFF" align="center" style={styles.sosAddress}>
-              {vendor.street_address}
+              {currentLocation
+                ? `${currentLocation.latitude.toFixed(5)}, ${currentLocation.longitude.toFixed(5)}`
+                : 'Acquiring GPS signal…'}
             </VText>
           </View>
           <VButton

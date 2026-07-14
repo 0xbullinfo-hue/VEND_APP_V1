@@ -27,8 +27,21 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
   const [locationType, setLocationType] = useState<'hq' | 'specific'>('hq');
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Same class of bug as VendorDashboardScreen/VendorGrowthScreen: myVendorProfile
+  // can be null right after registration and vendors[] can be empty (e.g. a
+  // locality with no seed data), leaving `vendor` undefined. Guard instead of
+  // crashing on `vendor.services` below.
   if (!vendor) {
-    return <VendorProfilePendingState title="My Services" onBack={onBack} />;
+    return (
+      <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+        <HeaderBar showBack={true} onBack={onBack} title="Manage Listings" showPoints={false} />
+        <VendorProfilePendingState
+          title="Setting up your listings"
+          message="Your business profile is still syncing. Pull to refresh in a moment, or go back and try again."
+          onBack={onBack}
+        />
+      </View>
+    );
   }
 
   const atListingLimit = vendor.services.length >= myVendorPlan.maxListings;

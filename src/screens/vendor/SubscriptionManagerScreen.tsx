@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { StyleSheet, View, ScrollView, Modal, TouchableOpacity } from 'react-native';
 import Animated, { FadeInUp, SlideInRight } from 'react-native-reanimated';
 import { theme, normalize } from '../../theme/designSystem';
-import { VText, VButton, VInput, HeaderBar } from '../../components/SharedComponents';
+import { VText, VButton, VInput, HeaderBar, VendorProfilePendingState } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
 import { Ionicons } from '../../components/VIcons';
 import { SUBSCRIPTION_PLANS, MIN_SUBSCRIPTION_TIER } from '../../lib/subscriptionPlans';
@@ -20,6 +20,22 @@ export const SubscriptionManagerScreen: React.FC<SubscriptionManagerScreenProps>
   const [activeModal, setActiveModal] = useState<'paystack' | null>(null);
   const [pendingTier, setPendingTier] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Same unresolved-profile case as ProductManagementScreen/VendorDashboardScreen —
+  // without this, `vendor.id`/`vendor.services`/`vendor.subscription_tier` below
+  // throw the moment myVendorProfile is null and vendors[] is empty.
+  if (!vendor) {
+    return (
+      <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+        <HeaderBar showBack={true} onBack={onBack} title="Vendor Pro Hub" showPoints={false} />
+        <VendorProfilePendingState
+          title="Setting up your subscription"
+          message="Your business profile is still syncing. Please try again in a moment."
+          onBack={onBack}
+        />
+      </View>
+    );
+  }
 
   const userCount = locality?.registered_users_count || 942;
   const isMilestoneCleared = userCount >= 1000;
