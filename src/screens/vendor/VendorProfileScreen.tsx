@@ -5,6 +5,7 @@ import { theme, normalize } from '../../theme/designSystem';
 import { VText, HeaderBar, VButton, VInput, VImage } from '../../components/SharedComponents';
 import { Ionicons } from '../../components/VIcons';
 import { useApp } from '../../contexts/AppContext';
+import { useNavigation } from '@react-navigation/native';
 import { useThemeStore } from '../../store/useThemeStore';
 
 interface VendorProfileScreenProps {
@@ -16,10 +17,12 @@ interface VendorProfileScreenProps {
 export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({ onBack, onTestRegistration, onLogout }) => {
   const { logout, user, vendors, myVendorProfile, updateVendorProfile } = useApp();
   const { isDarkMode, toggleDarkMode } = useThemeStore();
+  const navigation = useNavigation<any>();
   const vendor = myVendorProfile || vendors.find(v => v.id === user?.id);
 
   const [showEdit, setShowEdit] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [selectedGalleryImg, setSelectedGalleryImg] = useState<string | null>(null);
 
   // Edit Form State
   const [editName, setEditName] = useState(vendor?.business_name || '');
@@ -29,8 +32,15 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({ onBack
   const [editAddress, setEditAddress] = useState(vendor?.street_address || '');
   const [editImage, setEditImage] = useState(vendor?.image || '');
 
+  // V2 Portfolio States
+  const [p1, setP1] = useState(vendor?.portfolio_urls?.[0] || '');
+  const [p2, setP2] = useState(vendor?.portfolio_urls?.[1] || '');
+  const [p3, setP3] = useState(vendor?.portfolio_urls?.[2] || '');
+  const [p4, setP4] = useState(vendor?.portfolio_urls?.[3] || '');
+
   const handleSaveProfile = () => {
     if (!vendor) return;
+    const portfolio = [p1, p2, p3, p4].filter(url => !!url.trim());
     updateVendorProfile(vendor.id, {
       business_name: editName,
       bio: editBio,
@@ -38,6 +48,7 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({ onBack
       business_hours: editHours,
       street_address: editAddress,
       image: editImage,
+      portfolio_urls: portfolio
     });
     setShowEdit(false);
   };
@@ -66,8 +77,8 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({ onBack
             { icon: 'storefront-outline', label: 'Edit Store Info', onPress: () => setShowEdit(true) },
             { icon: 'eye-outline', label: 'Preview Public Profile', onPress: () => {
               if (vendor) {
-                // In production, we'd navigate to the actual Customer-facing VendorProfile screen
-                Alert.alert('Public Preview', `Viewing as Customer: ${vendor.business_name}\nCategory: ${vendor.category}\nHours: ${vendor.business_hours || 'Not set'}`);
+                // BUG FIX: Navigate to the actual Customer-facing profile for authentic preview
+                navigation.navigate('VendorProfile', { vendorId: vendor.id });
               }
             }},
             { icon: 'settings-outline', label: 'Settings', onPress: () => setShowSettings(true) },
@@ -165,6 +176,16 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({ onBack
                 icon="location-outline"
                 style={{ marginBottom: theme.spacing.lg }}
               />
+
+              <VText variant="h2" style={{ marginBottom: theme.spacing.sm }}>Service Portfolio (Gallery)</VText>
+              <VText variant="caption" color={theme.colors.textMuted} style={{ marginBottom: theme.spacing.md }}>
+                Add up to 4 image URLs to showcase your works or services.
+              </VText>
+
+              <VInput placeholder="Work Image 1 URL" value={p1} onChangeText={setP1} style={{ marginBottom: 8 }} />
+              <VInput placeholder="Work Image 2 URL" value={p2} onChangeText={setP2} style={{ marginBottom: 8 }} />
+              <VInput placeholder="Work Image 3 URL" value={p3} onChangeText={setP3} style={{ marginBottom: 8 }} />
+              <VInput placeholder="Work Image 4 URL" value={p4} onChangeText={setP4} style={{ marginBottom: theme.spacing.lg }} />
             </ScrollView>
 
             <View style={{ flexDirection: 'row', gap: theme.spacing.sm, marginTop: theme.spacing.md }}>
@@ -196,6 +217,18 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({ onBack
             </View>
           </View>
         </View>
+      </Modal>
+
+      {/* Full-Screen Image Popup */}
+      <Modal visible={!!selectedGalleryImg} transparent={true} animationType="fade" onRequestClose={() => setSelectedGalleryImg(null)}>
+        <TouchableOpacity style={styles.imgPopupBackdrop} activeOpacity={1} onPress={() => setSelectedGalleryImg(null)}>
+          <View style={styles.imgPopupContent}>
+            <VImage source={selectedGalleryImg || ''} style={styles.popupImg} />
+            <TouchableOpacity style={styles.popupCloseBtn} onPress={() => setSelectedGalleryImg(null)}>
+              <Ionicons name="close" size={32} color="#FFF" />
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
       </Modal>
     </View>
   );
@@ -277,5 +310,27 @@ const styles = StyleSheet.create({
     height: normalize(80),
     alignItems: 'flex-start',
     paddingVertical: theme.spacing.xs,
+  },
+  imgPopupBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imgPopupContent: {
+    width: '90%',
+    height: '70%',
+    position: 'relative',
+  },
+  popupImg: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 12,
+  },
+  popupCloseBtn: {
+    position: 'absolute',
+    top: -40,
+    right: 0,
+    padding: 8,
   },
 });

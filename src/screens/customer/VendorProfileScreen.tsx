@@ -6,7 +6,8 @@ import {
   TouchableOpacity, 
   Alert,
   Text,
-  Platform
+  Platform,
+  Modal
 } from 'react-native';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, VButton, HeaderBar, VImage, VendorProfilePendingState } from '../../components/SharedComponents';
@@ -30,6 +31,7 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({
   onStartChat
 }) => {
   const { vendors, savedVendors, toggleSaveVendor, addPoints, deductPoints, directionRequests, trackDirectionsRequest, trackChatStart, user, verifiedVisitCounts, recordChatInquiry, triggerNotification } = useApp();
+  const [selectedGalleryImg, setSelectedGalleryImg] = useState<string | null>(null);
 
   const vendor = vendors.find(v => v.id === vendorId);
   if (!vendor) {
@@ -118,7 +120,9 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({
           <View style={styles.portfolioSection}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.portfolioScroll}>
               {vendor.portfolio_urls.map((url, idx) => (
-                <VImage key={idx} source={url} style={styles.portfolioImg} />
+                <TouchableOpacity key={idx} onPress={() => setSelectedGalleryImg(url)}>
+                  <VImage source={url} style={styles.portfolioImg} />
+                </TouchableOpacity>
               ))}
             </ScrollView>
           </View>
@@ -435,6 +439,18 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({
           style={{ flex: 1, marginLeft: theme.spacing.sm }}
         />
       </View>
+
+      {/* Full-Screen Image Popup */}
+      <Modal visible={!!selectedGalleryImg} transparent={true} animationType="fade" onRequestClose={() => setSelectedGalleryImg(null)}>
+        <TouchableOpacity style={styles.imgPopupBackdrop} activeOpacity={1} onPress={() => setSelectedGalleryImg(null)}>
+          <View style={styles.imgPopupContent}>
+            <VImage source={selectedGalleryImg || ''} style={styles.popupImg} />
+            <TouchableOpacity style={styles.popupCloseBtn} onPress={() => setSelectedGalleryImg(null)}>
+              <Ionicons name="close" size={32} color="#FFF" />
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 };
@@ -729,5 +745,27 @@ const styles = StyleSheet.create({
     paddingTop: theme.spacing.sm,
     paddingBottom: Platform.OS === 'ios' ? normalize(32) : normalize(56),
     flexDirection: 'row',
+  },
+  imgPopupBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imgPopupContent: {
+    width: '90%',
+    height: '70%',
+    position: 'relative',
+  },
+  popupImg: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 12,
+  },
+  popupCloseBtn: {
+    position: 'absolute',
+    top: -40,
+    right: 0,
+    padding: 8,
   },
 });
