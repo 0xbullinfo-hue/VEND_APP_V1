@@ -47,6 +47,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const prevSearchLengthRef = useRef<number>(0);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedVendorId, setSelectedVendorId] = useState<string | null>(null); // Starts with no selection, showing promo bar
+  const [promoExpanded, setPromoExpanded] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [onlyBoosted, setOnlyBoosted] = useState(false);
   const [onlyOpen, setOnlyOpen] = useState(true);
@@ -514,61 +515,85 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         </View>
       </View>
 
-      {/* Suggested Unvisited Gems Bar (Promo) - Only visible when no vendor is selected */}
+      {/* Suggested Unvisited Gems Bar (Promo) - Collapsible to maximize map space */}
       {!selectedVendorId && (
-        <View style={[styles.promoBar, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
-          <View style={styles.promoHeader}>
-            <VText variant="h3" color={colors.textMain}>Unvisited Gems Nearby</VText>
-            <VText variant="caption" color={colors.primary}>BOOST FIRST • EARN +20 PTS</VText>
-          </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.promoScroll}>
-            {isLoadingVendors ? (
-              [1, 2, 3].map((i) => (
-                <View key={i} style={styles.promoCard}>
-                  <VSkeleton width="100%" height={80} borderRadius={0} />
-                  <View style={{ padding: theme.spacing.md, gap: 8 }}>
-                    <VSkeleton width="80%" height={14} />
-                    <VSkeleton width="40%" height={10} />
-                  </View>
-                </View>
-              ))
-            ) : (
-              promoVendors.map((v, index) => (
-                <Animated.View
-                  key={v.id}
-                  entering={FadeInRight.delay(100 * index).duration(500)}
-                  layout={Layout.springify()}
-                >
-                  <VCard
-                    onPress={() => {
-                      addPoints(20); // Award promised bonus for discovering unvisited gem
-                      handleViewVendorProfileInternal(v.id);
-                    }}
-                    style={styles.promoCard}
-                  >
-                    {v?.is_online && (
-                      <View style={styles.onlineBadge}>
-                        <VPulse size={8} color="#FFF" />
-                        <VText variant="caption" color="#FFF" style={{ fontSize: 8, marginLeft: 4, fontWeight: '900' }}>LIVE</VText>
-                      </View>
-                    )}
-                    <VImage source={v?.image || ''} style={styles.promoCardImage} />
-                    <View style={styles.promoCardContent}>
-                      <VText variant="subtext" numberOfLines={1}>{v?.business_name}</VText>
-                      <View style={styles.ratingRow}>
-                        <Ionicons name="star" size={10} color={theme.colors.warning} />
-                        <VText variant="caption" style={{ marginLeft: 4 }}>{v?.rating}</VText>
-                        <VText variant="caption" color={theme.colors.textMuted} style={{ marginLeft: 6 }}>
-                          {v?.is_home_based ? 'Home-Based' : 'Physical Shop'}
-                        </VText>
-                      </View>
+        <Animated.View
+          layout={Layout.springify()}
+          style={[
+            styles.promoBar,
+            {
+              backgroundColor: colors.background,
+              borderTopColor: colors.border,
+              paddingBottom: promoExpanded ? normalize(110) : normalize(80) // Adjust for absolute tab bar
+            }
+          ]}
+        >
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={() => setPromoExpanded(!promoExpanded)}
+            style={styles.promoHeader}
+          >
+            <View style={{ flex: 1 }}>
+              <VText variant="h3" color={colors.textMain}>Unvisited Gems Nearby</VText>
+              {promoExpanded && <VText variant="caption" color={colors.primary}>BOOST FIRST • EARN +20 PTS</VText>}
+            </View>
+            <Ionicons
+              name={promoExpanded ? "chevron-down" : "chevron-up"}
+              size={20}
+              color={colors.textMuted}
+            />
+          </TouchableOpacity>
+
+          {promoExpanded && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.promoScroll}>
+              {isLoadingVendors ? (
+                [1, 2, 3].map((i) => (
+                  <View key={i} style={styles.promoCard}>
+                    <VSkeleton width="100%" height={80} borderRadius={0} />
+                    <View style={{ padding: theme.spacing.md, gap: 8 }}>
+                      <VSkeleton width="80%" height={14} />
+                      <VSkeleton width="40%" height={10} />
                     </View>
-                  </VCard>
-                </Animated.View>
-              ))
-            )}
-          </ScrollView>
-        </View>
+                  </View>
+                ))
+              ) : (
+                promoVendors.map((v, index) => (
+                  <Animated.View
+                    key={v.id}
+                    entering={FadeInRight.delay(100 * index).duration(500)}
+                    layout={Layout.springify()}
+                  >
+                    <VCard
+                      onPress={() => {
+                        addPoints(20); // Award promised bonus for discovering unvisited gem
+                        handleViewVendorProfileInternal(v.id);
+                      }}
+                      style={styles.promoCard}
+                    >
+                      {v?.is_online && (
+                        <View style={styles.onlineBadge}>
+                          <VPulse size={8} color="#FFF" />
+                          <VText variant="caption" color="#FFF" style={{ fontSize: 8, marginLeft: 4, fontWeight: '900' }}>LIVE</VText>
+                        </View>
+                      )}
+                      <VImage source={v?.image || ''} style={styles.promoCardImage} />
+                      <View style={styles.promoCardContent}>
+                        <VText variant="subtext" numberOfLines={1}>{v?.business_name}</VText>
+                        <View style={styles.ratingRow}>
+                          <Ionicons name="star" size={10} color={theme.colors.warning} />
+                          <VText variant="caption" style={{ marginLeft: 4 }}>{v?.rating}</VText>
+                          <VText variant="caption" color={theme.colors.textMuted} style={{ marginLeft: 6 }}>
+                            {v?.is_home_based ? 'Home-Based' : 'Physical Shop'}
+                          </VText>
+                        </View>
+                      </View>
+                    </VCard>
+                  </Animated.View>
+                ))
+              )}
+            </ScrollView>
+          )}
+        </Animated.View>
       )}
 
       {/* Selected Vendor Detail Bottom Sheet */}
