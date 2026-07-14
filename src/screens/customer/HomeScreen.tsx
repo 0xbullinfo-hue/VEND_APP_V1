@@ -47,7 +47,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const prevSearchLengthRef = useRef<number>(0);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedVendorId, setSelectedVendorId] = useState<string | null>(null); // Starts with no selection, showing promo bar
-  const [promoExpanded, setPromoExpanded] = useState(true);
+  const [promoExpanded, setPromoExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [onlyBoosted, setOnlyBoosted] = useState(false);
   const [onlyOpen, setOnlyOpen] = useState(true);
@@ -116,7 +116,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   // Track the active vendor for sheet display
   const [activeVendor, setActiveVendor] = useState<typeof vendors[number] | null>(vendors[0] ?? null);
   const bottomSheetRef = useRef<BottomSheet>(null);
+  const promoSheetRef = useRef<BottomSheet>(null);
+
   const snapPoints = useMemo(() => ['30%', '60%'], []);
+  const promoSnapPoints = useMemo(() => [normalize(130), '75%'], []); // Floating height (handle + header) and full grid height
 
   useEffect(() => {
     if (selectedVendorId) {
@@ -515,85 +518,71 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         </View>
       </View>
 
-      {/* Suggested Unvisited Gems Bar (Promo) - Collapsible to maximize map space */}
+      {/* Suggested Unvisited Gems Bar (Promo) - Draggable Sheet (Uber Style) */}
       {!selectedVendorId && (
-        <Animated.View
-          layout={Layout.springify()}
-          style={[
-            styles.promoBar,
-            {
-              backgroundColor: colors.background,
-              borderTopColor: colors.border,
-              paddingBottom: promoExpanded ? normalize(110) : normalize(80) // Adjust for absolute tab bar
-            }
-          ]}
+        <BottomSheet
+          ref={promoSheetRef}
+          index={0}
+          snapPoints={promoSnapPoints}
+          backgroundStyle={{
+            backgroundColor: colors.background,
+            borderTopLeftRadius: normalize(24),
+            borderTopRightRadius: normalize(24),
+            borderTopWidth: 1,
+            borderTopColor: colors.border,
+            ...theme.shadows.premium,
+          }}
+          handleIndicatorStyle={[styles.sheetHandle, { backgroundColor: colors.border }]}
         >
-          <TouchableOpacity
-            activeOpacity={0.9}
-            onPress={() => setPromoExpanded(!promoExpanded)}
-            style={styles.promoHeader}
-          >
-            <View style={{ flex: 1 }}>
-              <VText variant="h3" color={colors.textMain}>Unvisited Gems Nearby</VText>
-              {promoExpanded && <VText variant="caption" color={colors.primary}>BOOST FIRST • EARN +20 PTS</VText>}
+          <BottomSheetView style={styles.promoSheetContent}>
+            <View style={styles.promoSheetHeader}>
+              <View>
+                <VText variant="h3" color={colors.textMain}>Unvisited Gems Nearby</VText>
+                <VText variant="caption" color={colors.primary}>BOOST FIRST • EARN +20 PTS</VText>
+              </View>
+              <View style={styles.sheetHandleIndicator}>
+                <Ionicons name="remove" size={32} color={colors.border} style={{ marginTop: -10 }} />
+              </View>
             </View>
-            <Ionicons
-              name={promoExpanded ? "chevron-down" : "chevron-up"}
-              size={20}
-              color={colors.textMuted}
-            />
-          </TouchableOpacity>
 
-          {promoExpanded && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.promoScroll}>
-              {isLoadingVendors ? (
-                [1, 2, 3].map((i) => (
-                  <View key={i} style={styles.promoCard}>
-                    <VSkeleton width="100%" height={80} borderRadius={0} />
-                    <View style={{ padding: theme.spacing.md, gap: 8 }}>
-                      <VSkeleton width="80%" height={14} />
-                      <VSkeleton width="40%" height={10} />
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.promoGridScroll}
+            >
+              <View style={styles.gridRowWrap}>
+                {isLoadingVendors ? (
+                  [1, 2, 3, 4, 5, 6].map((i) => (
+                    <View key={i} style={styles.promoGridCard}>
+                      <VSkeleton width="100%" height={normalize(70)} borderRadius={12} />
+                      <VSkeleton width="80%" height={12} style={{ marginTop: 8 }} />
                     </View>
-                  </View>
-                ))
-              ) : (
-                promoVendors.map((v, index) => (
-                  <Animated.View
-                    key={v.id}
-                    entering={FadeInRight.delay(100 * index).duration(500)}
-                    layout={Layout.springify()}
-                  >
-                    <VCard
+                  ))
+                ) : (
+                  promoVendors.map((v) => (
+                    <TouchableOpacity
+                      key={v.id}
+                      activeOpacity={0.9}
                       onPress={() => {
-                        addPoints(20); // Award promised bonus for discovering unvisited gem
+                        addPoints(20);
                         handleViewVendorProfileInternal(v.id);
                       }}
-                      style={styles.promoCard}
+                      style={styles.promoGridCard}
                     >
-                      {v?.is_online && (
-                        <View style={styles.onlineBadge}>
-                          <VPulse size={8} color="#FFF" />
-                          <VText variant="caption" color="#FFF" style={{ fontSize: 8, marginLeft: 4, fontWeight: '900' }}>LIVE</VText>
-                        </View>
-                      )}
-                      <VImage source={v?.image || ''} style={styles.promoCardImage} />
-                      <View style={styles.promoCardContent}>
-                        <VText variant="subtext" numberOfLines={1}>{v?.business_name}</VText>
-                        <View style={styles.ratingRow}>
-                          <Ionicons name="star" size={10} color={theme.colors.warning} />
-                          <VText variant="caption" style={{ marginLeft: 4 }}>{v?.rating}</VText>
-                          <VText variant="caption" color={theme.colors.textMuted} style={{ marginLeft: 6 }}>
-                            {v?.is_home_based ? 'Home-Based' : 'Physical Shop'}
-                          </VText>
-                        </View>
+                      <VImage source={v?.image || ''} style={styles.promoGridImage} />
+                      <VText variant="caption" numberOfLines={1} style={{ fontWeight: '600', marginTop: 4 }}>{v?.business_name}</VText>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Ionicons name="star" size={8} color={theme.colors.warning} />
+                        <VText variant="caption" style={{ fontSize: 9, marginLeft: 2 }}>{v?.rating}</VText>
                       </View>
-                    </VCard>
-                  </Animated.View>
-                ))
-              )}
+                    </TouchableOpacity>
+                  ))
+                )}
+              </View>
+              {/* Extra spacing for bottom tab bar when fully expanded */}
+              <View style={{ height: normalize(120) }} />
             </ScrollView>
-          )}
-        </Animated.View>
+          </BottomSheetView>
+        </BottomSheet>
       )}
 
       {/* Selected Vendor Detail Bottom Sheet */}
@@ -817,6 +806,46 @@ const styles = StyleSheet.create({
   tagInactive: {
     backgroundColor: 'rgba(255,255,255,0.9)',
     borderColor: theme.colors.primaryLight,
+  },
+  promoSheetContent: {
+    flex: 1,
+    paddingHorizontal: theme.spacing.lg,
+  },
+  promoSheetHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: theme.spacing.md,
+  },
+  promoGrid: {
+    flex: 1,
+  },
+  promoGridScroll: {
+    paddingBottom: 20,
+  },
+  gridRowWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  promoGridCard: {
+    width: '48%',
+    backgroundColor: theme.colors.surface,
+    borderRadius: 16,
+    padding: 8,
+    marginBottom: theme.spacing.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  promoGridImage: {
+    width: '100%',
+    height: normalize(70),
+    borderRadius: 12,
+    backgroundColor: theme.colors.border,
+  },
+  sheetHandleIndicator: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   promoBar: {
     paddingVertical: theme.spacing.sm,
