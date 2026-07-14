@@ -1,43 +1,47 @@
-# VEND Mobile App - Hyperlocal Discovery & Safety Hub
+# VEND – Real-Time Local Vendor Discovery Platform
 
-VEND is the professional "Operating System for Local Services in Africa," starting with a focus on Nigeria (Lagos & Abuja). It bridges the gap between customers and local service providers through real-time map discovery, a high-trust verification economy, and a professional safety protocol.
+VEND is a mobile platform that helps users find trusted local service providers instantly, starting in Nigeria. 
+It combines real-time location, verified trust signals, and intelligent ranking to make hiring local vendors fast, safe, and reliable.
 
-## 🚀 Key Features
+🔥 **Core Value**: Find reliable vendors near you in seconds. Chat, verify, and get the job done — all in one place.
 
-### 📍 Hyperlocal Discovery
-*   **Real-time Map Hub**: Interactive discovery of vendors with pulsing "Live" status indicators.
-*   **AI Relevance Ranking**: A sophisticated algorithm that ranks vendors based on Handshake Velocity, Response Speed, and proximity.
-*   **Local Vibe Feed**: Daily snapshots from vendors to build community trust and showcase professional portfolios.
+## 📍 Key Features
 
-### 💎 High-Trust Economy
-*   **The Handshake Protocol**: A secure 4-digit code verification system that awards points for physical visits.
-*   **Unified Point Wallet**: A circular economy where points act as "Visibility Credits" for vendors and "Discount Rewards" for customers.
-*   **Reputation Credit Scoring**: Automated trust badges like "Verified Pro" and "Fast Responder" based on verified performance data.
+### 🔎 Real-Time Discovery
+*   **Live Map Hub**: Interactive discovery of vendors with pulsing "Live" status indicators.
+*   **Smart AI Ranking**: Advanced algorithm based on Proximity (40%), Reputation (30%), Response Speed (20%), and Boost Status (10%).
+*   **Fast Discovery Sheet**: Iconic draggable category rail for 1-tap filtering.
 
-### 🛡️ Professional Safety
-*   **SOS Shield Mode**: A root-level safety overlay that gates UI controls and displays real-time GPS coordinates for emergency contact notification.
-*   **Privacy by Design**: Coordinate masking for home-based vendors and recursive PII scrubbing for all metadata.
+### ⭐ Trust & Verification
+*   **Verified Visit System**: A secure 4-digit code verification system that confirms physical interactions.
+*   **Automated Reputation Badging**: Performance-based badges like "Verified Pro" and "Fast Responder."
+*   **Professional Portfolios**: Visual "Proof of Work" galleries on vendor profiles.
 
-### 🎨 Premium Experience
-*   **Dynamic Dark Mode**: A system-wide theme engine that automatically adapts all components for light or dark environments.
-*   **Optimized Performance**: Marker throttling and storage pruning to ensure fluid interaction for 100k+ users.
+### 💬 Communication
+*   **In-App Chat**: Direct, real-time communication between customers and vendors.
+*   **Actionable Conversions**: Structured triggers for "Request Quote" and "Accept Job."
 
-## 🛠️ Tech Stack
-*   **Frontend**: React Native with Expo (SDK 51), TypeScript.
-*   **State Management**: Zustand (with specialized storage serialization for Maps).
-*   **Backend**: Supabase (Database, Auth, Realtime).
-*   **Styling**: Specialized Design System with normalized typography and adaptive geometry.
+### 💰 Vendor Growth Hub
+*   **Paid Visibility Boosts**: Tiered ₦500 – ₦10,000 visibility injections via Paystack.
+*   **Performance Analytics**: Real-time tracking of leads and interactions.
+*   **Smart Demand Nudges**: AI-driven alerts for high-traffic windows.
 
-## 🏁 Getting Started
+### 🛡️ Safety & Privacy
+*   **Emergency SOS Mode**: Immediate emergency contact notification with live GPS coordinates.
+*   **Privacy-First Discovery**: Coordinate masking for residential vendors.
 
-1.  **Clone the Repo**: `git clone https://github.com/0xbullinfo-hue/VEND_APP_V1.git`
-2.  **Install Dependencies**: `npm install`
-3.  **Start Dev Server**: `npx expo start --android` (Ensure an emulator is running).
-4.  **Run Logic Tests**: `node src/__tests__/final_flow_stress_test.js`
+## 💰 Business Model
+*   **Vendor-Paid Boosts**: Points-based visibility bidding (Primary Cash Flow).
+*   **Premium Subscriptions**: Recurring MRR tiers (Pro, Elite, Business).
+*   **Success Commissions**: Future fixed/percentage fee per Verified Visit.
 
-## ⚖️ Legal & Compliance
-*   [Terms of Service](./assets/legal/terms_of_service.md)
-*   [Privacy Policy](./assets/legal/privacy_policy.md)
+## 🧱 Tech Stack
+*   **React Native (Expo)**: Fast iteration and native performance.
+*   **Supabase**: Modern backend for Database, Auth, and Realtime sync.
+*   **Zustand**: Lightweight, high-performance state management.
+
+## 🎯 Vision
+To become the operating system for discovering and hiring local services across Africa.
 
 ---
-© 2026 VEND Team. Hyperlocal. Secure. Fast.
+© 2026 VEND Team. The fastest way to find trusted vendors.

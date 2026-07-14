@@ -24,7 +24,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNext }) => {
             resizeMode="contain"
           />
           <VText variant="caption" color={theme.colors.textMuted} style={styles.tagline}>
-            HYPERLOCAL DISCOVERY • REAL-TIME CONNECTION
+            FAST DISCOVERY • VERIFIED TRUST
           </VText>
         </Animated.View>
 
@@ -44,10 +44,10 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNext }) => {
         {/* Welcome Text */}
         <Animated.View entering={FadeInUp.delay(600).duration(800)} style={styles.textWrapper}>
           <VText variant="h2" align="center" style={styles.heading}>
-            Find active local vendors in real-time
+            The fastest way to find trusted local vendors
           </VText>
           <VText variant="body" align="center" color={theme.colors.textMuted} style={styles.description}>
-            Discover verified services, track live proximity on a map, and earn VEND rewards with every verified connection in your neighborhood.
+            Find reliable service providers near you in seconds. Chat, verify, and get the job done — all in one place.
           </VText>
         </Animated.View>
 
