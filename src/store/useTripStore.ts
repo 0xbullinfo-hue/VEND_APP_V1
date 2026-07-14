@@ -9,6 +9,7 @@ interface TripState {
   emergencyContacts: EmergencyContact[];
   activeTrip: { vendorId: string; status: 'en_route' | 'arrived' | 'completed'; startTime: number } | null;
   verifiedVisitCounts: Record<string, number>;
+  totalVerifiedHandshakes: number; // V2: Track total for referral unlocking
   quests: LocalityQuest[];
   isSOSActive: boolean;
 
@@ -31,6 +32,7 @@ export const useTripStore = create<TripState>((set, get) => ({
   ],
   activeTrip: null,
   verifiedVisitCounts: {},
+  totalVerifiedHandshakes: 0,
   isSOSActive: false,
   quests: [
     { id: 'q1', title: 'Foodie Discovery', description: 'Visit 3 different Food & Catering shops', targetCount: 3, currentCount: 0, pointsReward: 150, category: 'Food & Catering', isCompleted: false },
@@ -76,14 +78,25 @@ export const useTripStore = create<TripState>((set, get) => ({
         
         const newCount = (state.verifiedVisitCounts[vendorId] || 0) + 1;
         const updatedCounts = { ...state.verifiedVisitCounts, [vendorId]: newCount };
+        const newTotalHandshakes = state.totalVerifiedHandshakes + 1;
 
         if (newCount === 5) {
           useUIStore.getState().triggerNotification(`🎖️ NEW MAYOR! You are now the Mayor of ${useVendorStore.getState().vendors.find(v => v.id === vendorId)?.business_name || 'this shop'}!`);
         }
 
+        // V2 MASTER PLAN: Referral "Vouching" Logic (Unlocks at 3 total handshakes)
+        if (newTotalHandshakes === 3) {
+          const user = useAuthStore.getState().user;
+          if (user?.referralCode) {
+            useAuthStore.getState().addPoints(150);
+            useUIStore.getState().triggerNotification("🎊 Referral Milestone! 3 verified visits reached. +150 PTS bonus unlocked.");
+          }
+        }
+
         return {
           directionRequests: updatedRequests,
           verifiedVisitCounts: updatedCounts,
+          totalVerifiedHandshakes: newTotalHandshakes,
           activeTrip: state.activeTrip?.vendorId === vendorId
             ? { ...state.activeTrip, status: 'arrived' } 
             : state.activeTrip

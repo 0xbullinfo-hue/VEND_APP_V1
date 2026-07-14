@@ -177,6 +177,12 @@ export const VendorGrowthScreen: React.FC<VendorGrowthScreenProps> = ({ onBack }
     dotColor = '#10B981';
   }
 
+  // V2 MASTER PLAN: High Demand Demand Nudge
+  const isHighDemand = total7dInteractions > 20 || rankNow > 5;
+  const demandMessage = isHighDemand
+    ? `🔥 High demand in ${vendor.locality_id}! Vendors with Boosts are seeing 4x more leads right now.`
+    : `Momentum building in your area. Use a Flash Boost to capture current local searches.`;
+
   return (
     <View style={styles.container}>
       <HeaderBar 
@@ -226,6 +232,16 @@ export const VendorGrowthScreen: React.FC<VendorGrowthScreenProps> = ({ onBack }
             </VText>
           </View>
         </View>
+
+        {/* V2: SMART DEMAND ALERT */}
+        <Animated.View entering={FadeInDown.delay(200)}>
+          <View style={[styles.demandAlert, isHighDemand && styles.demandAlertHigh]}>
+            <Ionicons name={isHighDemand ? "flame" : "trending-up"} size={16} color={isHighDemand ? "#DC2626" : theme.colors.primary} />
+            <VText variant="caption" color={isHighDemand ? "#DC2626" : theme.colors.primary} style={{ marginLeft: 8, fontWeight: '700', flex: 1 }}>
+              {demandMessage}
+            </VText>
+          </View>
+        </Animated.View>
 
         <View style={styles.sectionHeader}>
           <VText variant="h3" color={theme.colors.textMuted} style={{ fontSize: normalize(12), letterSpacing: 1 }}>7-DAY IMPACT SNAPSHOT</VText>
@@ -687,6 +703,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  demandAlert: {
+    marginHorizontal: theme.spacing.lg,
+    backgroundColor: theme.colors.primaryLight,
+    padding: 12,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: theme.spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(17, 92, 85, 0.15)',
+  },
+  demandAlertHigh: {
+    backgroundColor: '#FFF1F2',
+    borderColor: 'rgba(220, 38, 38, 0.15)',
   },
   syncPill: {
     flexDirection: 'row',

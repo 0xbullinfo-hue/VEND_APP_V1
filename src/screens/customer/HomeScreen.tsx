@@ -196,6 +196,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     onViewVendorProfile(vendorId);
   };
 
+  const topTrustVendors = useMemo(() => {
+    return vendors
+      .filter(v => v.handshake_count >= 10 || v.avg_response_mins <= 10)
+      .sort((a, b) => (b.handshake_count || 0) - (a.handshake_count || 0))
+      .slice(0, 5);
+  }, [vendors]);
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Top Header */}
@@ -265,6 +272,40 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
       <VibeFeed snapshots={snapshots} onViewVendor={(vId) => handleViewVendorProfileInternal(vId)} />
 
+      {/* V2 MASTER PLAN: High Trust "Top Picks" Rail */}
+      {topTrustVendors.length > 0 && (
+        <View style={styles.trustRailContainer}>
+          <VText variant="caption" color={theme.colors.textMuted} style={styles.trustRailTitle}>
+            TRUSTED TOP PICKS • FAST RESPONDERS
+          </VText>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.trustRailScroll}>
+            {topTrustVendors.map((v) => (
+              <TouchableOpacity
+                key={v.id}
+                activeOpacity={0.8}
+                onPress={() => handleViewVendorProfileInternal(v.id)}
+                style={[styles.trustChip, theme.shadows.soft]}
+              >
+                <VImage source={v.image} style={styles.trustChipImg} />
+                <View style={styles.trustChipContent}>
+                  <VText variant="caption" numberOfLines={1} style={{ fontWeight: '700' }}>{v.business_name}</VText>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+                    <Ionicons
+                      name={v.avg_response_mins <= 10 ? "flash" : "ribbon"}
+                      size={10}
+                      color={v.avg_response_mins <= 10 ? theme.colors.accent : "#3B82F6"}
+                    />
+                    <VText variant="caption" style={{ fontSize: 9, marginLeft: 3 }}>
+                      {v.avg_response_mins <= 10 ? 'Fast' : 'Verified Pro'}
+                    </VText>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+
       {/* Interactive Map Viewport */}
       <View style={styles.mapContainer}>
         <Animated.View entering={FadeInUp.delay(300).duration(600)} style={styles.discoveryRail}>
@@ -319,7 +360,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
               {categories.map((cat, index) => {
                 const isSelected = selectedCategory === cat.name || (selectedCategory === null && cat.name === 'All');
-                return (
+                const topTrustVendors = useMemo(() => {
+    return vendors
+      .filter(v => v.handshake_count >= 10 || v.avg_response_mins <= 10)
+      .sort((a, b) => (b.handshake_count || 0) - (a.handshake_count || 0))
+      .slice(0, 5);
+  }, [vendors]);
+
+  return (
                   <Animated.View
                     key={cat.name}
                     entering={FadeInRight.delay(400 + (index * 50)).duration(400)}
@@ -403,7 +451,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             const catIcon = icon.replace('-outline', '');
 
             if (vendor.is_home_based) {
-              return (
+              const topTrustVendors = useMemo(() => {
+    return vendors
+      .filter(v => v.handshake_count >= 10 || v.avg_response_mins <= 10)
+      .sort((a, b) => (b.handshake_count || 0) - (a.handshake_count || 0))
+      .slice(0, 5);
+  }, [vendors]);
+
+  return (
                 <React.Fragment key={vendor.id}>
                   <Circle
                     center={coordinate}
@@ -439,7 +494,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               );
             }
 
-            return (
+            const topTrustVendors = useMemo(() => {
+    return vendors
+      .filter(v => v.handshake_count >= 10 || v.avg_response_mins <= 10)
+      .sort((a, b) => (b.handshake_count || 0) - (a.handshake_count || 0))
+      .slice(0, 5);
+  }, [vendors]);
+
+  return (
               <Marker
                 key={vendor.id}
                 coordinate={coordinate}
@@ -1087,5 +1149,38 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: '#FFFFFF',
     zIndex: 3,
+  },
+  trustRailContainer: {
+    paddingBottom: theme.spacing.md,
+    backgroundColor: theme.colors.background,
+  },
+  trustRailTitle: {
+    paddingHorizontal: theme.spacing.lg,
+    marginBottom: 6,
+    letterSpacing: 1,
+  },
+  trustRailScroll: {
+    paddingHorizontal: theme.spacing.lg,
+    gap: theme.spacing.sm,
+  },
+  trustChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.surface,
+    borderRadius: 12,
+    padding: 6,
+    width: normalize(150),
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  trustChipImg: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: theme.colors.border,
+  },
+  trustChipContent: {
+    marginLeft: 8,
+    flex: 1,
   },
 });
