@@ -145,6 +145,9 @@ export const useVendorStore = create<VendorState>()(
             services: [],
             street_address: '',
             point_wallet: 50, // Welcome points for vendors
+            handshake_count: 0,
+            avg_response_mins: 0,
+            portfolio_urls: [],
             exact_location: locality?.center_location || { latitude: 6.5165, longitude: 3.3792 }
           };
           return { vendors: rankVendorsForCustomer([newVendorProfile, ...state.vendors]) };
@@ -219,6 +222,9 @@ export const useVendorStore = create<VendorState>()(
             is_open: true,
             subscription_tier: 1,
             point_wallet: 50,
+            handshake_count: 0,
+            avg_response_mins: 0,
+            portfolio_urls: [],
             image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500&q=80',
             services: [],
           };

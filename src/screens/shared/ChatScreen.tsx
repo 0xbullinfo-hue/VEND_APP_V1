@@ -7,7 +7,8 @@ import {
   TextInput, 
   KeyboardAvoidingView, 
   Platform,
-  ScrollView
+  ScrollView,
+  Alert
 } from 'react-native';
 import { theme, normalize } from '../../theme/designSystem';
 import { VText, HeaderBar, VendorProfilePendingState } from '../../components/SharedComponents';
@@ -96,6 +97,27 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     }, 1500);
   };
 
+  const handleAction = (type: 'quote' | 'location' | 'accept') => {
+    switch (type) {
+      case 'quote':
+        handleSendMessage("I'd like to request a quote for your services. What is your base pricing?");
+        break;
+      case 'location':
+        handleSendMessage("Shared my live location for easier navigation. [VEND LIVE COORDS]");
+        break;
+      case 'accept':
+        Alert.alert(
+          'Accept Job Intent?',
+          'This will notify the vendor you are ready to proceed. Points are transferred after the physical handshake.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Confirm', onPress: () => handleSendMessage("✅ JOB ACCEPTED: I am proceeding with this service. See you soon!") }
+          ]
+        );
+        break;
+    }
+  };
+
   return (
     <View style={styles.container}>
       <HeaderBar 
@@ -122,7 +144,28 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           inverted
           renderItem={({ item: msg }) => {
             const isMe = msg.sender === 'me';
-            return (
+            const handleAction = (type: 'quote' | 'location' | 'accept') => {
+    switch (type) {
+      case 'quote':
+        handleSendMessage("I'd like to request a quote for your services. What is your base pricing?");
+        break;
+      case 'location':
+        handleSendMessage("Shared my live location for easier navigation. [VEND LIVE COORDS]");
+        break;
+      case 'accept':
+        Alert.alert(
+          'Accept Job Intent?',
+          'This will notify the vendor you are ready to proceed. Points are transferred after the physical handshake.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Confirm', onPress: () => handleSendMessage("✅ JOB ACCEPTED: I am proceeding with this service. See you soon!") }
+          ]
+        );
+        break;
+    }
+  };
+
+  return (
               <View 
                 style={[
                   styles.messageRow,
@@ -183,6 +226,24 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
             </ScrollView>
           </View>
         )}
+
+        {/* Action Rail (V2 Structured Funnel) */}
+        <View style={styles.actionRail}>
+          <TouchableOpacity style={styles.railBtn} onPress={() => handleAction('quote')}>
+            <Ionicons name="receipt-outline" size={16} color={theme.colors.primary} />
+            <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 4, fontWeight: 'bold' }}>Request Quote</VText>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.railBtn} onPress={() => handleAction('location')}>
+            <Ionicons name="location-outline" size={16} color={theme.colors.primary} />
+            <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 4, fontWeight: 'bold' }}>Share Map</VText>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={[styles.railBtn, styles.acceptBtn]} onPress={() => handleAction('accept')}>
+            <Ionicons name="checkmark-done" size={16} color="#FFFFFF" />
+            <VText variant="caption" color="#FFFFFF" style={{ marginLeft: 4, fontWeight: 'bold' }}>Accept Job</VText>
+          </TouchableOpacity>
+        </View>
 
         {/* Messaging Text Input Bar */}
         <View style={styles.inputBar}>
@@ -272,6 +333,30 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     borderColor: 'rgba(17, 92, 85, 0.1)',
+  },
+  actionRail: {
+    flexDirection: 'row',
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: 10,
+    backgroundColor: theme.colors.background,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    gap: 8,
+  },
+  railBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.primaryLight,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(17, 92, 85, 0.2)',
+  },
+  acceptBtn: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
   },
   inputBar: {
     flexDirection: 'row',

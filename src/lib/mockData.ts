@@ -59,6 +59,12 @@ export const MOCK_VENDORS: VendorProfile[] = [
     image: 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=500&q=80',
     street_address: 'Alagomeji Street, Yaba, Lagos',
     point_wallet: 150,
+    handshake_count: 124,
+    avg_response_mins: 8,
+    portfolio_urls: [
+      'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=500&q=80',
+      'https://images.unsplash.com/photo-1567620817605-d2c986d30421?w=500&q=80',
+    ],
     exact_location: { latitude: 6.5050, longitude: 3.3750 },
     services: [
       {
@@ -101,6 +107,11 @@ export const MOCK_VENDORS: VendorProfile[] = [
     image: 'https://images.unsplash.com/photo-1607400201515-c2c41c07d307?w=500&q=80',
     street_address: 'Toyin Street, Ikeja, Lagos',
     point_wallet: 45,
+    handshake_count: 56,
+    avg_response_mins: 15,
+    portfolio_urls: [
+      'https://images.unsplash.com/photo-1607400201515-c2c41c07d307?w=500&q=80',
+    ],
     exact_location: { latitude: 6.5985, longitude: 3.3512 },
     services: [
       {
@@ -130,6 +141,12 @@ export const MOCK_VENDORS: VendorProfile[] = [
     image: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=500&q=80',
     street_address: 'Herbert Macaulay Way, Yaba',
     point_wallet: 320,
+    handshake_count: 210,
+    avg_response_mins: 4,
+    portfolio_urls: [
+      'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=500&q=80',
+      'https://images.unsplash.com/photo-1519762822-dea94f2a5a4e?w=500&q=80',
+    ],
     exact_location: { latitude: 6.5101, longitude: 3.3640 },
     services: [
       {
@@ -172,6 +189,11 @@ export const MOCK_VENDORS: VendorProfile[] = [
     image: 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?w=500&q=80',
     street_address: 'Admiralty Way, Lekki Phase 1',
     point_wallet: 10,
+    handshake_count: 32,
+    avg_response_mins: 25,
+    portfolio_urls: [
+      'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?w=500&q=80',
+    ],
     exact_location: { latitude: 6.4401, longitude: 3.4714 },
     services: [
       {

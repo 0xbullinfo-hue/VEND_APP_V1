@@ -1,20 +1,7 @@
-/**
- * Rank-Up Nudge Engine
- *
- * Computes the nearest actionable step a vendor can take to move up in locality ranking.
- * Ranking priority order: subscription_tier → is_open → rating → business_name
- */
+import { rankVendorsForCustomer } from './vendorRanking';
+import { VendorProfile } from '../types';
 
 export type RankUpNudgeType = 'upgrade' | 'rating_gap' | 'already_top' | 'open_status';
-
-export interface VendorRankInput {
-  id: string;
-  business_name: string;
-  subscription_tier: number;
-  is_open: boolean;
-  rating: number;
-  locality_id: number;
-}
 
 export interface RankUpNudge {
   type: RankUpNudgeType;
@@ -30,25 +17,14 @@ const RATING_NEAR_THRESHOLD = 0.8;
 
 /**
  * Returns the nearest rank-up nudge for a given vendor in a locality.
+ * Uses the V2 Master Plan AI Ranking utility.
  */
 export const computeRankUpNudge = (
-  vendor: VendorRankInput,
-  localityVendors: VendorRankInput[]
+  vendor: VendorProfile,
+  localityVendors: VendorProfile[]
 ): RankUpNudge => {
-  // Sort all vendors by rank priority (same algorithm as customer discovery)
-  const ranked = [...localityVendors].sort((a, b) => {
-    const aBoost = a.subscription_tier > 1 ? 1 : 0;
-    const bBoost = b.subscription_tier > 1 ? 1 : 0;
-    if (bBoost !== aBoost) return bBoost - aBoost;
-
-    const aOpen = a.is_open ? 1 : 0;
-    const bOpen = b.is_open ? 1 : 0;
-    if (bOpen !== aOpen) return bOpen - aOpen;
-
-    if (b.rating !== a.rating) return b.rating - a.rating;
-
-    return a.business_name.localeCompare(b.business_name);
-  });
+  // Sort all vendors by the new V2 AI relevance algorithm
+  const ranked = rankVendorsForCustomer(localityVendors);
 
   const currentRank = ranked.findIndex((v) => v.id === vendor.id);
   if (currentRank <= 0) {

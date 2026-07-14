@@ -113,6 +113,17 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({
         {/* Vendor Banner Image */}
         <VImage source={vendor?.image || ''} style={styles.bannerImage} />
 
+        {/* Portfolio Gallery (V2 Proof of Work) */}
+        {vendor.portfolio_urls && vendor.portfolio_urls.length > 0 && (
+          <View style={styles.portfolioSection}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.portfolioScroll}>
+              {vendor.portfolio_urls.map((url, idx) => (
+                <VImage key={idx} source={url} style={styles.portfolioImg} />
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
         {/* Business Title Details */}
         <View style={styles.infoSection}>
           <View style={styles.titleRow}>
@@ -133,6 +144,26 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({
                 </VText>
               </View>
             )}
+
+            {/* V2: High Trust Badges */}
+            {vendor.handshake_count >= 50 && (
+              <View style={[styles.signalChip, styles.signalChipVerifiedPro]}>
+                <Ionicons name="ribbon" size={12} color="#FFFFFF" />
+                <VText variant="caption" color="#FFFFFF" style={{ marginLeft: 5 }}>
+                  Verified Pro
+                </VText>
+              </View>
+            )}
+
+            {vendor.avg_response_mins <= 10 && (
+              <View style={[styles.signalChip, styles.signalChipFast]}>
+                <Ionicons name="flash" size={12} color="#FFFFFF" />
+                <VText variant="caption" color="#FFFFFF" style={{ marginLeft: 5 }}>
+                  Fast Responder
+                </VText>
+              </View>
+            )}
+
             <View style={styles.signalChip}>
               <Ionicons name="shield-checkmark" size={12} color={theme.colors.primary} />
               <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 5 }}>
@@ -200,18 +231,18 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({
 
           <View style={styles.metricsStrip}>
             <View style={styles.metricCell}>
-              <VText variant="h2">{recentVisits}+</VText>
-              <VText variant="caption" color={theme.colors.textMuted}>Recent Visits</VText>
+              <VText variant="h2">{vendor.handshake_count || 0}</VText>
+              <VText variant="caption" color={theme.colors.textMuted}>Jobs Done</VText>
             </View>
             <View style={styles.metricDivider} />
             <View style={styles.metricCell}>
               <VText variant="h2">{vendor.rating.toFixed(1)}</VText>
-              <VText variant="caption" color={theme.colors.textMuted}>Avg Rating</VText>
+              <VText variant="caption" color={theme.colors.textMuted}>Rating</VText>
             </View>
             <View style={styles.metricDivider} />
             <View style={styles.metricCell}>
-              <VText variant="h2">{vendor.is_home_based ? 'Home' : 'Store'}</VText>
-              <VText variant="caption" color={theme.colors.textMuted}>Service Model</VText>
+              <VText variant="h2">~{vendor.avg_response_mins}m</VText>
+              <VText variant="caption" color={theme.colors.textMuted}>Resp. Time</VText>
             </View>
           </View>
         </View>
@@ -424,6 +455,22 @@ const styles = StyleSheet.create({
     height: normalize(180),
     backgroundColor: theme.colors.surface,
   },
+  portfolioSection: {
+    marginTop: -normalize(30),
+    paddingBottom: theme.spacing.sm,
+  },
+  portfolioScroll: {
+    paddingHorizontal: theme.spacing.lg,
+    gap: theme.spacing.sm,
+  },
+  portfolioImg: {
+    width: normalize(140),
+    height: normalize(100),
+    borderRadius: normalize(12),
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    ...theme.shadows.soft,
+  },
   infoSection: {
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.md,
@@ -475,6 +522,14 @@ const styles = StyleSheet.create({
   signalChipUrgent: {
     borderColor: theme.colors.danger,
     backgroundColor: '#FFF5F5',
+  },
+  signalChipVerifiedPro: {
+    backgroundColor: '#3B82F6',
+    borderColor: '#3B82F6',
+  },
+  signalChipFast: {
+    backgroundColor: theme.colors.accent,
+    borderColor: theme.colors.accent,
   },
   categoryRow: {
     marginTop: 2,

@@ -80,6 +80,9 @@ const mapRowsToVendorProfiles = (
       image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500&q=80',
       street_address: row.display_address || 'Address not available',
       point_wallet: 0, // Hydrate from real wallet table in V2
+      handshake_count: 0, // V2: Map from handshakes table
+      avg_response_mins: 15, // V2: Calculated signal
+      portfolio_urls: [], // V2: Map from assets table
       exact_location: location || { latitude: 6.5165, longitude: 3.3792 },
       services: serviceItems,
       realtime_source: 'supabase',

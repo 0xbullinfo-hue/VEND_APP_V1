@@ -670,7 +670,7 @@ const styles = StyleSheet.create({
     gap: theme.spacing.md,
   },
   gridBox: {
-    width: (width - normalize(32) - theme.spacing.md) / 2,
+    width: '47%', // Use percentage for responsiveness
     backgroundColor: theme.colors.surface,
     padding: theme.spacing.lg,
     borderRadius: normalize(16),

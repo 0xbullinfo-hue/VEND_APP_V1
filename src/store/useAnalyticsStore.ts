@@ -71,7 +71,9 @@ export const useAnalyticsStore = create<AnalyticsState>((set) => ({
 
   trackProfileView: (vendorId, context) => {
     const event = buildEvent('profile_view', vendorId, context);
-    set((state) => ({ analyticsEvents: [...state.analyticsEvents, event] }));
+    set((state) => ({
+      analyticsEvents: [...state.analyticsEvents, event].slice(-100) // Pruning: Keep only latest 100 locally
+    }));
     void persistAnalyticsEvent(event).then((result) => {
       set({ analyticsPendingCount: result.pendingCount });
     });
@@ -79,7 +81,9 @@ export const useAnalyticsStore = create<AnalyticsState>((set) => ({
 
   trackDirectionsRequest: (vendorId, context) => {
     const event = buildEvent('directions_request', vendorId, context);
-    set((state) => ({ analyticsEvents: [...state.analyticsEvents, event] }));
+    set((state) => ({
+      analyticsEvents: [...state.analyticsEvents, event].slice(-100)
+    }));
     void persistAnalyticsEvent(event).then((result) => {
       set({ analyticsPendingCount: result.pendingCount });
     });
@@ -87,7 +91,9 @@ export const useAnalyticsStore = create<AnalyticsState>((set) => ({
 
   trackChatStart: (vendorId, context) => {
     const event = buildEvent('chat_start', vendorId, context);
-    set((state) => ({ analyticsEvents: [...state.analyticsEvents, event] }));
+    set((state) => ({
+      analyticsEvents: [...state.analyticsEvents, event].slice(-100)
+    }));
     void persistAnalyticsEvent(event).then((result) => {
       set({ analyticsPendingCount: result.pendingCount });
     });
