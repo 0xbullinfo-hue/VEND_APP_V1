@@ -10,7 +10,7 @@ import {
   Modal
 } from 'react-native';
 import { theme, normalize } from '../../theme/designSystem';
-import { VText, VButton, HeaderBar, VImage, VendorProfilePendingState } from '../../components/SharedComponents';
+import { VText, VButton, HeaderBar, VImage, VendorProfilePendingState, VCard } from '../../components/SharedComponents';
 import { useApp } from '../../contexts/AppContext';
 import { Ionicons } from '../../components/VIcons';
 import { getClosingUrgency } from '../../lib/timeUtils';
@@ -39,21 +39,15 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({
   }
 
   const isSaved = savedVendors.includes(vendor.id);
-  const isBoostedVendor = vendor.subscription_tier > 1;
-  const trustScore = Math.min(99, Math.round(vendor.rating * 19.8)); // Hardened scale for 0-5 rating
+  const isBoostedVendor = vendor.is_boosted || vendor.subscription_tier > 1;
+  const trustScore = Math.min(99, Math.round(vendor.rating * 19.8));
   const responseLabel = vendor.is_open ? 'Usually replies in under 5 mins' : 'Replies when back online';
-  const recentVisits = Math.max(8, Math.round(vendor.rating * 11));
+  const totalVerifiedVisits = (vendor.handshake_count || 0) + (verifiedVisitCounts[vendor.id] || 0);
 
-  // Feature 3: Social Proof (Verified Visits)
-  // Mocking a "Local Trust" score based on rating + active usage
-  const totalVerifiedVisits = Math.floor(vendor.rating * 22) + (verifiedVisitCounts[vendor.id] || 0);
-
-  // Feature 2: Real-time Urgency (Closes Soon)
   const closingUrgency = vendor.is_open && vendor.business_hours
     ? getClosingUrgency(vendor.business_hours)
     : null;
 
-  // Check if directions are already unlocked or active
   const hasUnlockedDirections = directionRequests.some(
     r => r.vendorId === vendor.id && (r.status === 'verified' || r.status === 'completed')
   );
@@ -67,33 +61,9 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({
     onRequestDirections(vendor.id);
   };
 
-  const handleRedeemDiscount = (service: any) => {
-    if ((user?.points || 0) < service.pointsDiscountCost) {
-      Alert.alert('Low Points', `You need ${service.pointsDiscountCost} PTS to unlock this ${service.discountValue} discount.`);
-      return;
-    }
-
-    Alert.alert(
-      'Redeem Discount?',
-      `Spend ${service.pointsDiscountCost} VEND points to unlock ${service.discountValue} off ${service.title}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Redeem Now',
-          onPress: () => {
-            deductPoints(service.pointsDiscountCost);
-            // In a real flow, this would mark the direction request as having a pending discount
-            triggerNotification(`Discount unlocked! Show the verification code to the vendor to claim your ${service.discountValue} off.`);
-          }
-        }
-      ]
-    );
-  };
-
   return (
     <View style={styles.container}>
-      {/* Header Bar */}
-      <HeaderBar 
+      <HeaderBar
         showBack={true} 
         onBack={onBack}
         rightComponent={
@@ -112,23 +82,8 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({
       />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* Vendor Banner Image */}
         <VImage source={vendor?.image || ''} style={styles.bannerImage} />
 
-        {/* Portfolio Gallery (V2 Proof of Work) */}
-        {vendor.portfolio_urls && vendor.portfolio_urls.length > 0 && (
-          <View style={styles.portfolioSection}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.portfolioScroll}>
-              {vendor.portfolio_urls.map((url, idx) => (
-                <TouchableOpacity key={idx} onPress={() => setSelectedGalleryImg(url)}>
-                  <VImage source={url} style={styles.portfolioImg} />
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        )}
-
-        {/* Business Title Details */}
         <View style={styles.infoSection}>
           <View style={styles.titleRow}>
             <VText variant="h1" style={styles.vendorName}>{vendor.business_name}</VText>
@@ -143,65 +98,23 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({
             {isBoostedVendor && (
               <View style={[styles.signalChip, styles.signalChipBoosted]}>
                 <Ionicons name="sparkles" size={12} color="#FFFFFF" />
-                <VText variant="caption" color="#FFFFFF" style={{ marginLeft: 5 }}>
-                  Boosted Visibility
-                </VText>
+                <VText variant="caption" color="#FFFFFF" style={{ marginLeft: 5 }}>Boosted</VText>
               </View>
             )}
-
-            {/* V2: High Trust Badges */}
             {vendor.handshake_count >= 50 && (
               <View style={[styles.signalChip, styles.signalChipVerifiedPro]}>
                 <Ionicons name="ribbon" size={12} color="#FFFFFF" />
-                <VText variant="caption" color="#FFFFFF" style={{ marginLeft: 5 }}>
-                  Verified Pro
-                </VText>
+                <VText variant="caption" color="#FFFFFF" style={{ marginLeft: 5 }}>Verified Pro</VText>
               </View>
             )}
-
-            {vendor.avg_response_mins <= 10 && (
-              <View style={[styles.signalChip, styles.signalChipFast]}>
-                <Ionicons name="flash" size={12} color="#FFFFFF" />
-                <VText variant="caption" color="#FFFFFF" style={{ marginLeft: 5 }}>
-                  Fast Responder
-                </VText>
-              </View>
-            )}
-
             <View style={styles.signalChip}>
               <Ionicons name="shield-checkmark" size={12} color={theme.colors.primary} />
-              <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 5 }}>
-                Trust Score {trustScore}%
-              </VText>
+              <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 5 }}>Trust {trustScore}%</VText>
             </View>
-            <View style={styles.signalChip}>
-              <Ionicons name="time-outline" size={12} color={theme.colors.primary} />
-              <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 5 }}>
-                {responseLabel}
-              </VText>
-            </View>
-
-            {/* Social Proof Badge */}
-            <View style={[styles.signalChip, styles.signalChipTrust]}>
-              <Ionicons name="people" size={12} color={theme.colors.accent} />
-              <VText variant="caption" color={theme.colors.accent} style={{ marginLeft: 5, fontWeight: '700' }}>
-                Trusted by {totalVerifiedVisits}+ Locals
-              </VText>
-            </View>
-
-            {/* Real-time Urgency Badge */}
             {closingUrgency && (
               <View style={[styles.signalChip, closingUrgency.isUrgent ? styles.signalChipUrgent : styles.signalChipWarning]}>
-                <Ionicons
-                  name="alarm-outline"
-                  size={12}
-                  color={closingUrgency.isUrgent ? theme.colors.danger : theme.colors.warning}
-                />
-                <VText
-                  variant="caption"
-                  color={closingUrgency.isUrgent ? theme.colors.danger : theme.colors.warning}
-                  style={{ marginLeft: 5, fontWeight: '800' }}
-                >
+                <Ionicons name="alarm-outline" size={12} color={closingUrgency.isUrgent ? theme.colors.danger : theme.colors.warning} />
+                <VText variant="caption" color={closingUrgency.isUrgent ? theme.colors.danger : theme.colors.warning} style={{ marginLeft: 5, fontWeight: '800' }}>
                   {closingUrgency.label.toUpperCase()}
                 </VText>
               </View>
@@ -215,27 +128,18 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({
           <View style={styles.ratingRow}>
             <Ionicons name="star" size={16} color={theme.colors.warning} />
             <VText variant="h3" style={{ marginLeft: 4 }}>{vendor.rating}</VText>
-            <VText variant="caption" color={theme.colors.textMuted} style={{ marginLeft: 6 }}>(48 reviews)</VText>
-            
             <View style={styles.verticalDivider} />
-            
-            <Ionicons 
-              name={vendor.is_home_based ? "shield-checkmark" : "business"} 
-              size={16} 
-              color={theme.colors.primary} 
-            />
+            <Ionicons name={vendor.is_home_based ? "shield-checkmark" : "business"} size={16} color={theme.colors.primary} />
             <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 4, fontWeight: '700' }}>
-              {vendor.is_home_based ? 'Home-Based Service' : 'Physical Retail Shop'}
+              {vendor.is_home_based ? 'Home-Based' : 'Physical Shop'}
             </VText>
           </View>
 
-          <VText variant="body" color={theme.colors.textMuted} style={styles.bioText}>
-            {vendor.bio}
-          </VText>
+          <VText variant="body" color={theme.colors.textMuted} style={styles.bioText}>{vendor.bio}</VText>
 
           <View style={styles.metricsStrip}>
             <View style={styles.metricCell}>
-              <VText variant="h2">{vendor.handshake_count || 0}</VText>
+              <VText variant="h2">{totalVerifiedVisits}</VText>
               <VText variant="caption" color={theme.colors.textMuted}>Jobs Done</VText>
             </View>
             <View style={styles.metricDivider} />
@@ -251,203 +155,95 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({
           </View>
         </View>
 
-        <View style={[styles.transparencyCard, theme.shadows.soft]}>
-          <View style={styles.guardHeader}>
-            <Ionicons name="information-circle-outline" size={20} color={theme.colors.primary} />
-            <VText variant="h3" style={{ marginLeft: 8 }}>Why This Vendor Appears High</VText>
-          </View>
-          <VText variant="body" color={theme.colors.textMuted}>
-            Ranking follows customer relevance: boosted listing status, open availability, rating quality, and business consistency.
-          </VText>
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() => Alert.alert('Ranking Policy', 'Discovery results are ordered by boosted tier first, then availability (Open Now), rating quality, and business consistency. This keeps browsing fair while honoring premium visibility upgrades.')}
-            style={styles.policyBtn}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons name="help-circle-outline" size={14} color={theme.colors.primary} />
-            <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 6, fontWeight: '700' }}>
-              VIEW FULL RANKING POLICY
-            </VText>
-          </TouchableOpacity>
+        {/* V2+ UNIFIED VISUAL CATALOG (The requested Gallery) */}
+        <View style={styles.section}>
+          <VText variant="h2" style={[styles.sectionTitle, { color: theme.colors.primary }]}>Our Work & Products Showcase</VText>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.galleryScroll}>
+            {vendor.services.map((service: any) => (
+              <VCard key={service.id} style={styles.galleryCard}>
+                <TouchableOpacity activeOpacity={0.9} onPress={() => setSelectedGalleryImg(service.image)}>
+                  <VImage source={service.image} style={styles.galleryImg} />
+                </TouchableOpacity>
+                <View style={styles.galleryInfo}>
+                  <VText variant="subtext" numberOfLines={1} style={{ fontWeight: '700' }}>{service.title}</VText>
+                  <VText variant="caption" color={theme.colors.primary}>₦{service.price.toLocaleString()}</VText>
+                </View>
+              </VCard>
+            ))}
+            {vendor.portfolio_urls?.map((url, idx) => (
+              <VCard key={`p-${idx}`} style={styles.galleryCard}>
+                <TouchableOpacity activeOpacity={0.9} onPress={() => setSelectedGalleryImg(url)}>
+                  <VImage source={url} style={styles.galleryImg} />
+                </TouchableOpacity>
+                <View style={styles.galleryInfo}>
+                  <VText variant="subtext" style={{ fontWeight: '700' }}>Recent Work</VText>
+                  <VText variant="caption" color={theme.colors.textMuted}>Portfolio Item</VText>
+                </View>
+              </VCard>
+            ))}
+          </ScrollView>
         </View>
 
-        {/* Location Security Protection Guard Box */}
+        {/* Location & Security */}
         <View style={[styles.locationGuardBox, theme.shadows.soft]}>
           <View style={styles.guardHeader}>
-            <Ionicons 
-              name={vendor.is_home_based ? "shield-checkmark-outline" : "map-outline"} 
-              size={20} 
-              color={theme.colors.primary} 
-            />
-            <VText variant="h3" style={{ marginLeft: 8 }}>
-              {vendor.is_home_based ? 'Fuzzy Coordinates Protection' : 'Storefront Address'}
-            </VText>
+            <Ionicons name={vendor.is_home_based ? "shield-checkmark-outline" : "map-outline"} size={20} color={theme.colors.primary} />
+            <VText variant="h3" style={{ marginLeft: 8 }}>{vendor.is_home_based ? 'Fuzzy Coordinates' : 'Business Address'}</VText>
           </View>
-
-          {vendor.is_home_based ? (
-            <View style={styles.guardBody}>
-              <VText variant="body" color={theme.colors.textMuted} style={{ marginBottom: theme.spacing.md }}>
-                This is a residential home-based vendor. To protect their physical privacy, coordinates are masked until a Visit is requested.
-              </VText>
-              
-              {hasUnlockedDirections ? (
-                <View style={styles.unlockedBox}>
-                  <Ionicons name="location" size={18} color={theme.colors.accent} />
-                  <VText variant="subtext" color={theme.colors.accent} style={{ marginLeft: 6 }}>
-                    Exact address revealed: {vendor.street_address}
-                  </VText>
-                </View>
-              ) : (
-                <View style={styles.maskedBox}>
-                  <Ionicons name="lock-closed" size={16} color={theme.colors.primary} />
-                  <VText variant="subtext" color={theme.colors.primary} style={{ marginLeft: 6 }}>
-                    Exact coordinates hidden within LGA boundary circle
-                  </VText>
-                </View>
-              )}
-            </View>
-          ) : (
-            <View style={styles.guardBody}>
-              <VText variant="body" color={theme.colors.textMuted} style={{ marginBottom: theme.spacing.sm }}>
-                Shop location is open to customers:
-              </VText>
-              <VText variant="h3">{vendor.street_address}</VText>
-            </View>
-          )}
-
-          {/* Directions Request Action */}
-          <VButton
-            title={hasUnlockedDirections ? "Resume Live Navigation" : "Request Driving Directions"}
-            onPress={handleDirectionsPress}
-            icon="navigate-outline"
-            style={{ marginTop: theme.spacing.sm }}
-          />
+          <VText variant="body" color={theme.colors.textMuted} style={{ marginBottom: theme.spacing.sm }}>
+            {vendor.is_home_based ? 'Coordinates masked for residential privacy.' : vendor.street_address}
+          </VText>
+          <VButton title={hasUnlockedDirections ? "Resume Navigation" : "Request Directions"} onPress={handleDirectionsPress} icon="navigate-outline" />
         </View>
 
-        {/* Services & Products Listings */}
+        {/* Full Service Directory */}
         <View style={styles.section}>
-          <VText variant="h2" style={styles.sectionTitle}>Offered Services</VText>
-          {vendor.services && vendor.services.length > 0 ? (
-            vendor.services.map((service: any) => (
-              <View key={service.id} style={styles.serviceItem}>
-                <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <VText variant="h3">{service.title}</VText>
-                    {service.allowPointDiscount && (
-                      <View style={styles.discountBadge}>
-                        <VText variant="caption" color="#FFFFFF" style={{ fontSize: 9 }}>{service.discountValue}</VText>
-                      </View>
-                    )}
-                  </View>
-                  <VText variant="caption" color={theme.colors.textMuted} style={{ marginTop: 2 }}>
-                    {service.description}
-                  </VText>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-                    {service.price > 0 && (
-                      <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: '700' }}>
-                        NGN {service.price.toLocaleString()}
-                      </VText>
-                    )}
-                    {service.allowPointDiscount && (
-                      <TouchableOpacity
-                        onPress={() => handleRedeemDiscount(service)}
-                        style={styles.redeemDiscountBtn}
-                      >
-                        <Ionicons name="gift" size={10} color={theme.colors.primary} />
-                        <VText variant="caption" color={theme.colors.primary} style={{ marginLeft: 4 }}>
-                          Redeem for {service.pointsDiscountCost} PTS
-                        </VText>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                </View>
-                <TouchableOpacity 
-                  activeOpacity={0.8}
-                  onPress={() => {
-                    recordChatInquiry(vendor.id);
-                    trackChatStart(vendor.id, { actorUserId: user?.id, localityId: vendor.locality_id });
-                    onStartChat(vendor.id);
-                  }}
-                  style={styles.bookBtn}
-                >
-                  <Ionicons name="chatbubble-ellipses-outline" size={18} color={theme.colors.primary} />
-                </TouchableOpacity>
+          <VText variant="h2" style={styles.sectionTitle}>Full Service Directory</VText>
+          {vendor.services.map((service: any) => (
+            <View key={`list-${service.id}`} style={styles.serviceItem}>
+              <View style={{ flex: 1 }}>
+                <VText variant="h3">{service.title}</VText>
+                <VText variant="caption" color={theme.colors.textMuted}>{service.description}</VText>
               </View>
-            ))
-          ) : (
-            <View style={styles.emptyCard}>
-              <VText variant="caption" color={theme.colors.textMuted}>
-                No specific services cataloged yet. Tap chat to inquire.
-              </VText>
+              <TouchableOpacity activeOpacity={0.8} onPress={() => onStartChat(vendor.id)} style={styles.bookBtn}>
+                <Ionicons name="chatbubble-ellipses-outline" size={18} color={theme.colors.primary} />
+              </TouchableOpacity>
             </View>
-          )}
+          ))}
         </View>
 
-        {/* Customer Reviews Section */}
+        {/* Customer Reviews */}
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
             <VText variant="h2">Customer Reviews</VText>
             <TouchableOpacity onPress={() => onLeaveReview(vendor.id)}>
-              <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: '900' }}>
-                LEAVE REVIEW
-              </VText>
+              <VText variant="caption" color={theme.colors.primary} style={{ fontWeight: '900' }}>LEAVE REVIEW</VText>
             </TouchableOpacity>
           </View>
-
           <View style={styles.reviewCard}>
             <View style={styles.reviewUserRow}>
               <View style={styles.reviewUserLeft}>
-                <View style={styles.reviewAvatar}>
-                  <Text style={styles.avatarText}>AO</Text>
-                </View>
-                <View style={{ marginLeft: 8 }}>
-                  <VText variant="h3">Adeolu O.</VText>
-                  <VText variant="caption" color={theme.colors.textMuted}>2 days ago</VText>
-                </View>
+                <View style={styles.reviewAvatar}><Text style={styles.avatarText}>AO</Text></View>
+                <View style={{ marginLeft: 8 }}><VText variant="h3">Adeolu O.</VText><VText variant="caption" color={theme.colors.textMuted}>2 days ago</VText></View>
               </View>
-              <View style={styles.reviewUserRight}>
-                <Ionicons name="star" size={12} color={theme.colors.warning} />
-                <VText variant="caption" style={{ marginLeft: 4 }}>5.0</VText>
-              </View>
+              <View style={styles.reviewUserRight}><Ionicons name="star" size={12} color={theme.colors.warning} /><VText variant="caption" style={{ marginLeft: 4 }}>5.0</VText></View>
             </View>
-            <VText variant="body" color={theme.colors.textMuted} style={{ marginTop: theme.spacing.sm }}>
-              Amazing service! Mama Titi's Amala is outstanding, fresh and hot. The location verification was super fast. Highly recommended.
-            </VText>
+            <VText variant="body" color={theme.colors.textMuted} style={{ marginTop: theme.spacing.sm }}>Amazing service! Highly recommended.</VText>
           </View>
         </View>
-
       </ScrollView>
 
       {/* Persistent conversion action bar */}
       <View style={[styles.bottomActionBar, theme.shadows.premium]}>
-        <VButton
-          title={hasUnlockedDirections ? 'Resume Navigation' : 'Request Directions'}
-          onPress={handleDirectionsPress}
-          icon="navigate-outline"
-          style={{ flex: 1 }}
-        />
-        <VButton
-          title="Direct Chat"
-          onPress={() => {
-            recordChatInquiry(vendor.id);
-            trackChatStart(vendor.id, { actorUserId: user?.id, localityId: vendor.locality_id });
-            onStartChat(vendor.id);
-          }}
-          variant="secondary"
-          icon="chatbubbles-outline"
-          style={{ flex: 1, marginLeft: theme.spacing.sm }}
-        />
+        <VButton title={hasUnlockedDirections ? 'Resume Navigation' : 'Request Directions'} onPress={handleDirectionsPress} icon="navigate-outline" style={{ flex: 1 }} />
+        <VButton title="Direct Chat" onPress={() => onStartChat(vendor.id)} variant="secondary" icon="chatbubbles-outline" style={{ flex: 1, marginLeft: theme.spacing.sm }} />
       </View>
 
-      {/* Full-Screen Image Popup */}
       <Modal visible={!!selectedGalleryImg} transparent={true} animationType="fade" onRequestClose={() => setSelectedGalleryImg(null)}>
         <TouchableOpacity style={styles.imgPopupBackdrop} activeOpacity={1} onPress={() => setSelectedGalleryImg(null)}>
           <View style={styles.imgPopupContent}>
             <VImage source={selectedGalleryImg || ''} style={styles.popupImg} />
-            <TouchableOpacity style={styles.popupCloseBtn} onPress={() => setSelectedGalleryImg(null)}>
-              <Ionicons name="close" size={32} color="#FFF" />
-            </TouchableOpacity>
+            <TouchableOpacity style={styles.popupCloseBtn} onPress={() => setSelectedGalleryImg(null)}><Ionicons name="close" size={32} color="#FFF" /></TouchableOpacity>
           </View>
         </TouchableOpacity>
       </Modal>
@@ -456,316 +252,50 @@ export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  saveHeaderBtn: {
-    padding: 4,
-  },
-  scrollContent: {
-    paddingBottom: normalize(100),
-  },
-  bannerImage: {
-    width: '100%',
-    height: normalize(180),
-    backgroundColor: theme.colors.surface,
-  },
-  portfolioSection: {
-    marginTop: -normalize(30),
-    paddingBottom: theme.spacing.sm,
-  },
-  portfolioScroll: {
-    paddingHorizontal: theme.spacing.lg,
-    gap: theme.spacing.sm,
-  },
-  portfolioImg: {
-    width: normalize(140),
-    height: normalize(100),
-    borderRadius: normalize(12),
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-    ...theme.shadows.soft,
-  },
-  infoSection: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-  },
-  vendorName: {
-    fontWeight: '900',
-    flex: 1,
-  },
-  statusBox: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  premiumSignalsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: theme.spacing.xs,
-    marginBottom: theme.spacing.sm,
-    gap: theme.spacing.xs,
-  },
-  signalChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: theme.colors.primaryLight,
-    backgroundColor: '#F8FAFC',
-    borderRadius: 999,
-    paddingVertical: 5,
-    paddingHorizontal: 9,
-  },
-  signalChipBoosted: {
-    borderColor: '#F59E0B',
-    backgroundColor: '#F59E0B',
-  },
-  signalChipTrust: {
-    borderColor: theme.colors.accent,
-    backgroundColor: `${theme.colors.accent}10`,
-  },
-  signalChipWarning: {
-    borderColor: theme.colors.warning,
-    backgroundColor: `${theme.colors.warning}10`,
-  },
-  signalChipUrgent: {
-    borderColor: theme.colors.danger,
-    backgroundColor: '#FFF5F5',
-  },
-  signalChipVerifiedPro: {
-    backgroundColor: '#3B82F6',
-    borderColor: '#3B82F6',
-  },
-  signalChipFast: {
-    backgroundColor: theme.colors.accent,
-    borderColor: theme.colors.accent,
-  },
-  categoryRow: {
-    marginTop: 2,
-    marginBottom: theme.spacing.sm,
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: theme.spacing.md,
-  },
-  verticalDivider: {
-    width: 1.5,
-    height: 14,
-    backgroundColor: theme.colors.border,
-    marginHorizontal: 10,
-  },
-  bioText: {
-    lineHeight: normalize(20),
-  },
-  metricsStrip: {
-    marginTop: theme.spacing.md,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: normalize(12),
-    paddingVertical: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.sm,
-    backgroundColor: '#FBFCFD',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  metricCell: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  metricDivider: {
-    width: 1,
-    height: normalize(30),
-    backgroundColor: theme.colors.border,
-  },
-  transparencyCard: {
-    backgroundColor: theme.colors.background,
-    marginHorizontal: theme.spacing.lg,
-    borderRadius: normalize(16),
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: theme.spacing.lg,
-    marginBottom: theme.spacing.lg,
-  },
-  policyBtn: {
-    marginTop: theme.spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: theme.colors.primaryLight,
-    borderRadius: 999,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(17, 92, 85, 0.2)',
-  },
-  
-  // Location privacy security layout
-  locationGuardBox: {
-    backgroundColor: theme.colors.background,
-    marginHorizontal: theme.spacing.lg,
-    borderRadius: normalize(16),
-    borderWidth: 1.5,
-    borderColor: theme.colors.primaryLight,
-    padding: theme.spacing.lg,
-    marginBottom: theme.spacing.xl,
-  },
-  guardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: theme.spacing.sm,
-  },
-  guardBody: {},
-  maskedBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.colors.primaryLight,
-    paddingVertical: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.md,
-    borderRadius: normalize(8),
-    marginBottom: theme.spacing.md,
-  },
-  unlockedBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#E8F5E9', // Success green background
-    paddingVertical: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.md,
-    borderRadius: normalize(8),
-    marginBottom: theme.spacing.md,
-  },
-  
-  // Services
-  section: {
-    paddingHorizontal: theme.spacing.lg,
-    marginBottom: theme.spacing.xl,
-  },
-  sectionTitle: {
-    marginBottom: theme.spacing.md,
-  },
-  serviceItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: theme.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-  },
-  bookBtn: {
-    width: normalize(36),
-    height: normalize(36),
-    borderRadius: normalize(18),
-    backgroundColor: theme.colors.primaryLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: theme.spacing.md,
-  },
-  discountBadge: {
-    backgroundColor: theme.colors.accent,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    marginLeft: 8,
-  },
-  redeemDiscountBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.colors.primaryLight,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    marginLeft: 12,
-  },
-  emptyCard: {
-    backgroundColor: theme.colors.surface,
-    padding: theme.spacing.lg,
-    borderRadius: normalize(10),
-    alignItems: 'center',
-  },
-  
-  // Review Section
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: theme.spacing.md,
-  },
-  reviewCard: {
-    backgroundColor: theme.colors.surface,
-    padding: theme.spacing.md,
-    borderRadius: normalize(12),
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  reviewUserRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  reviewUserLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  reviewAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: theme.colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 10,
-  },
-  reviewUserRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  
-  // Floating actions
-  bottomActionBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: theme.colors.background,
-    borderTopWidth: 1.5,
-    borderTopColor: theme.colors.primaryLight,
-    paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.sm,
-    paddingBottom: Platform.OS === 'ios' ? normalize(32) : normalize(56),
-    flexDirection: 'row',
-  },
-  imgPopupBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.9)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  imgPopupContent: {
-    width: '90%',
-    height: '70%',
-    position: 'relative',
-  },
-  popupImg: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 12,
-  },
-  popupCloseBtn: {
-    position: 'absolute',
-    top: -40,
-    right: 0,
-    padding: 8,
-  },
+  container: { flex: 1, backgroundColor: theme.colors.background },
+  saveHeaderBtn: { padding: 4 },
+  scrollContent: { paddingBottom: normalize(100) },
+  bannerImage: { width: '100%', height: normalize(180), backgroundColor: theme.colors.surface },
+  infoSection: { paddingHorizontal: theme.spacing.lg, paddingVertical: theme.spacing.md },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' },
+  vendorName: { fontWeight: '900', flex: 1 },
+  statusBox: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  premiumSignalsRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: theme.spacing.xs, marginBottom: theme.spacing.sm, gap: theme.spacing.xs },
+  signalChip: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: theme.colors.primaryLight, backgroundColor: '#F8FAFC', borderRadius: 999, paddingVertical: 5, paddingHorizontal: 9 },
+  signalChipBoosted: { borderColor: '#F59E0B', backgroundColor: '#F59E0B' },
+  signalChipVerifiedPro: { backgroundColor: '#3B82F6', borderColor: '#3B82F6' },
+  signalChipUrgent: { borderColor: theme.colors.danger, backgroundColor: '#FFF5F5' },
+  signalChipWarning: { borderColor: theme.colors.warning, backgroundColor: `${theme.colors.warning}10` },
+  categoryRow: { marginTop: 2, marginBottom: theme.spacing.sm },
+  ratingRow: { flexDirection: 'row', alignItems: 'center', marginBottom: theme.spacing.md },
+  verticalDivider: { width: 1.5, height: 14, backgroundColor: theme.colors.border, marginHorizontal: 10 },
+  bioText: { lineHeight: normalize(20) },
+  metricsStrip: { marginTop: theme.spacing.md, borderWidth: 1, borderColor: theme.colors.border, borderRadius: normalize(12), paddingVertical: theme.spacing.sm, paddingHorizontal: theme.spacing.sm, backgroundColor: '#FBFCFD', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  metricCell: { flex: 1, alignItems: 'center' },
+  metricDivider: { width: 1, height: normalize(30), backgroundColor: theme.colors.border },
+  section: { paddingHorizontal: theme.spacing.lg, marginBottom: theme.spacing.xl },
+  sectionTitle: { marginBottom: theme.spacing.md, fontWeight: '800' },
+  galleryScroll: { gap: theme.spacing.md, paddingRight: theme.spacing.xl },
+  galleryCard: { width: normalize(200), padding: 0, overflow: 'hidden', backgroundColor: theme.colors.surface, borderRadius: 16, borderWidth: 1, borderColor: theme.colors.border },
+  galleryImg: { width: '100%', height: normalize(130), backgroundColor: theme.colors.border },
+  galleryInfo: { padding: 10 },
+  locationGuardBox: { backgroundColor: theme.colors.background, marginHorizontal: theme.spacing.lg, borderRadius: normalize(16), borderWidth: 1.5, borderColor: theme.colors.primaryLight, padding: theme.spacing.lg, marginBottom: theme.spacing.xl },
+  guardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: theme.spacing.sm },
+  serviceItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: theme.spacing.md, borderBottomWidth: 1, borderBottomColor: theme.colors.border },
+  bookBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: theme.colors.primaryLight, justifyContent: 'center', alignItems: 'center' },
+  sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacing.md },
+  reviewCard: { backgroundColor: theme.colors.surface, padding: theme.spacing.md, borderRadius: 12, borderWidth: 1, borderColor: theme.colors.border },
+  reviewUserRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  reviewUserLeft: { flexDirection: 'row', alignItems: 'center' },
+  reviewAvatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: theme.colors.primary, justifyContent: 'center', alignItems: 'center' },
+  avatarText: { color: '#FFFFFF', fontWeight: '700', fontSize: 10 },
+  reviewUserRight: { flexDirection: 'row', alignItems: 'center' },
+  bottomActionBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: theme.colors.background, borderTopWidth: 1.5, borderTopColor: theme.colors.primaryLight, paddingHorizontal: theme.spacing.lg, paddingTop: theme.spacing.sm, paddingBottom: Platform.OS === 'ios' ? normalize(32) : normalize(40), flexDirection: 'row' },
+  imgPopupBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' },
+  imgPopupContent: { width: '90%', height: '70%', position: 'relative' },
+  popupImg: { width: '100%', height: '100%', borderRadius: 12 },
+  popupCloseBtn: { position: 'absolute', top: -40, right: 0, padding: 8 },
+  transparencyCard: { backgroundColor: theme.colors.background, marginHorizontal: theme.spacing.lg, borderRadius: normalize(16), borderWidth: 1, borderColor: theme.colors.border, padding: theme.spacing.lg, marginBottom: theme.spacing.lg },
+  policyBtn: { marginTop: theme.spacing.sm, flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', backgroundColor: theme.colors.primaryLight, borderRadius: 999, paddingVertical: 6, paddingHorizontal: 10, borderWidth: 1, borderColor: 'rgba(17, 92, 85, 0.2)' },
+  discountBadge: { backgroundColor: theme.colors.accent, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginLeft: 8 },
 });
