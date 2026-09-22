@@ -14,7 +14,7 @@ interface VendorProfileScreenProps {
   onLogout?: () => void;
 }
 
-export const VendorProfileScreen: React.FC<VendorProfileScreenProps> = ({ onBack, onTestRegistration, onLogout }) => {
+export const DashboardProfileScreen: React.FC<VendorProfileScreenProps> = ({ onBack, onTestRegistration, onLogout }) => {
   const { logout, user, vendors, myVendorProfile, updateVendorProfile } = useApp();
   const { isDarkMode, toggleDarkMode } = useThemeStore();
   const navigation = useNavigation<any>();

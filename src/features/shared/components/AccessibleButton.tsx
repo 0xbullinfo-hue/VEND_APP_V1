@@ -11,7 +11,7 @@ import { VButton } from './SharedComponents';
 import {
   validateInteractiveElement,
   validateComponentAccessibility,
-} from '../lib/accessibility';
+} from '../../../theme/accessibility';
 
 interface AccessibleButtonProps {
   title: string;

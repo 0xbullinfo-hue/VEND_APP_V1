@@ -20,7 +20,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { VButton, VText } from '../../components/SharedComponents';
 import { theme } from '../../theme/designSystem';
-import { useErrorTracking } from '../../hooks/useErrorTracking';
+import { useErrorTracking } from './hooks/useErrorTracking';
 import { exportUserData, shareExportedData } from '../../lib/gdprDataExport';
 import {
   createDeletionRequest,

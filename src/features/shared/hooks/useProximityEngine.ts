@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../contexts/AppContext';
-import { getDistance } from '../lib/vendorRanking';
+import { getDistance } from '../../../lib/vendorRanking';
 
 const DWELL_TIME_MS = 3 * 60 * 1000; // 3 minutes
 const PROXIMITY_RADIUS_M = 100;

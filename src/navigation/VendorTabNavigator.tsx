@@ -3,15 +3,15 @@ import { Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from './createStackNavigatorCompat';
-import { Ionicons, IonIconName } from '../components/VIcons';
+import { Ionicons, IonIconName } from '../features/shared/components/VIcons';
 import { theme, normalize } from '../theme/designSystem';
-import { useApp } from '../contexts/AppContext';
+import { useApp } from '../features/shared/contexts/AppContext';
 
 // Screens
-import { VendorDashboardScreen } from '../screens/vendor/VendorDashboardScreen';
-import { ProductManagementScreen } from '../screens/vendor/ProductManagementScreen';
-import { VendorGrowthScreen } from '../screens/vendor/VendorGrowthScreen';
-import { VendorProfileScreen } from '../screens/vendor/VendorProfileScreen';
+import { VendorDashboardScreen } from '../features/vendor-hub/VendorDashboardScreen';
+import { ProductManagementScreen } from '../features/vendor-hub/ProductManagementScreen';
+import { VendorGrowthScreen } from '../features/vendor-hub/VendorGrowthScreen';
+import { DashboardProfileScreen } from '../features/vendor-hub/DashboardProfileScreen';
 
 import type { VendorStackParamList, VendorTabParamList } from './types';
 
@@ -58,10 +58,10 @@ const GrowthAdapter = () => {
 const VendorProfileAdapter = () => {
   const nav = useNavigation<any>();
   return (
-    <VendorProfileScreen
+    <DashboardProfileScreen
       onBack={() => nav.jumpTo('Dashboard')}
       onTestRegistration={() => nav.navigate('LocationSetup')}
-      onLogout={() => { /* logout handled inside VendorProfileScreen via useApp */ }}
+      onLogout={() => { /* logout handled inside DashboardProfileScreen via useApp */ }}
     />
   );
 };

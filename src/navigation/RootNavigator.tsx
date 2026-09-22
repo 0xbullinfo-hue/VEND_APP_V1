@@ -19,11 +19,11 @@ import { ActivityIndicator, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigatorCompat } from './createStackNavigatorCompat';
 
-import { useApp } from '../contexts/AppContext';
+import { useApp } from '../features/shared/contexts/AppContext';
 import { OnboardingNavigator } from './OnboardingNavigator';
 import { CustomerStackNavigator } from './CustomerStackNavigator';
 import { VendorStackNavigator } from './VendorStackNavigator';
-import { BrandedSplashScreen } from '../screens/shared/BrandedSplashScreen';
+import { BrandedSplashScreen } from '../features/shared/BrandedSplashScreen';
 import { theme } from '../theme/designSystem';
 
 import type { RootStackParamList } from './types';

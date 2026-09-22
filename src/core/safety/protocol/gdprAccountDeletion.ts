@@ -415,6 +415,34 @@ class AccountDeletionService {
   /**
    * Get deletion request status
    */
+  async getUserDeletionRequests(userId: string): Promise<DeletionRequest[]> {
+    try {
+      const { data, error } = await supabase
+        .from('account_deletion_requests')
+        .select('*')
+        .eq('user_id', userId)
+        .order('requested_at', { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      return (data || []).map((item) => ({
+        id: item.id,
+        userId: item.user_id,
+        reason: item.reason,
+        status: item.status,
+        requestedAt: item.requested_at,
+        completedAt: item.completed_at,
+        error: item.error,
+        confirmed: item.confirmed,
+      }));
+    } catch (error) {
+      console.error('[GDPR] Error getting user deletion requests:', error);
+      throw error;
+    }
+  }
+
   async getDeletionStatus(
     deletionRequestId: string,
     userId: string
@@ -525,3 +553,12 @@ export const getDeletionStatus = (deletionRequestId: string, userId: string) =>
 
 export const cancelDeletion = (deletionRequestId: string, userId: string) =>
   accountDeletion.cancelDeletion(deletionRequestId, userId);
+
+export const hasPendingDeletionRequest = async (userId: string): Promise<boolean> => {
+  try {
+    const requests = await accountDeletion.getUserDeletionRequests(userId);
+    return requests.some((request) => request.status === 'pending' || request.status === 'processing');
+  } catch {
+    return false;
+  }
+};

@@ -13,7 +13,7 @@ import {
   addErrorBreadcrumb,
   setErrorContext,
   ErrorSeverity,
-} from '../lib/errorReporting';
+} from '../../../api/client/errorReporting';
 
 export interface UseErrorTrackingOptions {
   componentName: string;

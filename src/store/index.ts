@@ -4,3 +4,7 @@ export * from './useTripStore';
 export * from './useUIStore';
 export * from './useVendorStore';
 export * from './useAnalyticsStore';
+export * from './useThemeStore';
+export * from './useProximityNotificationStore';
+export * from './useCustomerEngagementStore';
+export * from './useRatingsStore';

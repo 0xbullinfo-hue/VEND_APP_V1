@@ -16,19 +16,19 @@ import type { StackScreenProps } from '@react-navigation/stack';
 import { UserTabNavigator } from './UserTabNavigator';
 
 // Overlay screens
-import { VendorProfileScreen } from '../screens/customer/VendorProfileScreen';
-import { DirectionRequestScreen } from '../screens/customer/DirectionRequestScreen';
-import { LiveTripScreen } from '../screens/customer/LiveTripScreen';
-import { QRScannerScreen } from '../screens/customer/QRScannerScreen';
-import { LeaveReviewScreen } from '../screens/customer/LeaveReviewScreen';
-import { ChatScreen } from '../screens/shared/ChatScreen';
-import { PointsHistoryScreen } from '../screens/PointsHistoryScreen';
+import { VendorProfileScreen } from '../features/discovery/VendorProfileScreen';
+import { DirectionRequestScreen } from '../features/verification/DirectionRequestScreen';
+import { LiveTripScreen } from '../features/shared/LiveTripScreen';
+import { QRScannerScreen } from '../features/verification/QRScannerScreen';
+import { LeaveReviewScreen } from '../features/shared/LeaveReviewScreen';
+import { ChatScreen } from '../features/shared/ChatScreen';
+import { PointsHistoryScreen } from '../features/shared/PointsHistoryScreen';
 import { TermsOfServiceScreen } from '../screens/legal/TermsOfServiceScreen';
 import { PrivacyPolicyScreen } from '../screens/legal/PrivacyPolicyScreen';
-import { GDPRSettingsScreen } from '../screens/vendor/GDPRSettingsScreen';
+import { GDPRSettingsScreen } from '../features/shared/GDPRSettingsScreen';
 
 import type { CustomerStackParamList } from './types';
-import { useApp } from '../contexts/AppContext';
+import { useApp } from '../features/shared/contexts/AppContext';
 
 const Stack = createStackNavigatorCompat<CustomerStackParamList>();
 

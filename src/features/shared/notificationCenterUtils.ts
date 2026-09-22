@@ -4,7 +4,7 @@
  * Provides formatting, filtering, and display logic for notifications
  */
 
-import { ProximityNotification } from './proximityNotifications';
+import { ProximityNotification } from '../../core/safety/protocol/proximityNotifications';
 
 export interface NotificationDisplayItem extends ProximityNotification {
   displayTime: string;

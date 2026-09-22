@@ -9,7 +9,7 @@ import {
 import { theme, normalize } from '../theme/designSystem';
 import { VText, VButton } from './SharedComponents';
 import { Ionicons } from './VIcons';
-import { captureException, ErrorSeverity } from '../lib/errorReporting';
+import { captureException, ErrorSeverity } from '../../../api/client/errorReporting';
 
 interface Props {
   children: ReactNode;

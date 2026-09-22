@@ -2,15 +2,15 @@ import React from 'react';
 import { Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useNavigation } from '@react-navigation/native';
-import { Ionicons, IonIconName } from '../components/VIcons';
+import { Ionicons, IonIconName } from '../features/shared/components/VIcons';
 import { theme, normalize } from '../theme/designSystem';
-import { useApp } from '../contexts/AppContext';
+import { useApp } from '../features/shared/contexts/AppContext';
 
 // Screens
-import { HomeScreen } from '../screens/customer/HomeScreen';
-import { ExploreScreen } from '../screens/customer/ExploreScreen';
-import { RewardsScreen } from '../screens/customer/RewardsScreen';
-import { CustomerProfileScreen } from '../screens/customer/CustomerProfileScreen';
+import { HomeScreen } from '../features/discovery/HomeScreen';
+import { ExploreScreen } from '../features/discovery/ExploreScreen';
+import { RewardsScreen } from '../features/shared/RewardsScreen';
+import { CustomerProfileScreen } from '../features/shared/CustomerProfileScreen';
 
 import type { CustomerTabParamList } from './types';
 

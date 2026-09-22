@@ -12,10 +12,10 @@ import type { StackNavigationProp } from './createStackNavigatorCompat';
 import { VendorTabNavigator } from './VendorTabNavigator';
 
 // Overlay screens
-import { SubscriptionManagerScreen } from '../screens/vendor/SubscriptionManagerScreen';
-import { DetailedLocationSetupScreen } from '../screens/vendor/DetailedLocationSetupScreen';
-import { RegistrationSuccessScreen } from '../screens/vendor/RegistrationSuccessScreen';
-import { ChatScreen } from '../screens/shared/ChatScreen';
+import { SubscriptionManagerScreen } from '../features/vendor-hub/SubscriptionManagerScreen';
+import { DetailedLocationSetupScreen } from '../features/onboarding/DetailedLocationSetupScreen';
+import { RegistrationSuccessScreen } from '../features/onboarding/RegistrationSuccessScreen';
+import { ChatScreen } from '../features/shared/ChatScreen';
 
 import type { VendorStackParamList } from './types';
 import type { StackScreenProps } from '@react-navigation/stack';

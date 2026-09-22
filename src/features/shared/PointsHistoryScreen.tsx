@@ -1,10 +1,10 @@
 import React from 'react';
 import { StyleSheet, View, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { theme, normalize } from '../theme/designSystem';
-import { VText, HeaderBar } from '../components/SharedComponents';
-import { useApp } from '../contexts/AppContext';
-import { Ionicons } from '../components/VIcons';
+import { theme, normalize } from '../../theme/designSystem';
+import { VText, HeaderBar } from './components/SharedComponents';
+import { useApp } from './contexts/AppContext';
+import { Ionicons } from './components/VIcons';
 
 interface PointsHistoryScreenProps {
   onBack: () => void;

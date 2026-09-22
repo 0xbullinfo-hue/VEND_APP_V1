@@ -29,7 +29,7 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
   onStartChat,
   onViewProfile
 }) => {
-  const { vendors, myVendorProfile, myVendorPlan, addSnapshot } = useApp();
+  const { vendors, myVendorProfile, myVendorPlan, addSnapshot, updateVendorProfile } = useApp();
   const { notifications } = useProximityNotificationStore();
   const [showSnapshotModal, setShowSnapshotModal] = React.useState(false);
 
@@ -122,7 +122,7 @@ export const VendorDashboardScreen: React.FC<VendorDashboardScreenProps> = ({
         <View style={styles.actionRail}>
           <TouchableOpacity
             style={[styles.railBox, vendor.is_open && styles.railBoxActive]}
-            onPress={() => updateVendorProfile(vendor.id, { is_open: !vendor.is_open })}
+            onPress={() => updateVendorProfile?.(vendor.id, { is_open: !vendor.is_open })}
           >
             <Ionicons name="power" size={20} color={vendor.is_open ? '#FFF' : theme.colors.primary} />
             <VText variant="caption" color={vendor.is_open ? '#FFF' : theme.colors.primary} style={styles.railLabel}>

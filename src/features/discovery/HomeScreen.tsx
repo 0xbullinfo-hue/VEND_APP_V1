@@ -203,6 +203,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       .slice(0, 5);
   }, [vendors]);
 
+  const selectedVendor = useMemo(
+    () => vendors.find(v => v.id === selectedVendorId) || null,
+    [selectedVendorId, vendors]
+  );
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Top Header */}
@@ -318,7 +323,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               value={searchQuery}
               onChangeText={(text) => {
                 setSearchQuery(text);
-                // Points removed from passive typing to prevent farming
                 prevSearchLengthRef.current = text.length;
               }}
               style={[styles.searchRailInput, { color: colors.textMain, fontFamily: theme.typography.fontSans }]}
@@ -355,19 +359,60 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </TouchableOpacity>
           </View>
 
+          {selectedVendor && (
+            <View style={[styles.selectedVendorSummary, { backgroundColor: isDarkMode ? colors.surface : 'rgba(255,255,255,0.96)', borderColor: colors.border }, theme.shadows.soft]}>
+              <TouchableOpacity
+                activeOpacity={0.9}
+                onPress={() => handleViewVendorProfileInternal(selectedVendor.id)}
+                style={styles.selectedVendorMain}
+              >
+                <VImage source={selectedVendor.image} style={styles.selectedVendorThumb} />
+                <View style={styles.selectedVendorMeta}>
+                  <VText variant="h3" numberOfLines={1}>{selectedVendor.business_name}</VText>
+                  <VText variant="caption" color={colors.textMuted} numberOfLines={1}>
+                    {selectedVendor.category} • {selectedVendor.is_open ? 'Open now' : 'Offline'}
+                  </VText>
+                  <View style={styles.summaryRow}>
+                    <View style={styles.summaryRating}>
+                      <Ionicons name="star" size={10} color={theme.colors.warning} />
+                      <VText variant="caption" style={{ marginLeft: 4 }}>{selectedVendor.rating}</VText>
+                    </View>
+                    <View style={[styles.summaryPill, { backgroundColor: selectedVendor.subscription_tier > 1 ? '#F59E0B' : colors.primaryLight }]}>
+                      <VText variant="caption" color={selectedVendor.subscription_tier > 1 ? '#FFFFFF' : colors.primary}>
+                        {selectedVendor.subscription_tier > 1 ? 'Boosted' : 'Trusted'}
+                      </VText>
+                    </View>
+                  </View>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.primary} />
+              </TouchableOpacity>
+
+              <View style={styles.summaryActions}>
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  onPress={() => handleViewVendorProfileInternal(selectedVendor.id)}
+                  style={[styles.summaryActionPrimary, { backgroundColor: colors.primary }]}
+                >
+                  <VText variant="caption" color="#FFFFFF">View profile</VText>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  activeOpacity={0.9}
+                  onPress={() => handleViewVendorProfileInternal(selectedVendor.id)}
+                  style={[styles.summaryActionSecondary, { backgroundColor: colors.primaryLight }]}
+                >
+                  <VText variant="caption" color={colors.primary}>Directions</VText>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
           {/* Integrated Category Bar (Right under search) */}
           <View style={styles.integratedCategoryBar}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
               {categories.map((cat, index) => {
                 const isSelected = selectedCategory === cat.name || (selectedCategory === null && cat.name === 'All');
-                const topTrustVendors = useMemo(() => {
-    return vendors
-      .filter(v => v.handshake_count >= 10 || v.avg_response_mins <= 10)
-      .sort((a, b) => (b.handshake_count || 0) - (a.handshake_count || 0))
-      .slice(0, 5);
-  }, [vendors]);
 
-  return (
+                return (
                   <Animated.View
                     key={cat.name}
                     entering={FadeInRight.delay(400 + (index * 50)).duration(400)}
@@ -451,14 +496,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             const catIcon = icon.replace('-outline', '');
 
             if (vendor.is_home_based) {
-              const topTrustVendors = useMemo(() => {
-    return vendors
-      .filter(v => v.handshake_count >= 10 || v.avg_response_mins <= 10)
-      .sort((a, b) => (b.handshake_count || 0) - (a.handshake_count || 0))
-      .slice(0, 5);
-  }, [vendors]);
-
-  return (
+              return (
                 <React.Fragment key={vendor.id}>
                   <Circle
                     center={coordinate}
@@ -494,14 +532,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               );
             }
 
-            const topTrustVendors = useMemo(() => {
-    return vendors
-      .filter(v => v.handshake_count >= 10 || v.avg_response_mins <= 10)
-      .sort((a, b) => (b.handshake_count || 0) - (a.handshake_count || 0))
-      .slice(0, 5);
-  }, [vendors]);
-
-  return (
+            return (
               <Marker
                 key={vendor.id}
                 coordinate={coordinate}
@@ -1116,6 +1147,66 @@ const styles = StyleSheet.create({
     height: '100%',
     color: theme.colors.textMain,
     fontSize: normalize(13),
+  },
+  selectedVendorSummary: {
+    marginTop: theme.spacing.sm,
+    borderRadius: normalize(16),
+    borderWidth: 1,
+    padding: theme.spacing.sm,
+    overflow: 'hidden',
+  },
+  selectedVendorMain: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  selectedVendorThumb: {
+    width: normalize(52),
+    height: normalize(52),
+    borderRadius: normalize(14),
+    marginRight: theme.spacing.sm,
+    backgroundColor: theme.colors.surface,
+  },
+  selectedVendorMeta: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    gap: 6,
+  },
+  summaryRating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF7ED',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 999,
+  },
+  summaryPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+  },
+  summaryActions: {
+    flexDirection: 'row',
+    marginTop: theme.spacing.sm,
+    gap: theme.spacing.sm,
+  },
+  summaryActionPrimary: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: theme.spacing.xs,
+    borderRadius: normalize(10),
+  },
+  summaryActionSecondary: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: theme.spacing.xs,
+    borderRadius: normalize(10),
   },
   vDivider: {
     width: 1,

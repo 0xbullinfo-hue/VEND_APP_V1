@@ -49,15 +49,14 @@ export interface VendorProfile {
   subscription_tier: number;
   image: string;
   street_address: string;
-  point_wallet: number; // Vendor's points for boosting
-  is_boosted: boolean; // V2+ Master visibility flag
-  boost_expiry: number | null; // V2+ Automated rank-reset timer
-  subscription_status: 'free' | 'pro' | 'elite' | 'business'; // V2+ MRR Tier
-  handshake_count: number; // V2: Total verified completions
-  avg_response_mins: number; // V2: Speed signal for AI ranking
-  portfolio_urls: string[]; // V2: Social proof gallery
+  point_wallet: number;
+  is_boosted: boolean;
+  boost_expiry: number | null;
+  subscription_status: 'free' | 'pro' | 'elite' | 'business';
+  handshake_count: number;
+  avg_response_mins: number;
+  portfolio_urls: string[];
   business_hours?: string;
-  boost_expiry?: number | null;
   exact_location: { latitude: number; longitude: number };
   services: VendorServiceItem[];
   last_seen_at?: string;

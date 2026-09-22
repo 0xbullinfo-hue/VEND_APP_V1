@@ -130,7 +130,7 @@ export const useVendorStore = create<VendorState>()(
         set((state) => {
           if (state.vendors.some(v => v.id === user.id)) return state;
           const locality = useLocationStore.getState().locality;
-          const newVendorProfile = {
+          const newVendorProfile: VendorProfile = {
             id: user.id,
             business_name: user.name,
             bio: 'Tell customers about your business by completing your profile setup.',
@@ -144,7 +144,7 @@ export const useVendorStore = create<VendorState>()(
             image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500&q=80',
             services: [],
             street_address: '',
-            point_wallet: 50, // Welcome points for vendors
+            point_wallet: 50,
             is_boosted: false,
             boost_expiry: null,
             subscription_status: 'free',
@@ -218,18 +218,29 @@ export const useVendorStore = create<VendorState>()(
             return { vendors: rankVendorsForCustomer(updated) };
           }
 
-          const newVendor = {
+          const newVendor: VendorProfile = {
             id: vendorId || ('v_' + Math.random().toString(36).substring(2, 11)),
             ...profileFields,
             rating: 5.0,
             is_open: true,
             subscription_tier: 1,
+            subscription_status: 'free',
+            is_boosted: false,
+            boost_expiry: null,
             point_wallet: 50,
             handshake_count: 0,
             avg_response_mins: 0,
             portfolio_urls: [],
             image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500&q=80',
             services: [],
+            business_name: businessName,
+            bio,
+            category: profileFields.category,
+            sub_category: subCategory,
+            locality_id: profileFields.locality_id,
+            exact_location: profileFields.exact_location,
+            is_home_based: isHomeBased,
+            street_address: address,
           };
           return { vendors: rankVendorsForCustomer([newVendor, ...state.vendors]) };
         });

@@ -12,10 +12,10 @@ import {
 import Animated, { useAnimatedStyle, withRepeat, withTiming, withSequence } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, IonIconName } from './VIcons';
-import { theme, normalize } from '../theme/designSystem';
+import { theme, normalize } from '../../../theme/designSystem';
 import { useApp } from '../contexts/AppContext';
-import { useThemeStore } from '../store/useThemeStore';
-import { getThemeColors } from '../theme/themeConfig';
+import { useThemeStore } from '../../../store/useThemeStore';
+import { getThemeColors } from '../../../theme/themeConfig';
 
 // VText component
 export const VText: React.FC<{

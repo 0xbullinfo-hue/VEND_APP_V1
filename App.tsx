@@ -8,10 +8,10 @@ import * as Notifications from 'expo-notifications';
 
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 
-import { AppProvider } from './src/contexts/AppContext';
+import { AppProvider } from './src/features/shared/contexts/AppContext';
 import { RootNavigator } from './src/navigation/RootNavigator';
-import { NotificationToast } from './src/components/SharedComponents';
-import { ErrorBoundary } from './src/components/ErrorBoundary';
+import { NotificationToast } from './src/features/shared/components/SharedComponents';
+import { ErrorBoundary } from './src/features/shared/components/ErrorBoundary';
 import { theme } from './src/theme/designSystem';
 import { useThemeStore } from './src/store/useThemeStore';
 import { getThemeColors } from './src/theme/themeConfig';

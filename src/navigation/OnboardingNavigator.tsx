@@ -9,15 +9,15 @@ import { useNavigation } from '@react-navigation/native';
 import { createStackNavigatorCompat } from './createStackNavigatorCompat';
 import type { StackNavigationProp } from './createStackNavigatorCompat';
 
-import { WelcomeScreen } from '../screens/onboarding/WelcomeScreen';
-import { WalkthroughScreen } from '../screens/onboarding/WalkthroughScreen';
-import { PhoneAuthScreen } from '../screens/onboarding/PhoneAuthScreen';
-import { ReferralCodeScreen } from '../screens/onboarding/ReferralCodeScreen';
-import { LocalitySelectionScreen } from '../screens/onboarding/LocalitySelectionScreen';
-import { OnboardingCompleteScreen } from '../screens/onboarding/OnboardingCompleteScreen';
+import { WelcomeScreen } from '../features/onboarding/WelcomeScreen';
+import { WalkthroughScreen } from '../features/onboarding/WalkthroughScreen';
+import { PhoneAuthScreen } from '../features/onboarding/PhoneAuthScreen';
+import { ReferralCodeScreen } from '../features/onboarding/ReferralCodeScreen';
+import { LocalitySelectionScreen } from '../features/onboarding/LocalitySelectionScreen';
+import { OnboardingCompleteScreen } from '../features/onboarding/OnboardingCompleteScreen';
 import { PrivacyPolicyScreen } from '../screens/legal/PrivacyPolicyScreen';
 import { TermsOfServiceScreen } from '../screens/legal/TermsOfServiceScreen';
-import { useApp } from '../contexts/AppContext';
+import { useApp } from '../features/shared/contexts/AppContext';
 
 import type { OnboardingStackParamList } from './types';
 

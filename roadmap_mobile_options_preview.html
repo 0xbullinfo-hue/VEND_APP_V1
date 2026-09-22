@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mobile Roadmap UI Options</title>
+  <style>
+    :root {
+      --bg: #0f141d;
+      --panel: #1a2230;
+      --border: #334155;
+      --text: #e5ecf4;
+      --muted: #91a1b8;
+      --accent: #f3c94d;
+      --ok: #18b67a;
+      --warn: #f59e0b;
+      --pending: #8ba1c9;
+      --queued: #6b7280;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: radial-gradient(circle at 20% 0%, #182131 0%, var(--bg) 40%), var(--bg);
+      color: var(--text);
+      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+      padding: 20px;
+    }
+
+    .page {
+      max-width: 420px;
+      margin: 0 auto;
+      display: grid;
+      gap: 20px;
+    }
+
+    .option {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0));
+      padding: 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    }
+
+    .option h2 {
+      margin: 0 0 6px;
+      font-size: 15px;
+      letter-spacing: 0.02em;
+    }
+
+    .option p {
+      margin: 0 0 12px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px;
+      margin-bottom: 8px;
+    }
+
+    .title {
+      font-size: 12px;
+      margin: 0 0 6px;
+      font-weight: 700;
+    }
+
+    .meta {
+      font-size: 10px;
+      color: var(--muted);
+      margin: 0 0 8px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .bullets {
+      margin: 0;
+      padding-left: 16px;
+      color: #bbcae0;
+      font-size: 11px;
+      line-height: 1.45;
+    }
+
+    /* Option 1: Vertical timeline */
+    .timeline {
+      border-left: 1px dashed var(--border);
+      margin-left: 6px;
+      padding-left: 12px;
+    }
+
+    .node {
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .node::before {
+      content: "";
+      width: 9px;
+      height: 9px;
+      background: var(--accent);
+      border-radius: 999px;
+      position: absolute;
+      left: -17px;
+      top: 12px;
+      box-shadow: 0 0 0 3px rgba(243, 201, 77, 0.2);
+    }
+
+    /* Option 2: Accordion */
+    .accordion-item {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 8px;
+      background: var(--panel);
+    }
+
+    .accordion-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .pill {
+      font-size: 9px;
+      padding: 3px 6px;
+      border-radius: 999px;
+      border: 1px solid;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .verified { color: var(--ok); border-color: rgba(24,182,122,0.5); }
+    .executing { color: var(--warn); border-color: rgba(245,158,11,0.5); }
+    .pending { color: var(--pending); border-color: rgba(139,161,201,0.5); }
+    .queued { color: var(--queued); border-color: rgba(107,114,128,0.5); }
+
+    .accordion-body {
+      border-top: 1px solid var(--border);
+      padding: 10px;
+      font-size: 11px;
+      color: #bbcae0;
+    }
+
+    /* Option 3: Swipe cards */
+    .swipe-row {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      scroll-snap-type: x mandatory;
+    }
+
+    .swipe-card {
+      min-width: 260px;
+      max-width: 260px;
+      scroll-snap-align: center;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px;
+    }
+
+    .dots {
+      text-align: center;
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 8px;
+      letter-spacing: 4px;
+    }
+
+    /* Option 4: Stepper */
+    .stepper {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .step {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 4px;
+      text-align: center;
+      font-size: 10px;
+      color: var(--muted);
+      background: #161d2a;
+    }
+
+    .step.active {
+      background: linear-gradient(135deg, var(--accent), #eab308);
+      color: #1a1a1a;
+      font-weight: 800;
+      border-color: #f0c54c;
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="option option-1">
+      <h2>Option 1: Vertical Timeline</h2>
+      <p>Best readability, no horizontal scrolling.</p>
+      <div class="timeline">
+        <div class="node card">
+          <p class="meta">Phase_01</p>
+          <p class="title">Core Initialization</p>
+          <ul class="bullets"><li>Architecture and stress tests</li><li>Contract beta deploy</li></ul>
+        </div>
+        <div class="node card">
+          <p class="meta">Phase_02</p>
+          <p class="title">System Expansion</p>
+          <ul class="bullets"><li>Community onboarding</li><li>Audit and launch prep</li></ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="option option-2">
+      <h2>Option 2: Accordion Roadmap</h2>
+      <p>Compact layout, expand only what user needs.</p>
+      <div class="accordion-item">
+        <div class="accordion-head">PHASE_01 <span class="pill verified">Verified</span></div>
+        <div class="accordion-body">Core systems defined, token logic initialized, internal tests passed.</div>
+      </div>
+      <div class="accordion-item">
+        <div class="accordion-head">PHASE_02 <span class="pill executing">Executing</span></div>
+        <div class="accordion-body">Onboarding campaign and final contract review in progress.</div>
+      </div>
+      <div class="accordion-item">
+        <div class="accordion-head">PHASE_03 <span class="pill pending">Pending</span></div>
+      </div>
+    </section>
+
+    <section class="option option-3">
+      <h2>Option 3: Swipe Cards + Snap</h2>
+      <p>Product-like feel with touch swipe navigation.</p>
+      <div class="swipe-row">
+        <article class="swipe-card">
+          <p class="meta">Phase_01</p>
+          <p class="title">Core Initialization</p>
+          <ul class="bullets"><li>System architecture</li><li>Contract beta</li></ul>
+        </article>
+        <article class="swipe-card">
+          <p class="meta">Phase_02</p>
+          <p class="title">System Expansion</p>
+          <ul class="bullets"><li>Marketing rollout</li><li>Security checks</li></ul>
+        </article>
+      </div>
+      <div class="dots">. . .</div>
+    </section>
+
+    <section class="option option-4">
+      <h2>Option 4: Stepper + Detail Panel</h2>
+      <p>Guided progression with focused details.</p>
+      <div class="stepper">
+        <div class="step">P1</div>
+        <div class="step active">P2</div>
+        <div class="step">P3</div>
+        <div class="step">P4</div>
+      </div>
+      <div class="card">
+        <p class="meta">Phase_02 Active</p>
+        <p class="title">System Expansion and Deployment</p>
+        <ul class="bullets"><li>Community onboarding</li><li>Token launch and liquidity setup</li><li>Beta user rollout</li></ul>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
