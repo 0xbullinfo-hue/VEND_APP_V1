@@ -368,7 +368,7 @@ export const VImage: React.FC<{
   // Determine the final image source with fallback logic
   const getImageSource = () => {
     if (error || !source) {
-      return require('../../assets/images/placeholder-vendor.png');
+      return require('../../../../assets/images/placeholder-vendor.png');
     }
     if (typeof source === 'string') {
       return { uri: source };
